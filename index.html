@@ -374,24 +374,19 @@
 </div>
 
 <!-- ── CASH ROW ── -->
-<div class="section-label">Денежная позиция · ручной ввод</div>
+<div class="section-label">Денежная позиция · из таблицы</div>
 <div class="grid row-cash">
 
-  <div class="cash-input-card">
-    <div class="card-label">💰 Деньги в кассе (€)</div>
-    <div class="input-row">
-      <input class="euro-input" id="inputCash" type="number" placeholder="0" />
-      <button class="save-btn" onclick="saveCash()">Сохранить</button>
-    </div>
+  <div class="card">
+    <div class="card-label">💰 Деньги в кассе</div>
+    <div class="cash-display" id="cashVal">—</div>
+    <div class="cash-months" id="cashNote">загрузка…</div>
   </div>
 
   <div class="card" id="runwayCard">
     <div class="card-label">Runway · хватит на</div>
     <div class="cash-display" id="runwayVal">— мес.</div>
-    <div class="input-row" style="margin-top:10px">
-      <input class="euro-input" id="inputRunway" type="number" placeholder="мес." style="font-size:16px" />
-      <button class="save-btn" onclick="saveRunway()">Сохранить</button>
-    </div>
+    <div class="cash-months" id="runwayNote">загрузка…</div>
   </div>
 
 </div>
@@ -496,7 +491,7 @@
 // ══════════════════════════════════════════
 //  КОНФИГ — вставь сюда URL после деплоя Apps Script
 // ══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyL9GuWagUunjtPKNWYzU-SYxnguxhWOMd18cD-XjXifNJ2K9n_NQfUFII8mPwpF0aGQQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzS7qrkmivgLv8lEJoBi4gpGit5TVjvYCXARqBwcQLrCZaG039vNXONO8abaG-yRVy5gg/exec';
 
 const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -515,6 +510,8 @@ const FALLBACK = {
   webPlan:           [30,30,30,30,30,30,30,30,30,30,30,30],
   mktFact:           [0, 15.91, 16.61, null, null, null, null, null, null, null, null, null],
   mktPlan:           [30,30,30,30,30,30,30,30,30,30,30,30],
+  cash:              [23749.59, null, null, null, null, null, null, null, null, null, null, null],
+  runway:            [3.5, null, null, null, null, null, null, null, null, null, null, null],
 };
 
 let data = FALLBACK;
@@ -790,33 +787,35 @@ function buildCharts() {
 }
 
 // ══════════════════════════════════════════
-//  CASH / RUNWAY  (localStorage)
+//  CASH / RUNWAY  (из таблицы)
 // ══════════════════════════════════════════
-function saveCash() {
-  const v = parseFloat(document.getElementById('inputCash').value);
-  if (!isNaN(v)) localStorage.setItem('mgmt_cash', v);
-}
-
-function saveRunway() {
-  const v = parseFloat(document.getElementById('inputRunway').value);
-  if (!isNaN(v)) {
-    localStorage.setItem('mgmt_runway', v);
-    const el = document.getElementById('runwayVal');
-    el.textContent = v + ' мес.';
-    el.style.color = v < 3 ? 'var(--danger)' : v < 6 ? 'var(--warn)' : 'var(--accent)';
+function updateCash() {
+  // Деньги в кассе — первое ненулевое значение строки 57
+  const cashArr = data.cash || [];
+  const cashVal = cashArr.find(v => v !== null && v !== 0) || null;
+  const cashEl = document.getElementById('cashVal');
+  const cashNote = document.getElementById('cashNote');
+  if (cashVal !== null) {
+    cashEl.textContent = euro(cashVal);
+    cashEl.style.color = 'var(--accent)';
+    cashNote.textContent = 'актуально на последний заполненный месяц';
+  } else {
+    cashEl.textContent = '—';
+    cashNote.textContent = 'нет данных в таблице';
   }
-}
 
-function loadCashInputs() {
-  const c = localStorage.getItem('mgmt_cash');
-  const r = localStorage.getItem('mgmt_runway');
-  if (c) document.getElementById('inputCash').value = c;
-  if (r) {
-    document.getElementById('inputRunway').value = r;
-    const months = parseFloat(r);
-    const el = document.getElementById('runwayVal');
-    el.textContent = months + ' мес.';
-    el.style.color = months < 3 ? 'var(--danger)' : months < 6 ? 'var(--warn)' : 'var(--accent)';
+  // Runway — первое ненулевое значение строки 58
+  const runwayArr = data.runway || [];
+  const runwayVal = runwayArr.find(v => v !== null && v !== 0) || null;
+  const runwayEl = document.getElementById('runwayVal');
+  const runwayNote = document.getElementById('runwayNote');
+  if (runwayVal !== null) {
+    runwayEl.textContent = runwayVal + ' мес.';
+    runwayEl.style.color = runwayVal < 3 ? 'var(--danger)' : runwayVal < 6 ? 'var(--warn)' : 'var(--accent)';
+    runwayNote.textContent = runwayVal < 3 ? '⚠ критично' : runwayVal < 6 ? '⚡ требует внимания' : '✓ комфортный запас';
+  } else {
+    runwayEl.textContent = '— мес.';
+    runwayNote.textContent = 'нет данных в таблице';
   }
 }
 
@@ -828,8 +827,8 @@ function renderAll() {
     `2025 · до ${MONTHS_FULL[factMonths()-1]}`;
   updateKPIs();
   updateMarginCards();
+  updateCash();
   buildCharts();
-  loadCashInputs();
 }
 
 function showStatus(msg, isError) {
