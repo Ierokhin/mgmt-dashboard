@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upwork · Sales Dashboard 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #f2f1ee;
+  --surface:   #ffffff;
+  --surface2:  #f7f6f3;
+  --border:    rgba(0,0,0,0.08);
+  --border2:   rgba(0,0,0,0.14);
+  --text:      #0f1117;
+  --text-dim:  #374151;
+  --text-muted:#6b7280;
+  --text-faint:#9ca3af;
+  --blue:   #1d4ed8; --blue-l: #eff6ff;  --blue-m: #bfdbfe;
+  --red:    #dc2626; --red-l:  #fef2f2;  --red-m:  #fecaca;
+  --green:  #059669; --green-l:#ecfdf5;  --green-m:#a7f3d0;
+  --amber:  #b45309; --amber-l:#fffbeb;  --amber-m:#fde68a;
+  --radius: 12px; --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:14px; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* TOPBAR */
+.topbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:0 40px; height:58px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+.topbar-left { display:flex; align-items:center; gap:12px; }
+.topbar-logo {
+  width:32px; height:32px; background:var(--text); border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; color:#fff; letter-spacing:-0.5px;
+}
+.topbar-title { font-size:15px; font-weight:700; letter-spacing:-0.3px; }
+.topbar-title span { color:var(--text-muted); font-weight:400; }
+.topbar-right { display:flex; align-items:center; gap:20px; }
+.live-pill {
+  display:flex; align-items:center; gap:6px;
+  background:var(--green-l); border:1px solid var(--green-m);
+  border-radius:20px; padding:4px 12px;
+  font-size:11px; font-weight:600; color:var(--green);
+  font-family:'DM Mono',monospace;
+}
+.live-dot { width:5px; height:5px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+.live-pill.loading { background:#f3f4f6; border-color:#d1d5db; color:var(--text-muted); }
+.live-pill.loading .live-dot { background:var(--text-muted); animation:none; }
+.live-pill.error { background:var(--red-l); border-color:var(--red-m); color:var(--red); }
+.live-pill.error .live-dot { background:var(--red); animation:none; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+.topbar-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); }
+.channel-tag {
+  font-size:11px; font-weight:600; color:var(--text-muted);
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:6px; padding:3px 10px;
+  font-family:'DM Mono',monospace; letter-spacing:0.5px;
+}
+
+/* LAYOUT */
+.main { padding:28px 40px 48px; max-width:1440px; margin:0 auto; }
+
+/* SKELETON LOADER */
+.skeleton {
+  background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);
+  background-size:400% 100%;
+  animation:shimmer 1.4s ease infinite;
+  border-radius:8px;
+}
+@keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+/* SECTION LABEL */
+.section-label {
+  font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color:var(--text-muted); margin-bottom:14px;
+  display:flex; align-items:center; gap:10px;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* KPI */
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+.kpi {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px 22px 18px;
+  border-left:3px solid transparent; transition:box-shadow .15s;
+}
+.kpi:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+.kpi.c-blue  { border-left-color:var(--blue); }
+.kpi.c-red   { border-left-color:var(--red); }
+.kpi.c-green { border-left-color:var(--green); }
+.kpi.c-amber { border-left-color:var(--amber); }
+.kpi-label { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; font-family:'DM Mono',monospace; }
+.kpi-value { font-size:38px; font-weight:800; line-height:1; letter-spacing:-2px; margin-bottom:10px; }
+.kpi.c-blue  .kpi-value { color:var(--blue); }
+.kpi.c-red   .kpi-value { color:var(--red); }
+.kpi.c-green .kpi-value { color:var(--green); }
+.kpi.c-amber .kpi-value { color:var(--amber); }
+.kpi-meta { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+.badge { padding:2px 8px; border-radius:5px; font-size:10px; font-weight:700; font-family:'DM Mono',monospace; }
+.badge-bad   { background:var(--red-l);   color:var(--red);   }
+.badge-good  { background:var(--green-l); color:var(--green); }
+.badge-warn  { background:var(--amber-l); color:var(--amber); }
+.kpi-bar { height:3px; background:rgba(0,0,0,0.06); border-radius:2px; margin-top:13px; overflow:hidden; }
+.kpi-bar-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+.kpi.c-blue  .kpi-bar-fill { background:var(--blue); }
+.kpi.c-red   .kpi-bar-fill { background:var(--red); }
+.kpi.c-green .kpi-bar-fill { background:var(--green); }
+.kpi.c-amber .kpi-bar-fill { background:var(--amber); }
+
+/* FUNNEL */
+.funnel-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:28px; overflow:hidden; }
+.funnel-header { padding:16px 24px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.funnel-title { font-size:13px; font-weight:700; }
+.funnel-period { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); }
+.funnel-cols { display:grid; grid-template-columns:repeat(4,1fr); }
+.funnel-col { padding:22px 24px 20px; border-right:1px solid var(--border); position:relative; }
+.funnel-col:last-child { border-right:none; }
+.funnel-arrow {
+  position:absolute; right:-10px; top:50%; transform:translateY(-50%);
+  width:20px; height:20px; background:var(--bg); border:1px solid var(--border);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:9px; color:var(--text-muted); z-index:2;
+}
+.funnel-col:last-child .funnel-arrow { display:none; }
+.funnel-step { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-faint); margin-bottom:12px; }
+.funnel-num { font-size:44px; font-weight:800; line-height:1; letter-spacing:-2.5px; margin-bottom:4px; }
+.f-blue{color:var(--blue)} .f-amber{color:var(--amber)} .f-red{color:var(--red)} .f-green{color:var(--green)}
+.funnel-name { font-size:11px; font-weight:600; color:var(--text-dim); margin-bottom:10px; }
+.funnel-plan { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); }
+.funnel-conv { display:inline-block; margin-top:10px; font-family:'DM Mono',monospace; font-size:10px; padding:3px 8px; border-radius:5px; }
+.funnel-conv.bad  { background:var(--red-l);   color:var(--red);   }
+.funnel-conv.good { background:var(--green-l); color:var(--green); }
+
+/* CHARTS */
+.charts-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+.charts-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
+.chart-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 20px 16px; }
+.chart-card-title { font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:2px; }
+.chart-card-sub { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); margin-bottom:14px; }
+.chart-wrap { position:relative; height:190px; }
+
+/* TABLE */
+.table-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:28px; }
+.table-card-header { padding:14px 20px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.table-card-title { font-size:13px; font-weight:700; }
+.table-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); }
+table.dt { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; }
+table.dt th { background:var(--surface2); padding:9px 14px; text-align:center; color:var(--text-muted); font-weight:500; font-size:10px; letter-spacing:0.5px; border-bottom:1px solid var(--border); white-space:nowrap; }
+table.dt th:first-child { text-align:left; width:200px; }
+table.dt td { padding:8px 14px; text-align:center; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--text-dim); }
+table.dt td:first-child { text-align:left; color:var(--text-muted); }
+table.dt tr:last-child td { border-bottom:none; }
+table.dt tr.gr td { background:var(--surface2); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); padding:6px 14px; border-top:1px solid var(--border); }
+table.dt tr.fact td { color:var(--text); font-weight:500; }
+.cv-good { color:var(--green)!important; }
+.cv-bad  { color:var(--red)!important;   }
+.cv-zero { color:var(--text-faint)!important; opacity:.4; }
+.cell-tag { display:inline-block; padding:1px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+.cell-tag.bad  { background:var(--red-l);   color:var(--red);   }
+.cell-tag.good { background:var(--green-l); color:var(--green); }
+
+/* CONFIG BANNER */
+.config-banner {
+  background:var(--amber-l); border:1px solid var(--amber-m);
+  border-radius:var(--radius-sm); padding:14px 20px; margin-bottom:24px;
+  display:flex; align-items:center; gap:12px; font-size:12px;
+}
+.config-banner strong { color:var(--amber); }
+.config-banner code { background:rgba(0,0,0,0.06); padding:2px 6px; border-radius:4px; font-family:'DM Mono',monospace; font-size:11px; }
+
+/* FOOTER */
+.footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">U</div>
+    <div class="topbar-title">Upwork <span>/ Sales Dashboard</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="channel-tag">UPWORK</span>
+    <span class="topbar-date" id="js-date">—</span>
+    <div class="live-pill loading" id="live-pill"><div class="live-dot"></div><span id="live-text">Загрузка...</span></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- CONFIG BANNER — скрывается после подключения -->
+  <div class="config-banner" id="config-banner">
+    ⚙️ <strong>Настройка:</strong> вставь URL твоего Apps Script в переменную <code>SCRIPT_URL</code> в коде страницы. До этого показываются демо-данные.
+  </div>
+
+  <!-- KPI -->
+  <div class="section-label" id="kpi-period">Ключевые показатели</div>
+  <div class="kpi-grid">
+    <div class="kpi c-blue">
+      <div class="kpi-label">Продажи · факт</div>
+      <div class="kpi-value" id="kv-sales">—</div>
+      <div class="kpi-meta"><span id="km-sales-plan">план: —</span><span class="badge" id="kb-sales">—</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kbar-sales" style="width:0%"></div></div>
+    </div>
+    <div class="kpi c-red">
+      <div class="kpi-label">Лиды · факт</div>
+      <div class="kpi-value" id="kv-leads">—</div>
+      <div class="kpi-meta"><span id="km-leads-plan">план: —</span><span class="badge" id="kb-leads">—</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kbar-leads" style="width:0%"></div></div>
+    </div>
+    <div class="kpi c-green">
+      <div class="kpi-label">LTV · последний месяц</div>
+      <div class="kpi-value" id="kv-ltv">—</div>
+      <div class="kpi-meta"><span id="km-ltv-plan">план: —</span><span class="badge" id="kb-ltv">—</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kbar-ltv" style="width:0%"></div></div>
+    </div>
+    <div class="kpi c-amber">
+      <div class="kpi-label">LTV / CAC · последний месяц</div>
+      <div class="kpi-value" id="kv-ltvcac">—</div>
+      <div class="kpi-meta"><span id="km-ltvcac-plan">план: —</span><span class="badge" id="kb-ltvcac">—</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kbar-ltvcac" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- FUNNEL -->
+  <div class="section-label">Воронка продаж · накопительно</div>
+  <div class="funnel-wrap">
+    <div class="funnel-header">
+      <span class="funnel-title">Путь клиента</span>
+      <span class="funnel-period" id="funnel-period">—</span>
+    </div>
+    <div class="funnel-cols">
+      <div class="funnel-col">
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-step">01 · входящие</div>
+        <div class="funnel-num f-blue" id="fn-leads">—</div>
+        <div class="funnel-name">Лиды</div>
+        <div class="funnel-plan" id="fp-leads">план: —</div>
+      </div>
+      <div class="funnel-col">
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-step">02 · контакт</div>
+        <div class="funnel-num f-amber" id="fn-calls">—</div>
+        <div class="funnel-name">Звонки</div>
+        <div class="funnel-plan" id="fp-calls">план: —</div>
+        <div class="funnel-conv bad" id="fconv-calls">—</div>
+      </div>
+      <div class="funnel-col">
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-step">03 · закрытие</div>
+        <div class="funnel-num f-red" id="fn-sales">—</div>
+        <div class="funnel-name">Продажи</div>
+        <div class="funnel-plan" id="fp-sales">план: —</div>
+        <div class="funnel-conv bad" id="fconv-sales">—</div>
+      </div>
+      <div class="funnel-col">
+        <div class="funnel-step">04 · стоимость клиента</div>
+        <div class="funnel-num f-amber" id="fn-cac" style="font-size:34px;letter-spacing:-1.5px">—</div>
+        <div class="funnel-name">CAC · последний месяц</div>
+        <div class="funnel-plan" id="fp-cac">план: —</div>
+        <div class="funnel-conv" id="fconv-cac">— vs пред. месяц</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUMULATIVE CHARTS -->
+  <div class="section-label">Накопительные показатели</div>
+  <div class="charts-3">
+    <div class="chart-card"><div class="chart-card-title">Лиды накопительно</div><div class="chart-card-sub">план vs факт · шт.</div><div class="chart-wrap"><canvas id="c-leads"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">Звонки накопительно</div><div class="chart-card-sub">план vs факт · шт.</div><div class="chart-wrap"><canvas id="c-calls"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">Продажи накопительно</div><div class="chart-card-sub">план vs факт · шт.</div><div class="chart-wrap"><canvas id="c-sales"></canvas></div></div>
+  </div>
+
+  <!-- CONVERSION CHARTS -->
+  <div class="section-label">Конверсии накопительно</div>
+  <div class="charts-3">
+    <div class="chart-card"><div class="chart-card-title">Лид → Звонок</div><div class="chart-card-sub">план vs факт · %</div><div class="chart-wrap"><canvas id="c-conv1"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">Звонок → Продажа</div><div class="chart-card-sub">план vs факт · %</div><div class="chart-wrap"><canvas id="c-conv2"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">Лид → Продажа</div><div class="chart-card-sub">план vs факт · %</div><div class="chart-wrap"><canvas id="c-conv3"></canvas></div></div>
+  </div>
+
+  <!-- UNIT ECONOMICS -->
+  <div class="section-label">Unit Economics</div>
+  <div class="charts-2">
+    <div class="chart-card"><div class="chart-card-title">LTV</div><div class="chart-card-sub">план vs факт · €</div><div class="chart-wrap"><canvas id="c-ltv"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">LTV / CAC</div><div class="chart-card-sub">план vs факт · ratio</div><div class="chart-wrap"><canvas id="c-ltvcac"></canvas></div></div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="section-label">Детальные данные · план vs факт</div>
+  <div class="table-card">
+    <div class="table-card-header">
+      <span class="table-card-title">Все метрики по месяцам</span>
+      <span class="table-note">Серый = план · Тёмный = факт · — = нет данных</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="dt" id="main-table">
+        <thead>
+          <tr>
+            <th>Метрика</th>
+            <th>Янв</th><th>Фев</th><th>Мар</th><th>Апр</th><th>Май</th>
+            <th>Июн</th><th>Июл</th><th>Авг</th><th>Сен</th><th>Окт</th><th>Ноя</th><th>Дек</th>
+            <th>Итого</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="14" style="text-align:center;padding:24px;color:var(--text-muted)">Загрузка данных...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  Upwork Sales Dashboard · 2025 · Данные обновляются автоматически из Google Sheets
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   🔧 НАСТРОЙКА: вставь сюда URL твоего Apps Script
+   ══════════════════════════════════════════════════════ */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaUoP2LEIYRw32qczwi0LR3H721q42hVv2ntJjIx_seDcOEAAqBzQutkvWn3Cy-_RQ/exec';   // ← ВСТАВИТЬ ПОСЛЕ DEPLOY
+
+/* ══════════════════════════════════════════════════════
+   DEMO DATA — используется пока не подключён Script
+   ══════════════════════════════════════════════════════ */
+const DEMO = {
+  months: ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'],
+  filledMonths: 3,
+  plan: {
+    leads:       [34,35,35,36,37,38,38,39,40,41,41,42],
+    calls:       [4,4,4,4,4,4,5,5,5,5,5,5],
+    sales:       [1,1.04,1.08,1.12,1.17,1.22,1.27,1.32,1.37,1.42,1.48,1.54],
+    conv1:       [11.20,11.31,11.43,11.54,11.65,11.77,11.89,12.01,12.13,12.25,12.37,12.50],
+    conv2:       [26.19,26.45,26.72,26.98,27.25,27.53,27.80,28.08,28.36,28.64,28.93,29.22],
+    conv3:       [2.94,2.97,3.09,3.12,3.16,3.20,3.33,3.37,3.42,3.47,3.61,3.67],
+    ltv:         [5223,5275,5328,5381,5435,5489,5544,5600,5656,5712,5769,5827],
+    cac:         [1680,1680,1680,1680,1680,1680,1680,1680,1680,1680,1680,1680],
+    ltvcac:      [3.50,3.50,3.50,3.50,3.50,3.50,3.50,3.50,3.50,3.50,3.50,3.50],
+    leadsCum:    [34,69,104,140,177,215,253,292,332,373,414,456],
+    callsCum:    [4,8,12,16,20,24,29,34,39,44,49,54],
+    salesCum:    [1,2,3,4,5,7,8,9,11,12,13,15],
+  },
+  fact: {
+    leads:       [28,28,28],
+    calls:       [2,2,2],
+    sales:       [0,1,0],
+    conv1:       [7.14,7.14,7.14],
+    conv2:       [0,50,0],
+    conv3:       [0,3.57,0],
+    ltv:         [5658,5605,5857],
+    cac:         [1993,2274,3697],
+    ltvcac:      [2.84,2.47,1.58],
+    leadsCum:    [28,56,84],
+    callsCum:    [2,4,6],
+    salesCum:    [0,1,1],
+    conv1Cum:    [7.14,7.14,7.14],
+    conv2Cum:    [0,25.00,16.67],
+    conv3Cum:    [0,1.79,1.19],
+  }
+};
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+   ══════════════════════════════════════════════════════ */
+const M_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+function nullPad(arr, len=12){ return [...arr, ...Array(len-arr.length).fill(null)]; }
+function pct(fact, plan){ return plan ? Math.round(fact/plan*100) : 0; }
+function diff(fact, plan){ return plan ? Math.round((fact/plan-1)*100) : 0; }
+function eur(n){ return n===null||n===undefined ? '—' : '€'+Math.round(n).toLocaleString('ru-RU'); }
+function num(n){ return n===null||n===undefined ? '—' : n; }
+
+function setBadge(el, factVal, planVal, higherIsBetter=true){
+  const d = diff(factVal, planVal);
+  const good = higherIsBetter ? d >= 0 : d <= 0;
+  el.textContent = (d>0?'+':'')+d+'%';
+  el.className = 'badge ' + (good ? 'badge-good' : 'badge-bad');
+}
+
+/* ══════════════════════════════════════════════════════
+   CHART FACTORY
+   ══════════════════════════════════════════════════════ */
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size   = 10;
+Chart.defaults.color       = '#9ca3af';
+
+const GRID    = { color:'rgba(0,0,0,0.05)', drawBorder:false };
+const TOOLTIP = { backgroundColor:'#fff', borderColor:'rgba(0,0,0,0.1)', borderWidth:1, titleColor:'#0f1117', bodyColor:'#6b7280', padding:10, cornerRadius:8 };
+
+const planDS = data => ({
+  label:'План', data,
+  borderColor:'#d1d5db', backgroundColor:'transparent',
+  borderWidth:1.5, borderDash:[5,4], pointRadius:0, tension:0.3,
+});
+const factDS = (data, color) => ({
+  label:'Факт', data,
+  borderColor:color, backgroundColor:color+'18', borderWidth:2,
+  pointRadius:4, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:2,
+  fill:true, tension:0.3, spanGaps:false,
+});
+
+const charts = {};
+function makeChart(id, plan, fact, color, yFmt){
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'line',
+    data:{ labels:DEMO.months, datasets:[planDS(plan), factDS(fact, color)] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:10, padding:12, font:{size:10} } },
+        tooltip:{ ...TOOLTIP, callbacks: yFmt ? { label: c => c.parsed.y===null?null:`${c.dataset.label}: ${yFmt(c.parsed.y)}` } : {} }
+      },
+      scales:{
+        x:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
+        y:{ grid:GRID, ticks:{color:'#9ca3af', callback: yFmt||undefined}, border:{display:false} }
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER — принимает data (от API или DEMO)
+   ══════════════════════════════════════════════════════ */
+function render(d){
+  const n = d.filledMonths;
+  const lastM = n - 1;
+
+  /* — Период — */
+  const periodLabel = n===1
+    ? M_NAMES[0]
+    : `${M_NAMES[0]} — ${M_NAMES[lastM]} 2025`;
+  document.getElementById('kpi-period').textContent = `Ключевые показатели · накоп. ${periodLabel}`;
+  document.getElementById('funnel-period').textContent = periodLabel;
+
+  /* — Суммы за заполненные месяцы — */
+  const sumFact = key => d.fact[key].reduce((a,b)=>a+b,0);
+  const sumPlan = key => d.plan[key].slice(0,n).reduce((a,b)=>a+b,0);
+
+  const totalLeadsFact  = sumFact('leads');
+  const totalLeadsPlan  = sumPlan('leads');
+  const totalSalesFact  = sumFact('sales');
+  const totalSalesPlan  = sumPlan('sales');
+  const totalCallsFact  = sumFact('calls');
+  const totalCallsPlan  = sumPlan('calls');
+  const lastLtvFact     = d.fact.ltv[lastM];
+  const lastLtvPlan     = d.plan.ltv[lastM];
+  const lastLtvcacFact  = d.fact.ltvcac[lastM];
+  const lastLtvcacPlan  = d.plan.ltvcac[lastM];
+
+  /* — KPI cards — */
+  document.getElementById('kv-sales').textContent   = Math.round(totalSalesFact);
+  document.getElementById('km-sales-plan').textContent = `план: ${Math.round(totalSalesPlan)}`;
+  setBadge(document.getElementById('kb-sales'), totalSalesFact, totalSalesPlan);
+  document.getElementById('kbar-sales').style.width = Math.min(pct(totalSalesFact,totalSalesPlan),100)+'%';
+
+  document.getElementById('kv-leads').textContent   = totalLeadsFact;
+  document.getElementById('km-leads-plan').textContent = `план: ${totalLeadsPlan}`;
+  setBadge(document.getElementById('kb-leads'), totalLeadsFact, totalLeadsPlan);
+  document.getElementById('kbar-leads').style.width = Math.min(pct(totalLeadsFact,totalLeadsPlan),100)+'%';
+
+  document.getElementById('kv-ltv').textContent     = eur(lastLtvFact);
+  document.getElementById('km-ltv-plan').textContent  = `план: ${eur(lastLtvPlan)}`;
+  setBadge(document.getElementById('kb-ltv'), lastLtvFact, lastLtvPlan);
+  document.getElementById('kbar-ltv').style.width   = Math.min(pct(lastLtvFact,lastLtvPlan),100)+'%';
+
+  document.getElementById('kv-ltvcac').textContent  = lastLtvcacFact.toFixed(2);
+  document.getElementById('km-ltvcac-plan').textContent = `план: ${lastLtvcacPlan.toFixed(2)}`;
+  setBadge(document.getElementById('kb-ltvcac'), lastLtvcacFact, lastLtvcacPlan);
+  document.getElementById('kbar-ltvcac').style.width = Math.min(pct(lastLtvcacFact,lastLtvcacPlan),100)+'%';
+
+  /* — Funnel — */
+  const cumLeadsFact  = d.fact.leadsCum ? d.fact.leadsCum[lastM] : totalLeadsFact;
+  const cumCallsFact  = d.fact.callsCum ? d.fact.callsCum[lastM] : totalCallsFact;
+  const cumSalesFact  = d.fact.salesCum ? d.fact.salesCum[lastM] : totalSalesFact;
+  const cumLeadsPlan  = d.plan.leadsCum[lastM];
+  const cumCallsPlan  = d.plan.callsCum[lastM];
+  const cumSalesPlan  = d.plan.salesCum[lastM];
+  const conv1Fact = d.fact.conv1Cum ? d.fact.conv1Cum[lastM] : (cumLeadsFact ? (cumCallsFact/cumLeadsFact*100) : 0);
+  const conv2Fact = d.fact.conv2Cum ? d.fact.conv2Cum[lastM] : (cumCallsFact ? (cumSalesFact/cumCallsFact*100) : 0);
+
+  document.getElementById('fn-leads').textContent = cumLeadsFact;
+  document.getElementById('fp-leads').textContent = `план: ${cumLeadsPlan}`;
+  document.getElementById('fn-calls').textContent = cumCallsFact;
+  document.getElementById('fp-calls').textContent = `план: ${cumCallsPlan}`;
+  document.getElementById('fconv-calls').textContent = `${conv1Fact.toFixed(2)}% → ${d.plan.conv1[lastM].toFixed(2)}% план`;
+  document.getElementById('fn-sales').textContent = cumSalesFact;
+  document.getElementById('fp-sales').textContent = `план: ${cumSalesPlan}`;
+  document.getElementById('fconv-sales').textContent = `${conv2Fact.toFixed(2)}% → ${d.plan.conv2[lastM].toFixed(2)}% план`;
+  /* CAC последнего месяца + сравнение с предыдущим */
+  const lastCacFact = d.fact.cac[lastM];
+  const lastCacPlan = d.plan.cac[lastM];
+  const prevCacFact = lastM > 0 ? d.fact.cac[lastM - 1] : null;
+
+  document.getElementById('fn-cac').textContent = eur(lastCacFact);
+  document.getElementById('fp-cac').textContent = `план: ${eur(lastCacPlan)}`;
+
+  const cacConvEl = document.getElementById('fconv-cac');
+  if(prevCacFact !== null && prevCacFact > 0){
+    const cacMoM = Math.round((lastCacFact / prevCacFact - 1) * 100);
+    /* CAC: рост — плохо, снижение — хорошо */
+    cacConvEl.textContent = `${cacMoM > 0 ? '+' : ''}${cacMoM}% vs ${M_NAMES[lastM - 1]}`;
+    cacConvEl.className = 'funnel-conv ' + (cacMoM <= 0 ? 'good' : 'bad');
+  } else {
+    cacConvEl.textContent = `первый месяц`;
+    cacConvEl.className = 'funnel-conv';
+  }
+
+  /* — Charts — */
+  const fmtPct = v => v===null?null:v.toFixed(2)+'%';
+  const fmtEur = v => v===null?null:'€'+Math.round(v).toLocaleString('ru-RU');
+
+  makeChart('c-leads',  d.plan.leadsCum,  nullPad(d.fact.leadsCum  || d.fact.leads.map((_,i)=>d.fact.leads.slice(0,i+1).reduce((a,b)=>a+b,0))),  '#1d4ed8');
+  makeChart('c-calls',  d.plan.callsCum,  nullPad(d.fact.callsCum  || d.fact.calls.map((_,i)=>d.fact.calls.slice(0,i+1).reduce((a,b)=>a+b,0))),  '#b45309');
+  makeChart('c-sales',  d.plan.salesCum,  nullPad(d.fact.salesCum  || d.fact.sales.map((_,i)=>d.fact.sales.slice(0,i+1).reduce((a,b)=>a+b,0))),  '#dc2626');
+  makeChart('c-conv1',  d.plan.conv1,     nullPad(d.fact.conv1Cum || d.fact.conv1),  '#1d4ed8', fmtPct);
+  makeChart('c-conv2',  d.plan.conv2,     nullPad(d.fact.conv2Cum || d.fact.conv2),  '#dc2626', fmtPct);
+  makeChart('c-conv3',  d.plan.conv3,     nullPad(d.fact.conv3Cum || d.fact.conv3),  '#059669', fmtPct);
+  makeChart('c-ltv',    d.plan.ltv,       nullPad(d.fact.ltv),    '#059669', fmtEur);
+  makeChart('c-ltvcac', d.plan.ltvcac,    nullPad(d.fact.ltvcac), '#b45309');
+
+  /* — Table — */
+  const MO = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  function cellFact(val, planVal, idx, fmt='num'){
+    if(idx >= n) return `<td class="cv-zero">—</td>`;
+    const v = fmt==='eur' ? Math.round(val) : val;
+    const p = fmt==='eur' ? Math.round(planVal) : planVal;
+    const good = v >= p;
+    if(fmt==='num' && Number.isInteger(val)){
+      return `<td><span class="cell-tag ${good?'good':'bad'}">${v}</span></td>`;
+    }
+    if(fmt==='pct') return `<td class="${good?'cv-good':'cv-bad'}">${val.toFixed(2)}%</td>`;
+    if(fmt==='eur') return `<td class="${good?'cv-good':'cv-bad'}">€${v.toLocaleString('ru-RU')}</td>`;
+    return `<td class="${good?'cv-good':'cv-bad'}">${v}</td>`;
+  }
+  function row(label, planArr, factArr, fmt='num', cls='fact'){
+    const planCells = planArr.map((v,i)=>{
+      if(fmt==='pct') return `<td>${v.toFixed(2)}%</td>`;
+      if(fmt==='eur') return `<td>€${Math.round(v).toLocaleString('ru-RU')}</td>`;
+      return `<td>${typeof v==='number'&&!Number.isInteger(v)?v.toFixed(2):v}</td>`;
+    }).join('');
+    const planTotal = fmt==='pct'||fmt==='ratio' ? `${planArr[n-1].toFixed(fmt==='pct'?2:2)}${fmt==='pct'?'%':''}` : planArr.slice(0,n).reduce((a,b)=>a+b,0).toFixed(fmt==='eur'?0:2);
+    const factCells = factArr.map((v,i)=>cellFact(v, planArr[i], i, fmt)).join('');
+    const factTotal = factArr.reduce((a,b)=>a+b,0);
+    const ftxt = fmt==='eur' ? `€${Math.round(factTotal).toLocaleString('ru-RU')}` : fmt==='pct' ? `${(factTotal/n).toFixed(2)}%` : factTotal;
+    return `
+      <tr><td>${label} · план</td>${planCells}<td>${planTotal}</td></tr>
+      <tr class="${cls}"><td>${label} · факт</td>${factCells}<td>${ftxt}</td></tr>`;
+  }
+
+  document.getElementById('table-body').innerHTML = `
+    <tr class="gr"><td colspan="14">Лиды</td></tr>
+    ${row('Лиды', d.plan.leads, d.fact.leads, 'num')}
+    ${row('Конверсия лид→звонок', d.plan.conv1, d.fact.conv1, 'pct')}
+    <tr class="gr"><td colspan="14">Звонки</td></tr>
+    ${row('Звонки', d.plan.calls, d.fact.calls, 'num')}
+    ${row('Конверсия звонок→продажа', d.plan.conv2, d.fact.conv2, 'pct')}
+    <tr class="gr"><td colspan="14">Продажи</td></tr>
+    ${row('Продажи', d.plan.sales, d.fact.sales, 'num')}
+    ${row('Конверсия лид→продажа', d.plan.conv3, d.fact.conv3, 'pct')}
+    <tr class="gr"><td colspan="14">Unit Economics</td></tr>
+    ${row('LTV', d.plan.ltv, d.fact.ltv, 'eur')}
+    ${row('CAC', d.plan.cac, d.fact.cac, 'eur')}
+    ${row('LTV / CAC', d.plan.ltvcac, d.fact.ltvcac, 'pct')}
+  `;
+}
+
+/* ══════════════════════════════════════════════════════
+   DATA FETCH — Google Sheets или Demo
+   ══════════════════════════════════════════════════════ */
+const pill     = document.getElementById('live-pill');
+const pillText = document.getElementById('live-text');
+const banner   = document.getElementById('config-banner');
+
+async function loadData(){
+  if(!SCRIPT_URL){
+    render(DEMO);
+    pill.className = 'live-pill';
+    pillText.textContent = 'Demo данные';
+    return;
+  }
+  try {
+    const res  = await fetch(SCRIPT_URL);
+    const data = await res.json();
+    render(data);
+    banner.style.display = 'none';
+    pill.className  = 'live-pill';
+    pillText.textContent = 'Live · Google Sheets';
+  } catch(e){
+    render(DEMO);
+    pill.className  = 'live-pill error';
+    pillText.textContent = 'Ошибка загрузки';
+    console.error('Dashboard fetch error:', e);
+  }
+}
+
+/* Date + first load */
+document.getElementById('js-date').textContent =
+  new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+
+loadData();
+
+/* Авто-обновление каждые 5 минут */
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
