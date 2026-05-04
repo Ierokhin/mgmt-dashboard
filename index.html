@@ -365,7 +365,7 @@ body {
     </div>
 
     <div class="cash-card" style="--card-color:var(--purple)">
-      <div class="cash-label">Runway · хватит на</div>
+      <div class="cash-label">Operating Cash Buffer</div>
       <div class="cash-value" id="runwayVal" style="color:var(--purple)">— мес.</div>
       <div class="cash-note" id="runwayNote">загрузка…</div>
     </div>
@@ -454,7 +454,7 @@ body {
 // ══════════════════════════════════════════
 //  КОНФИГ
 // ══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyL9GuWagUunjtPKNWYzU-SYxnguxhWOMd18cD-XjXifNJ2K9n_NQfUFII8mPwpF0aGQQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw36nrATLLcCmObsP884WvULlXafjC6yl1sZIWYy00wh55oEKhm9XuGcpTkfsosnVsa8g/exec';
 
 const MONTHS      = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
 const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -550,22 +550,20 @@ function updateMarginCards() {
 
 // ── CASH ──
 function updateCash() {
-  const cashArr = data.cash || [];
-  const cashVal = cashArr.find(v => v !== null && v !== 0) || null;
+  const cashVal = lastFact(data.cash || []);
   const cashEl  = document.getElementById('cashVal');
-  if (cashVal !== null) {
+  if (cashVal !== null && cashVal !== undefined) {
     cashEl.textContent = euro(cashVal);
   } else {
     cashEl.textContent = '—';
     document.getElementById('cashNote').textContent = 'нет данных';
   }
 
-  const rwArr = data.runway || [];
-  const rwVal = rwArr.find(v => v !== null && v !== 0) || null;
-  const rwEl  = document.getElementById('runwayVal');
+  const rwVal  = lastFact(data.runway || []);
+  const rwEl   = document.getElementById('runwayVal');
   const rwNote = document.getElementById('runwayNote');
-  if (rwVal !== null) {
-    rwEl.textContent = rwVal + ' мес.';
+  if (rwVal !== null && rwVal !== undefined) {
+    rwEl.textContent = rwVal.toFixed(1) + ' мес.';
     rwEl.style.color = rwVal < 3 ? 'var(--red)' : rwVal < 6 ? 'var(--orange)' : 'var(--purple)';
     rwNote.textContent = rwVal < 3 ? '⚠ критично' : rwVal < 6 ? '⚡ требует внимания' : '✓ комфортный запас';
   } else {
