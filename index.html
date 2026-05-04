@@ -550,13 +550,28 @@ function updateMarginCards() {
 
 // ── CASH ──
 function updateCash() {
-  const cashVal = lastFact(data.cash || []);
+  const cashArr = data.cash || [];
+  const cashVal = lastFact(cashArr);
   const cashEl  = document.getElementById('cashVal');
+  const cashNote = document.getElementById('cashNote');
   if (cashVal !== null && cashVal !== undefined) {
     cashEl.textContent = euro(cashVal);
+    // сравнение с предыдущим месяцем
+    const facts = cashArr.filter(v => v !== null);
+    if (facts.length >= 2) {
+      const prev = facts[facts.length - 2];
+      const diff = cashVal - prev;
+      const pct  = ((diff / Math.abs(prev)) * 100).toFixed(1);
+      cashNote.textContent = (diff >= 0 ? '▲ +' : '▼ ') + euro(diff) + ' (' + (diff >= 0 ? '+' : '') + pct + '%) vs прошлый месяц';
+      cashNote.style.color = diff >= 0 ? 'var(--green)' : 'var(--red)';
+    } else {
+      cashNote.textContent = 'данные только за один месяц';
+      cashNote.style.color = 'var(--muted)';
+    }
   } else {
     cashEl.textContent = '—';
-    document.getElementById('cashNote').textContent = 'нет данных';
+    cashNote.textContent = 'нет данных';
+    cashNote.style.color = 'var(--muted)';
   }
 
   const rwVal  = lastFact(data.runway || []);
@@ -769,9 +784,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   showStatus('↻ Загрузка…', false);
   try {
-    const res = await fetch(APPS_SCRIPT_URL);
+    const res = await fetch(APPS_SCRIPT_URL, { redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    data = await res.json();
+    const text = await res.text();
+    data = JSON.parse(text);
     showStatus('✓ Обновлено из Google Sheets', false);
   } catch(e) {
     showStatus('⚠ Fallback-данные', true);
