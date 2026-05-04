@@ -5,520 +5,480 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Management Dashboard 2025</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0f14;
-    --surface: #141720;
-    --surface2: #1a1e2b;
-    --border: #252a38;
-    --accent: #00e5a0;
-    --accent2: #ff6b35;
-    --accent3: #4da6ff;
-    --warn: #ffcc00;
-    --danger: #ff4444;
-    --text: #e8ecf4;
-    --muted: #6b7494;
-    --plan: #4da6ff;
-    --fact: #00e5a0;
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg:       #f0f0ed;
+  --surface:  #ffffff;
+  --border:   #e4e4e0;
+  --text:     #1a1a1a;
+  --muted:    #888884;
+  --blue:     #2563eb;
+  --red:      #dc2626;
+  --green:    #16a34a;
+  --orange:   #ea580c;
+  --purple:   #7c3aed;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    padding: 24px;
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+}
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: baseline;
-    gap: 20px;
-    margin-bottom: 32px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 20px;
-  }
-  .header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    letter-spacing: 3px;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .header .subtitle {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .period-badge {
-    margin-left: auto;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 4px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 1px;
-  }
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-logo {
+  width: 28px; height: 28px;
+  background: #14a800;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-size: 13px;
+  color: var(--muted);
+}
+.topbar-title span {
+  color: var(--text);
+  font-weight: 500;
+}
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.live-badge {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 500;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.4; }
+}
+.topbar-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+#dataStatus {
+  font-size: 11px;
+  color: var(--muted);
+}
 
-  /* ── Grid ── */
-  .grid {
-    display: grid;
-    gap: 16px;
-  }
-  .row-kpi { grid-template-columns: repeat(3, 1fr); }
-  .row-cash { grid-template-columns: repeat(2, 1fr); margin-bottom: 4px; }
-  .row-charts-main { grid-template-columns: 1fr 1fr; }
-  .row-margin { grid-template-columns: 1fr; }
+/* ── MAIN CONTENT ── */
+.content {
+  padding: 28px 32px 48px;
+  max-width: 1280px;
+}
 
-  /* ── Card ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 22px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .card:hover { border-color: #353c54; }
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-line, var(--accent)), transparent);
-    opacity: 0.6;
-  }
-  .card.blue::before { --accent-line: var(--accent3); }
-  .card.orange::before { --accent-line: var(--accent2); }
-  .card.yellow::before { --accent-line: var(--warn); }
+/* ── SECTION HEADER ── */
+.section-header {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 28px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-header::after {
+  content:'';
+  flex:1;
+  height:1px;
+  background: var(--border);
+}
 
-  .card-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-  .card-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 1px;
-    line-height: 1;
-    color: var(--text);
-  }
-  .card-sub {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
-  .badge {
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 500;
-    font-family: 'DM Mono', monospace;
-  }
-  .badge-green { background: rgba(0,229,160,0.15); color: var(--accent); }
-  .badge-red { background: rgba(255,68,68,0.15); color: var(--danger); }
-  .badge-yellow { background: rgba(255,204,0,0.15); color: var(--warn); }
-  .badge-blue { background: rgba(77,166,255,0.15); color: var(--accent3); }
+/* ── KPI CARD ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--card-color, var(--blue));
+  border-radius: 6px;
+  padding: 18px 20px 16px;
+}
+.kpi-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.kpi-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--card-color, var(--blue));
+  line-height: 1;
+  letter-spacing: -1px;
+  margin-bottom: 10px;
+}
+.kpi-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+.kpi-delta {
+  font-weight: 600;
+  font-size: 12px;
+}
+.kpi-delta.pos { color: var(--green); }
+.kpi-delta.neg { color: var(--red); }
 
-  /* Progress bar */
-  .progress-wrap {
-    margin-top: 12px;
-  }
-  .progress-track {
-    background: var(--surface2);
-    height: 4px;
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-  }
-  .progress-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 5px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
+.kpi-bar {
+  height: 3px;
+  background: #e8e8e5;
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.kpi-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .8s ease;
+}
 
-  /* ── Cash Input Card ── */
-  .cash-input-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 22px;
-  }
-  .cash-input-card .card-label { margin-bottom: 12px; }
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .euro-input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 20px;
-    padding: 8px 12px;
-    width: 100%;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .euro-input:focus { border-color: var(--accent); }
-  .save-btn {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 18px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: opacity 0.2s;
-  }
-  .save-btn:hover { opacity: 0.85; }
-  .cash-display {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    color: var(--accent);
-    margin-bottom: 4px;
-  }
-  .cash-months {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-  }
+/* ── CASH ROW ── */
+.cash-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.cash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--card-color, var(--purple));
+  border-radius: 6px;
+  padding: 18px 20px 16px;
+}
+.cash-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.cash-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+}
+.cash-note {
+  font-size: 12px;
+  color: var(--muted);
+}
 
-  /* ── Chart containers ── */
-  .chart-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .legend {
-    display: flex;
-    gap: 14px;
-  }
-  .leg-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .leg-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-  }
-  .chart-wrap {
-    position: relative;
-    height: 200px;
-  }
-  .chart-wrap-tall {
-    position: relative;
-    height: 240px;
-  }
+/* ── CHART CARD ── */
+.chart-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.chart-grid-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px 22px;
+}
+.chart-card-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.chart-card-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.leg-line {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+.leg-dash {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed;
+  opacity: 0.5;
+}
+.chart-wrap { position: relative; height: 190px; }
+.chart-wrap-tall { position: relative; height: 220px; }
 
-  /* ── Margin product cards ── */
-  .margin-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 4px;
-  }
-  .margin-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .margin-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .margin-facts {
-    display: flex;
-    gap: 16px;
-    margin: 12px 0;
-    align-items: flex-end;
-  }
-  .margin-big {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 40px;
-    line-height: 1;
-  }
-  .margin-plan-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-  .sparkline-wrap {
-    height: 70px;
-    position: relative;
-  }
-
-  /* ── Divider labels ── */
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 20px 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .card, .cash-input-card, .margin-card {
-    animation: fadeUp 0.5s ease both;
-  }
+/* ── MARGIN PRODUCT CARDS ── */
+.margin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.margin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--card-color, var(--blue));
+  border-radius: 6px;
+  padding: 18px 20px 16px;
+}
+.margin-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.margin-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--card-color, var(--blue));
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.margin-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.spark-wrap { height: 60px; position: relative; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>MGMT REPORT</h1>
-  <span class="subtitle">Управленческая отчётность</span>
-  <div class="period-badge" id="periodBadge">2025 · YTD Q1</div>
-  <div id="dataStatus" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:8px"></div>
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <div class="topbar-logo">M</div>
+  <div class="topbar-title">Management / <span>Dashboard 2025</span></div>
+  <div class="topbar-right">
+    <span id="dataStatus"></span>
+    <span class="topbar-date" id="periodBadge">2025</span>
+    <span class="live-badge"><span class="live-dot"></span>Live</span>
+  </div>
 </div>
 
-<!-- ── KPI ROW ── -->
-<div class="section-label">Ключевые показатели · факт vs план</div>
-<div class="grid row-kpi">
+<div class="content">
 
-  <div class="card" id="kpiEbitdaMargin">
-    <div class="card-label">EBITDA Margin</div>
-    <div class="card-value" id="valEbitdaMargin">—</div>
-    <div class="card-sub">
-      <span class="badge" id="badgeEbitdaMargin">—</span>
-      план 14%
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-track"><div class="progress-fill" id="progEbitdaMargin" style="width:0%;background:var(--accent)"></div></div>
-      <div class="progress-labels"><span>0%</span><span>план 14%</span></div>
-    </div>
-  </div>
+  <!-- ── KPI ── -->
+  <div class="section-header">Ключевые показатели · накопительно</div>
+  <div class="kpi-grid">
 
-  <div class="card blue" id="kpiEbitda">
-    <div class="card-label">EBITDA накопительный факт</div>
-    <div class="card-value" id="valEbitda">—</div>
-    <div class="card-sub">
-      <span class="badge" id="badgeEbitda">—</span>
-      план <span id="planEbitda">—</span>
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-track"><div class="progress-fill" id="progEbitda" style="width:0%;background:var(--accent3)"></div></div>
-      <div class="progress-labels"><span>0</span><span id="progEbitdaLabel">—</span></div>
-    </div>
-  </div>
-
-  <div class="card orange" id="kpiGP">
-    <div class="card-label">Gross Profit накопительный факт</div>
-    <div class="card-value" id="valGP">—</div>
-    <div class="card-sub">
-      <span class="badge" id="badgeGP">—</span>
-      план <span id="planGP">—</span>
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-track"><div class="progress-fill" id="progGP" style="width:0%;background:var(--accent2)"></div></div>
-      <div class="progress-labels"><span>0</span><span id="progGPLabel">—</span></div>
-    </div>
-  </div>
-
-
-</div>
-
-<!-- ── CASH ROW ── -->
-<div class="section-label">Денежная позиция · из таблицы</div>
-<div class="grid row-cash">
-
-  <div class="card">
-    <div class="card-label">💰 Деньги в кассе</div>
-    <div class="cash-display" id="cashVal">—</div>
-    <div class="cash-months" id="cashNote">загрузка…</div>
-  </div>
-
-  <div class="card" id="runwayCard">
-    <div class="card-label">Runway · хватит на</div>
-    <div class="cash-display" id="runwayVal">— мес.</div>
-    <div class="cash-months" id="runwayNote">загрузка…</div>
-  </div>
-
-</div>
-
-<!-- ── MAIN CHARTS ── -->
-<div class="section-label">Динамика EBITDA и Gross Profit</div>
-<div class="grid row-charts-main">
-
-  <div class="card">
-    <div class="chart-title">
-      EBITDA · факт vs план
-      <div class="legend">
-        <div class="leg-item"><div class="leg-dot" style="background:var(--accent)"></div>Факт</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--plan)"></div>План</div>
+    <div class="kpi-card" style="--card-color:var(--blue)">
+      <div class="kpi-label">EBITDA Margin %</div>
+      <div class="kpi-value" id="valEbitdaMargin">—</div>
+      <div class="kpi-footer">
+        <span>план: 14%</span>
+        <span class="kpi-delta" id="badgeEbitdaMargin">—</span>
       </div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="progEbitdaMargin" style="background:var(--blue)"></div></div>
     </div>
-    <div class="chart-wrap"><canvas id="chartEbitda"></canvas></div>
+
+    <div class="kpi-card" style="--card-color:var(--green)">
+      <div class="kpi-label">EBITDA факт</div>
+      <div class="kpi-value" id="valEbitda">—</div>
+      <div class="kpi-footer">
+        <span>план: <span id="planEbitda">—</span></span>
+        <span class="kpi-delta" id="badgeEbitda">—</span>
+      </div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="progEbitda" style="background:var(--green)"></div></div>
+    </div>
+
+    <div class="kpi-card" style="--card-color:var(--orange)">
+      <div class="kpi-label">Gross Profit факт</div>
+      <div class="kpi-value" id="valGP">—</div>
+      <div class="kpi-footer">
+        <span>план: <span id="planGP">—</span></span>
+        <span class="kpi-delta" id="badgeGP">—</span>
+      </div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="progGP" style="background:var(--orange)"></div></div>
+    </div>
+
   </div>
 
-  <div class="card blue">
-    <div class="chart-title">
-      Gross Profit · факт vs план
-      <div class="legend">
-        <div class="leg-item"><div class="leg-dot" style="background:var(--fact)"></div>Факт</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--plan)"></div>План</div>
-      </div>
+  <!-- ── CASH ── -->
+  <div class="section-header">Денежная позиция</div>
+  <div class="cash-grid">
+
+    <div class="cash-card" style="--card-color:var(--blue)">
+      <div class="cash-label">💰 Деньги в кассе</div>
+      <div class="cash-value" id="cashVal" style="color:var(--blue)">—</div>
+      <div class="cash-note" id="cashNote">загрузка…</div>
     </div>
-    <div class="chart-wrap"><canvas id="chartGP"></canvas></div>
+
+    <div class="cash-card" style="--card-color:var(--purple)">
+      <div class="cash-label">Runway · хватит на</div>
+      <div class="cash-value" id="runwayVal" style="color:var(--purple)">— мес.</div>
+      <div class="cash-note" id="runwayNote">загрузка…</div>
+    </div>
+
   </div>
 
-</div>
+  <!-- ── CHARTS ── -->
+  <div class="section-header">Динамика EBITDA и Gross Profit</div>
+  <div class="chart-grid-2">
 
-<!-- EBITDA MARGIN TREND -->
-<div class="section-label">Рентабельность · тренд</div>
-<div class="card" style="animation-delay:.1s">
-  <div class="chart-title">
-    EBITDA Margin % · факт vs план
-    <div class="legend">
-      <div class="leg-item"><div class="leg-dot" style="background:var(--accent)"></div>Факт</div>
-      <div class="leg-item"><div class="leg-dot" style="background:var(--plan)"></div>План 14%</div>
-    </div>
-  </div>
-  <div class="chart-wrap-tall"><canvas id="chartMarginTrend"></canvas></div>
-</div>
-
-<!-- ── PRODUCT MARGINS ── -->
-<div class="section-label">Маржинальность продуктов · тренд</div>
-<div class="margin-grid">
-
-  <div class="margin-card" style="border-top:2px solid var(--accent);animation-delay:.05s">
-    <div class="margin-name" style="color:var(--accent)">Branding</div>
-    <div class="margin-facts">
-      <div>
-        <div class="margin-big" id="brandingLast">—</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">последний факт</div>
+    <div class="chart-card">
+      <div class="chart-card-title">EBITDA накопительно</div>
+      <div class="chart-card-sub">план vs факт · €</div>
+      <div class="chart-legend">
+        <div class="leg"><div class="leg-line" style="background:var(--green)"></div>Факт</div>
+        <div class="leg"><div class="leg-dash" style="border-color:var(--muted)"></div>План</div>
       </div>
-      <div>
-        <div class="margin-plan-val">план 60%</div>
-        <div class="badge" id="brandingBadge">—</div>
-      </div>
+      <div class="chart-wrap"><canvas id="chartEbitda"></canvas></div>
     </div>
-    <div class="sparkline-wrap"><canvas id="sparkBranding"></canvas></div>
+
+    <div class="chart-card">
+      <div class="chart-card-title">Gross Profit накопительно</div>
+      <div class="chart-card-sub">план vs факт · €</div>
+      <div class="chart-legend">
+        <div class="leg"><div class="leg-line" style="background:var(--orange)"></div>Факт</div>
+        <div class="leg"><div class="leg-dash" style="border-color:var(--muted)"></div>План</div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartGP"></canvas></div>
+    </div>
+
   </div>
 
-  <div class="margin-card" style="border-top:2px solid var(--accent3);animation-delay:.1s">
-    <div class="margin-name" style="color:var(--accent3)">Web</div>
-    <div class="margin-facts">
-      <div>
-        <div class="margin-big" id="webLast">—</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">последний факт</div>
+  <!-- ── MARGIN TREND ── -->
+  <div class="section-header">Рентабельность · тренд</div>
+  <div class="chart-grid-1">
+    <div class="chart-card">
+      <div class="chart-card-title">EBITDA Margin %</div>
+      <div class="chart-card-sub">факт vs план 14%</div>
+      <div class="chart-legend">
+        <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>Факт</div>
+        <div class="leg"><div class="leg-dash" style="border-color:var(--muted)"></div>План 14%</div>
       </div>
-      <div>
-        <div class="margin-plan-val">план 30%</div>
-        <div class="badge" id="webBadge">—</div>
-      </div>
+      <div class="chart-wrap-tall"><canvas id="chartMarginTrend"></canvas></div>
     </div>
-    <div class="sparkline-wrap"><canvas id="sparkWeb"></canvas></div>
   </div>
 
-  <div class="margin-card" style="border-top:2px solid var(--accent2);animation-delay:.15s">
-    <div class="margin-name" style="color:var(--accent2)">Marketing</div>
-    <div class="margin-facts">
-      <div>
-        <div class="margin-big" id="mktLast">—</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">последний факт</div>
+  <!-- ── PRODUCT MARGINS ── -->
+  <div class="section-header">Маржинальность продуктов · тренд</div>
+  <div class="margin-grid">
+
+    <div class="margin-card" style="--card-color:var(--green)">
+      <div class="margin-name">Branding</div>
+      <div class="margin-value" id="brandingLast">—</div>
+      <div class="margin-meta">
+        <span>план: 60%</span>
+        <span class="kpi-delta" id="brandingBadge">—</span>
       </div>
-      <div>
-        <div class="margin-plan-val">план 30%</div>
-        <div class="badge" id="mktBadge">—</div>
-      </div>
+      <div class="spark-wrap"><canvas id="sparkBranding"></canvas></div>
     </div>
-    <div class="sparkline-wrap"><canvas id="sparkMkt"></canvas></div>
+
+    <div class="margin-card" style="--card-color:var(--blue)">
+      <div class="margin-name">Web</div>
+      <div class="margin-value" id="webLast">—</div>
+      <div class="margin-meta">
+        <span>план: 30%</span>
+        <span class="kpi-delta" id="webBadge">—</span>
+      </div>
+      <div class="spark-wrap"><canvas id="sparkWeb"></canvas></div>
+    </div>
+
+    <div class="margin-card" style="--card-color:var(--orange)">
+      <div class="margin-name">Marketing</div>
+      <div class="margin-value" id="mktLast">—</div>
+      <div class="margin-meta">
+        <span>план: 30%</span>
+        <span class="kpi-delta" id="mktBadge">—</span>
+      </div>
+      <div class="spark-wrap"><canvas id="sparkMkt"></canvas></div>
+    </div>
+
   </div>
 
-</div>
-
-<div style="margin-top:24px; text-align:center; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px;">
-  ДАННЫЕ ЗА ЯНВАРЬ — МАРТ 2025 · ОБНОВИТЕ ДАННЫЕ В КОДЕ ПО МЕРЕ ЗАПОЛНЕНИЯ ТАБЛИЦЫ
-</div>
+</div><!-- /content -->
 
 <script>
 // ══════════════════════════════════════════
-//  КОНФИГ — вставь сюда URL после деплоя Apps Script
+//  КОНФИГ
 // ══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzS7qrkmivgLv8lEJoBi4gpGit5TVjvYCXARqBwcQLrCZaG039vNXONO8abaG-yRVy5gg/exec';
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
 
-const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS      = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
 const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
-// Fallback-данные на случай если fetch не сработал (текущие данные из таблицы)
 const FALLBACK = {
-  ebitdaMarginFact:  [9.35, -2.98, -10.56, null, null, null, null, null, null, null, null, null],
-  ebitdaMarginPlan:  [14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14],
-  ebitdaFact:        [2500, -1438, -7330, null, null, null, null, null, null, null, null, null],
-  ebitdaPlan:        [3400, 7000, 10800, 14800, 19000, 23400, 28000, 32800, 37800, 43000, 48400, 54000],
-  gpFact:            [9734, 16865, 21657, null, null, null, null, null, null, null, null, null],
-  gpPlan:            [14814, 30500, 47057, 64486, 82786, 101957, 122000, 142914, 164700, 187357, 210886, 235286],
-  brandingFact:      [57.02, 57.21, 53.59, null, null, null, null, null, null, null, null, null],
-  brandingPlan:      [60,60,60,60,60,60,60,60,60,60,60,60],
-  webFact:           [19.59, 21.01, 20.12, null, null, null, null, null, null, null, null, null],
-  webPlan:           [30,30,30,30,30,30,30,30,30,30,30,30],
-  mktFact:           [0, 15.91, 16.61, null, null, null, null, null, null, null, null, null],
-  mktPlan:           [30,30,30,30,30,30,30,30,30,30,30,30],
-  cash:              [23749.59, null, null, null, null, null, null, null, null, null, null, null],
-  runway:            [3.5, null, null, null, null, null, null, null, null, null, null, null],
+  ebitdaMarginFact: [9.35,-2.98,-10.56,null,null,null,null,null,null,null,null,null],
+  ebitdaMarginPlan: [14,14,14,14,14,14,14,14,14,14,14,14],
+  ebitdaFact:       [2500,-1438,-7330,null,null,null,null,null,null,null,null,null],
+  ebitdaPlan:       [3400,7000,10800,14800,19000,23400,28000,32800,37800,43000,48400,54000],
+  gpFact:           [9734,16865,21657,null,null,null,null,null,null,null,null,null],
+  gpPlan:           [14814,30500,47057,64486,82786,101957,122000,142914,164700,187357,210886,235286],
+  brandingFact:     [57.02,57.21,53.59,null,null,null,null,null,null,null,null,null],
+  brandingPlan:     [60,60,60,60,60,60,60,60,60,60,60,60],
+  webFact:          [19.59,21.01,20.12,null,null,null,null,null,null,null,null,null],
+  webPlan:          [30,30,30,30,30,30,30,30,30,30,30,30],
+  mktFact:          [0,15.91,16.61,null,null,null,null,null,null,null,null,null],
+  mktPlan:          [30,30,30,30,30,30,30,30,30,30,30,30],
+  cash:             [23749.59,null,null,null,null,null,null,null,null,null,null,null],
+  runway:           [3.5,null,null,null,null,null,null,null,null,null,null,null],
 };
 
 let data = FALLBACK;
 
-// ══════════════════════════════════════════
-//  HELPERS
-// ══════════════════════════════════════════
+// ── HELPERS ──
 const factMonths = () => data.ebitdaFact.filter(v => v !== null).length;
 const euro = v => '€' + Math.round(v).toLocaleString('ru');
 
@@ -526,89 +486,102 @@ function lastFact(arr) {
   const vals = arr.filter(v => v !== null);
   return vals[vals.length - 1];
 }
-function ytd(arr) {
-  return arr.filter(v => v !== null).reduce((s, v) => s + v, 0);
-}
 
-// ══════════════════════════════════════════
-//  KPI CARDS
-// ══════════════════════════════════════════
+// ── KPI ──
 function updateKPIs() {
-  // EBITDA Margin — накопительный, берём последнее значение факта
+  const fm = factMonths();
+
+  // EBITDA Margin
   const emLast = lastFact(data.ebitdaMarginFact);
-  const emPlan = 14;
+  const emDiff = emLast - 14;
   document.getElementById('valEbitdaMargin').textContent = emLast.toFixed(1) + '%';
   const emBadge = document.getElementById('badgeEbitdaMargin');
-  const emDiff = emLast - emPlan;
   emBadge.textContent = (emDiff > 0 ? '+' : '') + emDiff.toFixed(1) + '%';
-  emBadge.className = 'badge ' + (emDiff >= 0 ? 'badge-green' : 'badge-red');
-  // прогресс: сколько % от плана достигнуто (если отрицательный — 0)
-  const emProg = Math.max(0, Math.min(100, (emLast / emPlan) * 100));
-  document.getElementById('progEbitdaMargin').style.width = emProg + '%';
-  document.getElementById('progEbitdaMargin').style.background = emDiff >= 0 ? 'var(--accent)' : 'var(--danger)';
+  emBadge.className = 'kpi-delta ' + (emDiff >= 0 ? 'pos' : 'neg');
+  document.getElementById('progEbitdaMargin').style.width =
+    Math.max(0, Math.min(100, (emLast / 14) * 100)) + '%';
+  document.getElementById('progEbitdaMargin').style.background =
+    emDiff >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // EBITDA — накопительный, берём последнее значение факта
-  const eFactLast = lastFact(data.ebitdaFact);
-  const ePlanLast = data.ebitdaPlan[factMonths() - 1];
-  document.getElementById('valEbitda').textContent = euro(eFactLast);
-  document.getElementById('planEbitda').textContent = euro(ePlanLast);
-  document.getElementById('progEbitdaLabel').textContent = euro(ePlanLast);
+  // EBITDA
+  const eLast = lastFact(data.ebitdaFact);
+  const ePlan = data.ebitdaPlan[fm - 1];
+  const ePct  = ((eLast / ePlan - 1) * 100).toFixed(1);
+  document.getElementById('valEbitda').textContent = euro(eLast);
+  document.getElementById('planEbitda').textContent = euro(ePlan);
   const eBadge = document.getElementById('badgeEbitda');
-  const ePct = ((eFactLast / ePlanLast - 1) * 100).toFixed(1);
   eBadge.textContent = (ePct > 0 ? '+' : '') + ePct + '%';
-  eBadge.className = 'badge ' + (eFactLast >= ePlanLast ? 'badge-green' : 'badge-red');
-  const eProg = Math.max(0, Math.min(100, (eFactLast / ePlanLast) * 100));
-  document.getElementById('progEbitda').style.width = eProg + '%';
-  document.getElementById('progEbitda').style.background = eFactLast >= ePlanLast ? 'var(--accent3)' : 'var(--danger)';
+  eBadge.className = 'kpi-delta ' + (eLast >= ePlan ? 'pos' : 'neg');
+  document.getElementById('progEbitda').style.width =
+    Math.max(0, Math.min(100, (eLast / ePlan) * 100)) + '%';
+  document.getElementById('progEbitda').style.background =
+    eLast >= ePlan ? 'var(--green)' : 'var(--red)';
 
-  // Gross Profit — накопительный, берём последнее значение факта
-  const gpFactLast = lastFact(data.gpFact);
-  const gpPlanLast = data.gpPlan[factMonths() - 1];
-  document.getElementById('valGP').textContent = euro(gpFactLast);
-  document.getElementById('planGP').textContent = euro(gpPlanLast);
-  document.getElementById('progGPLabel').textContent = euro(gpPlanLast);
+  // GP
+  const gpLast = lastFact(data.gpFact);
+  const gpPlan = data.gpPlan[fm - 1];
+  const gpPct  = ((gpLast / gpPlan - 1) * 100).toFixed(1);
+  document.getElementById('valGP').textContent = euro(gpLast);
+  document.getElementById('planGP').textContent = euro(gpPlan);
   const gpBadge = document.getElementById('badgeGP');
-  const gpPct = ((gpFactLast / gpPlanLast - 1) * 100).toFixed(1);
   gpBadge.textContent = (gpPct > 0 ? '+' : '') + gpPct + '%';
-  gpBadge.className = 'badge ' + (gpFactLast >= gpPlanLast ? 'badge-green' : 'badge-red');
-  const gpProg = Math.max(0, Math.min(100, (gpFactLast / gpPlanLast) * 100));
-  document.getElementById('progGP').style.width = gpProg + '%';
-  document.getElementById('progGP').style.background = gpFactLast >= gpPlanLast ? 'var(--accent2)' : 'var(--danger)';
-
+  gpBadge.className = 'kpi-delta ' + (gpLast >= gpPlan ? 'pos' : 'neg');
+  document.getElementById('progGP').style.width =
+    Math.max(0, Math.min(100, (gpLast / gpPlan) * 100)) + '%';
+  document.getElementById('progGP').style.background =
+    gpLast >= gpPlan ? 'var(--green)' : 'var(--red)';
 }
 
-// ══════════════════════════════════════════
-//  PRODUCT MARGIN CARDS
-// ══════════════════════════════════════════
+// ── MARGIN CARDS ──
 function updateMarginCards() {
-  const products = [
-    { key:'branding', fact: data.brandingFact, plan: 60, idLast:'brandingLast', idBadge:'brandingBadge' },
-    { key:'web',      fact: data.webFact,      plan: 30, idLast:'webLast',      idBadge:'webBadge' },
-    { key:'mkt',      fact: data.mktFact,      plan: 30, idLast:'mktLast',      idBadge:'mktBadge' },
-  ];
-  products.forEach(p => {
+  [
+    { fact: data.brandingFact, plan: 60, idVal: 'brandingLast', idBadge: 'brandingBadge' },
+    { fact: data.webFact,      plan: 30, idVal: 'webLast',      idBadge: 'webBadge' },
+    { fact: data.mktFact,      plan: 30, idVal: 'mktLast',      idBadge: 'mktBadge' },
+  ].forEach(p => {
     const last = lastFact(p.fact);
     const diff = last - p.plan;
-    document.getElementById(p.idLast).textContent = last.toFixed(1) + '%';
-    const badge = document.getElementById(p.idBadge);
-    badge.textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%';
-    badge.className = 'badge ' + (diff >= 0 ? 'badge-green' : 'badge-red');
+    document.getElementById(p.idVal).textContent = last.toFixed(1) + '%';
+    const b = document.getElementById(p.idBadge);
+    b.textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%';
+    b.className = 'kpi-delta ' + (diff >= 0 ? 'pos' : 'neg');
   });
 }
 
-// ══════════════════════════════════════════
-//  CHART.JS CONFIG HELPERS
-// ══════════════════════════════════════════
-Chart.defaults.color = '#6b7494';
-Chart.defaults.font.family = "'DM Mono', monospace";
-Chart.defaults.font.size = 10;
+// ── CASH ──
+function updateCash() {
+  const cashArr = data.cash || [];
+  const cashVal = cashArr.find(v => v !== null && v !== 0) || null;
+  const cashEl  = document.getElementById('cashVal');
+  if (cashVal !== null) {
+    cashEl.textContent = euro(cashVal);
+  } else {
+    cashEl.textContent = '—';
+    document.getElementById('cashNote').textContent = 'нет данных';
+  }
 
-const gridStyle = {
-  color: 'rgba(255,255,255,0.04)',
-  drawBorder: false,
-};
+  const rwArr = data.runway || [];
+  const rwVal = rwArr.find(v => v !== null && v !== 0) || null;
+  const rwEl  = document.getElementById('runwayVal');
+  const rwNote = document.getElementById('runwayNote');
+  if (rwVal !== null) {
+    rwEl.textContent = rwVal + ' мес.';
+    rwEl.style.color = rwVal < 3 ? 'var(--red)' : rwVal < 6 ? 'var(--orange)' : 'var(--purple)';
+    rwNote.textContent = rwVal < 3 ? '⚠ критично' : rwVal < 6 ? '⚡ требует внимания' : '✓ комфортный запас';
+  } else {
+    rwEl.textContent = '— мес.';
+    rwNote.textContent = 'нет данных';
+  }
+}
 
-function baseOptions(yLabel='') {
+// ── CHARTS ──
+Chart.defaults.color = '#888884';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+
+const gridStyle = { color: '#e8e8e4', drawBorder: false };
+
+function baseOpts(fmt) {
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -616,152 +589,144 @@ function baseOptions(yLabel='') {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#141720',
-        borderColor: '#252a38',
+        backgroundColor: '#fff',
+        borderColor: '#e4e4e0',
         borderWidth: 1,
-        titleColor: '#6b7494',
-        bodyColor: '#e8ecf4',
+        titleColor: '#888884',
+        bodyColor: '#1a1a1a',
         padding: 10,
+        callbacks: {
+          label: ctx => {
+            const v = ctx.parsed.y;
+            if (v === null) return null;
+            return fmt === '€' ? ' ' + euro(v) : ' ' + v + '%';
+          }
+        }
       }
     },
     scales: {
       x: { grid: gridStyle, ticks: { maxRotation: 0 } },
-      y: {
-        grid: gridStyle,
-        ticks: { callback: v => yLabel === '€' ? '€'+Math.round(v/1000)+'k' : v + yLabel }
-      }
+      y: { grid: gridStyle, ticks: {
+        callback: v => fmt === '€' ? '€' + Math.round(v/1000) + 'k' : v + '%'
+      }}
     }
   };
 }
 
-// ══════════════════════════════════════════
-//  CHARTS
-// ══════════════════════════════════════════
 function buildCharts() {
-  const labels = MONTHS.slice(0, factMonths());
-  const labelsAll = MONTHS;
-
-  // EBITDA chart
+  // EBITDA
   new Chart(document.getElementById('chartEbitda'), {
     type: 'bar',
     data: {
-      labels: labelsAll,
+      labels: MONTHS,
       datasets: [
         {
           label: 'Факт',
           data: data.ebitdaFact,
           backgroundColor: data.ebitdaFact.map(v =>
-            v === null ? 'transparent' : v >= 0 ? 'rgba(0,229,160,0.7)' : 'rgba(255,68,68,0.7)'
+            v === null ? 'transparent' : v >= 0 ? 'rgba(22,163,74,0.75)' : 'rgba(220,38,38,0.75)'
           ),
-          borderRadius: 4,
+          borderRadius: 3,
           order: 2,
         },
         {
           label: 'План',
           data: data.ebitdaPlan,
           type: 'line',
-          borderColor: 'rgba(77,166,255,0.6)',
-          borderWidth: 2,
+          borderColor: '#aaa',
+          borderWidth: 1.5,
+          borderDash: [5,4],
           pointRadius: 0,
           fill: false,
-          tension: 0.4,
           order: 1,
         }
       ]
     },
-    options: baseOptions('€'),
+    options: baseOpts('€'),
   });
 
-  // GP chart
+  // GP
   new Chart(document.getElementById('chartGP'), {
     type: 'bar',
     data: {
-      labels: labelsAll,
+      labels: MONTHS,
       datasets: [
         {
           label: 'Факт',
           data: data.gpFact,
-          backgroundColor: 'rgba(255,107,53,0.7)',
-          borderRadius: 4,
+          backgroundColor: 'rgba(234,88,12,0.75)',
+          borderRadius: 3,
           order: 2,
         },
         {
           label: 'План',
           data: data.gpPlan,
           type: 'line',
-          borderColor: 'rgba(77,166,255,0.6)',
-          borderWidth: 2,
+          borderColor: '#aaa',
+          borderWidth: 1.5,
+          borderDash: [5,4],
           pointRadius: 0,
           fill: false,
-          tension: 0.4,
           order: 1,
         }
       ]
     },
-    options: baseOptions('€'),
+    options: baseOpts('€'),
   });
 
-  // EBITDA Margin trend
+  // Margin trend
   new Chart(document.getElementById('chartMarginTrend'), {
     type: 'line',
     data: {
-      labels: labelsAll,
+      labels: MONTHS,
       datasets: [
         {
           label: 'Факт %',
           data: data.ebitdaMarginFact,
-          borderColor: '#00e5a0',
-          backgroundColor: 'rgba(0,229,160,0.08)',
-          borderWidth: 2.5,
-          pointRadius: 5,
-          pointBackgroundColor: '#00e5a0',
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.06)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563eb',
           fill: true,
-          tension: 0.3,
+          tension: 0.35,
           spanGaps: false,
         },
         {
           label: 'План 14%',
           data: data.ebitdaMarginPlan,
-          borderColor: 'rgba(77,166,255,0.5)',
+          borderColor: '#bbb',
           borderWidth: 1.5,
           borderDash: [6,4],
           pointRadius: 0,
           fill: false,
-          tension: 0,
         }
       ]
     },
-    options: {
-      ...baseOptions('%'),
-      plugins: {
-        ...baseOptions('%').plugins,
-        annotation: {}
-      }
-    }
+    options: baseOpts('%'),
   });
 
   // Sparklines
-  function sparkline(id, fact, plan, color) {
-    const factData = fact.filter(v => v !== null);
-    const planLine = plan.slice(0, factData.length);
+  function spark(id, fact, plan, color) {
+    const fd = fact.filter(v => v !== null);
     new Chart(document.getElementById(id), {
       type: 'line',
       data: {
-        labels: MONTHS.slice(0, factData.length),
+        labels: MONTHS.slice(0, fd.length),
         datasets: [
           {
-            data: factData,
+            data: fd,
             borderColor: color,
+            backgroundColor: color + '18',
             borderWidth: 2,
             pointRadius: 3,
             pointBackgroundColor: color,
             fill: true,
-            backgroundColor: color.replace(')', ',0.1)').replace('rgb','rgba'),
             tension: 0.4,
           },
           {
-            data: planLine,
-            borderColor: 'rgba(255,255,255,0.15)',
+            data: plan.slice(0, fd.length),
+            borderColor: '#ccc',
             borderWidth: 1,
             borderDash: [4,3],
             pointRadius: 0,
@@ -770,58 +735,19 @@ function buildCharts() {
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { enabled: true } },
-        scales: {
-          x: { display: false },
-          y: { display: false }
-        }
+        scales: { x: { display: false }, y: { display: false } }
       }
     });
   }
 
-  sparkline('sparkBranding', data.brandingFact, data.brandingPlan, '#00e5a0');
-  sparkline('sparkWeb',      data.webFact,      data.webPlan,      '#4da6ff');
-  sparkline('sparkMkt',      data.mktFact,      data.mktPlan,      '#ff6b35');
+  spark('sparkBranding', data.brandingFact, data.brandingPlan, '#16a34a');
+  spark('sparkWeb',      data.webFact,      data.webPlan,      '#2563eb');
+  spark('sparkMkt',      data.mktFact,      data.mktPlan,      '#ea580c');
 }
 
-// ══════════════════════════════════════════
-//  CASH / RUNWAY  (из таблицы)
-// ══════════════════════════════════════════
-function updateCash() {
-  // Деньги в кассе — первое ненулевое значение строки 57
-  const cashArr = data.cash || [];
-  const cashVal = cashArr.find(v => v !== null && v !== 0) || null;
-  const cashEl = document.getElementById('cashVal');
-  const cashNote = document.getElementById('cashNote');
-  if (cashVal !== null) {
-    cashEl.textContent = euro(cashVal);
-    cashEl.style.color = 'var(--accent)';
-    cashNote.textContent = 'актуально на последний заполненный месяц';
-  } else {
-    cashEl.textContent = '—';
-    cashNote.textContent = 'нет данных в таблице';
-  }
-
-  // Runway — первое ненулевое значение строки 58
-  const runwayArr = data.runway || [];
-  const runwayVal = runwayArr.find(v => v !== null && v !== 0) || null;
-  const runwayEl = document.getElementById('runwayVal');
-  const runwayNote = document.getElementById('runwayNote');
-  if (runwayVal !== null) {
-    runwayEl.textContent = runwayVal + ' мес.';
-    runwayEl.style.color = runwayVal < 3 ? 'var(--danger)' : runwayVal < 6 ? 'var(--warn)' : 'var(--accent)';
-    runwayNote.textContent = runwayVal < 3 ? '⚠ критично' : runwayVal < 6 ? '⚡ требует внимания' : '✓ комфортный запас';
-  } else {
-    runwayEl.textContent = '— мес.';
-    runwayNote.textContent = 'нет данных в таблице';
-  }
-}
-
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
+// ── INIT ──
 function renderAll() {
   document.getElementById('periodBadge').textContent =
     `2025 · до ${MONTHS_FULL[factMonths()-1]}`;
@@ -834,26 +760,24 @@ function renderAll() {
 function showStatus(msg, isError) {
   const el = document.getElementById('dataStatus');
   el.textContent = msg;
-  el.style.color = isError ? 'var(--danger)' : 'var(--accent)';
+  el.style.color = isError ? 'var(--red)' : 'var(--green)';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-    showStatus('⚠ Fallback-данные (Apps Script URL не задан)', true);
+    showStatus('⚠ Fallback-данные', true);
     renderAll();
     return;
   }
-
-  showStatus('↻ Загрузка данных из Google Sheets…', false);
+  showStatus('↻ Загрузка…', false);
   try {
     const res = await fetch(APPS_SCRIPT_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    data = json;
-    showStatus('✓ Данные обновлены из Google Sheets', false);
-  } catch (e) {
-    showStatus('⚠ Не удалось загрузить данные, показаны fallback-данные', true);
-    console.error('Fetch error:', e);
+    data = await res.json();
+    showStatus('✓ Обновлено из Google Sheets', false);
+  } catch(e) {
+    showStatus('⚠ Fallback-данные', true);
+    console.error(e);
   }
   renderAll();
 });
