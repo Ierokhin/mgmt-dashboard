@@ -472,13 +472,23 @@ function render(d){
 
   document.getElementById('kv-ltv').textContent     = eur(lastLtvFact);
   document.getElementById('km-ltv-plan').textContent  = `план: ${eur(lastLtvPlan)}`;
-  setBadge(document.getElementById('kb-ltv'), lastLtvFact, lastLtvPlan);
-  document.getElementById('kbar-ltv').style.width   = Math.min(pct(lastLtvFact,lastLtvPlan),100)+'%';
+  if(lastLtvFact != null && lastLtvPlan != null) {
+    setBadge(document.getElementById('kb-ltv'), lastLtvFact, lastLtvPlan);
+    document.getElementById('kbar-ltv').style.width = Math.min(pct(lastLtvFact,lastLtvPlan),100)+'%';
+  } else {
+    document.getElementById('kb-ltv').textContent = '—';
+    document.getElementById('kb-ltv').className = 'badge';
+  }
 
-  document.getElementById('kv-ltvcac').textContent  = lastLtvcacFact.toFixed(2);
-  document.getElementById('km-ltvcac-plan').textContent = `план: ${lastLtvcacPlan.toFixed(2)}`;
-  setBadge(document.getElementById('kb-ltvcac'), lastLtvcacFact, lastLtvcacPlan);
-  document.getElementById('kbar-ltvcac').style.width = Math.min(pct(lastLtvcacFact,lastLtvcacPlan),100)+'%';
+  document.getElementById('kv-ltvcac').textContent  = lastLtvcacFact != null ? lastLtvcacFact.toFixed(2) : '—';
+  document.getElementById('km-ltvcac-plan').textContent = `план: ${lastLtvcacPlan != null ? lastLtvcacPlan.toFixed(2) : '—'}`;
+  if(lastLtvcacFact != null && lastLtvcacPlan != null) {
+    setBadge(document.getElementById('kb-ltvcac'), lastLtvcacFact, lastLtvcacPlan);
+    document.getElementById('kbar-ltvcac').style.width = Math.min(pct(lastLtvcacFact,lastLtvcacPlan),100)+'%';
+  } else {
+    document.getElementById('kb-ltvcac').textContent = '—';
+    document.getElementById('kb-ltvcac').className = 'badge';
+  }
 
   /* — Funnel — */
   const cumLeadsFact  = d.fact.leadsCum ? d.fact.leadsCum[lastM] : totalLeadsFact;
@@ -499,21 +509,23 @@ function render(d){
   document.getElementById('fp-sales').textContent = `план: ${cumSalesPlan}`;
   document.getElementById('fconv-sales').textContent = `${conv2Fact.toFixed(2)}% → ${d.plan.conv2[lastM].toFixed(2)}% план`;
   /* CAC последнего месяца + сравнение с предыдущим */
-  const lastCacFact = d.fact.cac[lastM];
-  const lastCacPlan = d.plan.cac[lastM];
-  const prevCacFact = lastM > 0 ? d.fact.cac[lastM - 1] : null;
+  /* Find last non-null CAC */
+  let lastCacM = lastM;
+  while(lastCacM > 0 && (d.fact.cac[lastCacM] === null || d.fact.cac[lastCacM] === undefined)) lastCacM--;
+  const lastCacFact = d.fact.cac[lastCacM];
+  const lastCacPlan = d.plan.cac[lastCacM];
+  const prevCacFact = lastCacM > 0 ? d.fact.cac[lastCacM - 1] : null;
 
   document.getElementById('fn-cac').textContent = eur(lastCacFact);
   document.getElementById('fp-cac').textContent = `план: ${eur(lastCacPlan)}`;
 
   const cacConvEl = document.getElementById('fconv-cac');
-  if(prevCacFact !== null && prevCacFact > 0){
+  if(lastCacFact != null && prevCacFact !== null && prevCacFact > 0){
     const cacMoM = Math.round((lastCacFact / prevCacFact - 1) * 100);
-    /* CAC: рост — плохо, снижение — хорошо */
-    cacConvEl.textContent = `${cacMoM > 0 ? '+' : ''}${cacMoM}% vs ${M_NAMES[lastM - 1]}`;
+    cacConvEl.textContent = `${cacMoM > 0 ? '+' : ''}${cacMoM}% vs ${M_NAMES[lastCacM - 1]}`;
     cacConvEl.className = 'funnel-conv ' + (cacMoM <= 0 ? 'good' : 'bad');
   } else {
-    cacConvEl.textContent = `первый месяц`;
+    cacConvEl.textContent = lastCacM === 0 ? 'первый месяц' : `данные за ${M_NAMES[lastCacM]}`;
     cacConvEl.className = 'funnel-conv';
   }
 
@@ -583,6 +595,34 @@ const pill     = document.getElementById('live-pill');
 const pillText = document.getElementById('live-text');
 const banner   = document.getElementById('config-banner');
 
+/* ── Загрузка через Web Worker (обходит MetaMask SES) ── */
+function fetchViaWorker(url) {
+  return new Promise(function(resolve, reject) {
+    const code = [
+      'self.onmessage = async function(e) {',
+      '  try {',
+      '    const r = await fetch(e.data, { credentials:"omit", redirect:"follow" });',
+      '    const t = await r.text();',
+      '    self.postMessage({ ok:true, text:t });',
+      '  } catch(err) {',
+      '    self.postMessage({ ok:false, error:err.message });',
+      '  }',
+      '};'
+    ].join('\n');
+    const blob   = new Blob([code], { type:'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    const timer  = setTimeout(function(){ worker.terminate(); reject(new Error('timeout')); }, 15000);
+    worker.onmessage = function(e) {
+      clearTimeout(timer); worker.terminate();
+      if(e.data.ok) {
+        try { resolve(JSON.parse(e.data.text)); }
+        catch(err) { reject(new Error('JSON parse: ' + err.message)); }
+      } else { reject(new Error(e.data.error)); }
+    };
+    worker.onerror = function(e) { clearTimeout(timer); worker.terminate(); reject(new Error(e.message)); };
+  });
+}
+
 async function loadData(){
   if(!SCRIPT_URL){
     render(DEMO);
@@ -591,9 +631,20 @@ async function loadData(){
     return;
   }
 
-  /* Пробуем fetch (не блокируется MetaMask) */
+  /* 1. Web Worker — изолирован от MetaMask */
   try {
-    const res  = await fetch(SCRIPT_URL, { redirect: 'follow' });
+    const data = await fetchViaWorker(SCRIPT_URL);
+    if(data.error) throw new Error(data.error);
+    render(data);
+    banner.style.display = 'none';
+    pill.className  = 'live-pill';
+    pillText.textContent = 'Live · Google Sheets';
+    return;
+  } catch(e) { console.warn('Worker failed:', e.message); }
+
+  /* 2. Обычный fetch */
+  try {
+    const res  = await fetch(SCRIPT_URL, { credentials:'omit', redirect:'follow' });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
     render(data);
@@ -601,25 +652,19 @@ async function loadData(){
     pill.className  = 'live-pill';
     pillText.textContent = 'Live · Google Sheets';
     return;
-  } catch(e){
-    console.warn('fetch failed, trying JSONP:', e.message);
-  }
+  } catch(e) { console.warn('Fetch failed:', e.message); }
 
-  /* Fallback: JSONP (на случай если fetch заблокирован) */
+  /* 3. JSONP */
   try {
     const data = await new Promise(function(resolve, reject){
       const cbName = 'cb_' + Date.now();
       const script = document.createElement('script');
       let done = false;
-      const timer = setTimeout(function(){
-        if(!done){ done=true; reject(new Error('timeout')); }
-      }, 15000);
+      const timer = setTimeout(function(){ if(!done){ done=true; reject(new Error('timeout')); } }, 12000);
       window[cbName] = function(d){
-        if(!done){
-          done=true; clearTimeout(timer);
+        if(!done){ done=true; clearTimeout(timer);
           if(script.parentNode) script.parentNode.removeChild(script);
-          delete window[cbName]; resolve(d);
-        }
+          delete window[cbName]; resolve(d); }
       };
       script.src = SCRIPT_URL + '?callback=' + cbName;
       document.head.appendChild(script);
@@ -633,7 +678,7 @@ async function loadData(){
     render(DEMO);
     pill.className  = 'live-pill error';
     pillText.textContent = 'Ошибка загрузки';
-    console.error('Dashboard error:', e);
+    console.error('All methods failed:', e);
   }
 }
 
