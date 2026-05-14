@@ -587,17 +587,30 @@ function jsonp(url) {
   return new Promise(function(resolve, reject) {
     const cbName = 'cb_' + Date.now() + '_' + Math.round(Math.random()*1e6);
     const script = document.createElement('script');
-    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
-    script.onerror = function() {
-      document.head.removeChild(script);
-      delete window[cbName];
-      reject(new Error('JSONP error'));
-    };
+    let done = false;
+
+    /* Таймаут 15 сек — onerror не используем,
+       он ложно срабатывает на редиректах Google */
+    const timer = setTimeout(function() {
+      if (!done) {
+        done = true;
+        if (script.parentNode) script.parentNode.removeChild(script);
+        delete window[cbName];
+        reject(new Error('JSONP timeout'));
+      }
+    }, 15000);
+
     window[cbName] = function(data) {
-      document.head.removeChild(script);
-      delete window[cbName];
-      resolve(data);
+      if (!done) {
+        done = true;
+        clearTimeout(timer);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        delete window[cbName];
+        resolve(data);
+      }
     };
+
+    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cbName;
     document.head.appendChild(script);
   });
 }
