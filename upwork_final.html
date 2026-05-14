@@ -328,7 +328,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 /* ══════════════════════════════════════════════════════
    🔧 НАСТРОЙКА: вставь сюда URL твоего Apps Script
    ══════════════════════════════════════════════════════ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyKyydUE0bwDqgdXg1GXnNvvpzQpHjpyFveAKqcitoIOB2_82WgcfSYVNMuk03rhVgI/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7_B47IP2z_6Yb0i3JNmZEvBhbiDymz6Dd15EhkzSH-7iNBoCArEiInj9Z6sUMXYDJ/exec';
 
 /* ══════════════════════════════════════════════════════
    DEMO DATA — используется пока не подключён Script
@@ -583,6 +583,25 @@ const pill     = document.getElementById('live-pill');
 const pillText = document.getElementById('live-text');
 const banner   = document.getElementById('config-banner');
 
+function jsonp(url) {
+  return new Promise(function(resolve, reject) {
+    const cbName = 'cb_' + Date.now() + '_' + Math.round(Math.random()*1e6);
+    const script = document.createElement('script');
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = function() {
+      document.head.removeChild(script);
+      delete window[cbName];
+      reject(new Error('JSONP error'));
+    };
+    window[cbName] = function(data) {
+      document.head.removeChild(script);
+      delete window[cbName];
+      resolve(data);
+    };
+    document.head.appendChild(script);
+  });
+}
+
 async function loadData(){
   if(!SCRIPT_URL){
     render(DEMO);
@@ -591,8 +610,8 @@ async function loadData(){
     return;
   }
   try {
-    const res  = await fetch(SCRIPT_URL);
-    const data = await res.json();
+    const data = await jsonp(SCRIPT_URL);
+    if(data.error) throw new Error(data.error);
     render(data);
     banner.style.display = 'none';
     pill.className  = 'live-pill';
