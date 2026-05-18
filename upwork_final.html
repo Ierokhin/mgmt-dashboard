@@ -375,6 +375,7 @@ const DEMO = {
 const M_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
 function nullPad(arr, len=12){ return [...arr, ...Array(len-arr.length).fill(null)]; }
+function round2(v){ return v === null || v === undefined ? null : Math.round(v * 100) / 100; }
 function pct(fact, plan){ return plan ? Math.round(fact/plan*100) : 0; }
 function diff(fact, plan){ return plan ? Math.round((fact/plan-1)*100) : 0; }
 function eur(n){ return n===null||n===undefined ? '—' : '€'+Math.round(n).toLocaleString('ru-RU'); }
@@ -533,6 +534,10 @@ function render(d){
   const fmtPct = v => v===null?null:v.toFixed(2)+'%';
   const fmtEur = v => v===null?null:'€'+Math.round(v).toLocaleString('ru-RU');
 
+  /* Round ratio arrays to avoid floating point display issues */
+  d.plan.ltvcac = d.plan.ltvcac.map(round2);
+  d.fact.ltvcac = d.fact.ltvcac.map(round2);
+
   makeChart('c-leads',  d.plan.leadsCum,  nullPad(d.fact.leadsCum  || d.fact.leads.map((_,i)=>d.fact.leads.slice(0,i+1).reduce((a,b)=>a+b,0))),  '#1d4ed8');
   makeChart('c-calls',  d.plan.callsCum,  nullPad(d.fact.callsCum  || d.fact.calls.map((_,i)=>d.fact.calls.slice(0,i+1).reduce((a,b)=>a+b,0))),  '#b45309');
   makeChart('c-sales',  d.plan.salesCum,  nullPad(d.fact.salesCum  || d.fact.sales.map((_,i)=>d.fact.sales.slice(0,i+1).reduce((a,b)=>a+b,0))),  '#dc2626');
@@ -540,32 +545,53 @@ function render(d){
   makeChart('c-conv2',  d.plan.conv2,     nullPad(d.fact.conv2Cum || d.fact.conv2),  '#dc2626', fmtPct);
   makeChart('c-conv3',  d.plan.conv3,     nullPad(d.fact.conv3Cum || d.fact.conv3),  '#059669', fmtPct);
   makeChart('c-ltv',    d.plan.ltv,       nullPad(d.fact.ltv),    '#059669', fmtEur);
-  makeChart('c-ltvcac', d.plan.ltvcac,    nullPad(d.fact.ltvcac), '#b45309');
+  makeChart('c-ltvcac', d.plan.ltvcac,    nullPad(d.fact.ltvcac), '#b45309', v => v.toFixed(2));
 
   /* — Table — */
   const MO = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
-  function cellFact(val, planVal, idx, fmt='num'){
-    if(idx >= n) return `<td class="cv-zero">—</td>`;
+  function cellFact(val, planVal, idx, fmt='num', lowerIsBetter=false){
+    /* Нет данных — пустая ячейка */
+    if(idx >= n || val === null || val === undefined)
+      return `<td class="cv-zero">—</td>`;
     const v = fmt==='eur' ? Math.round(val) : val;
     const p = fmt==='eur' ? Math.round(planVal) : planVal;
-    const good = v >= p;
-    if(fmt==='num' && Number.isInteger(val)){
+    const good = lowerIsBetter ? v <= p : v >= p;
+    if(fmt==='num' && Number.isInteger(val))
       return `<td><span class="cell-tag ${good?'good':'bad'}">${v}</span></td>`;
-    }
-    if(fmt==='pct') return `<td class="${good?'cv-good':'cv-bad'}">${val.toFixed(2)}%</td>`;
-    if(fmt==='eur') return `<td class="${good?'cv-good':'cv-bad'}">€${v.toLocaleString('ru-RU')}</td>`;
+    if(fmt==='pct')   return `<td class="${good?'cv-good':'cv-bad'}">${val.toFixed(2)}%</td>`;
+    if(fmt==='ratio') return `<td class="${good?'cv-good':'cv-bad'}">${val.toFixed(2)}</td>`;
+    if(fmt==='eur')   return `<td class="${good?'cv-good':'cv-bad'}">€${v.toLocaleString('ru-RU')}</td>`;
     return `<td class="${good?'cv-good':'cv-bad'}">${v}</td>`;
   }
-  function row(label, planArr, factArr, fmt='num', cls='fact'){
+  function row(label, planArr, factArr, fmt='num', cls='fact', lowerIsBetter=false){
     const planCells = planArr.map((v,i)=>{
-      if(fmt==='pct') return `<td>${v.toFixed(2)}%</td>`;
-      if(fmt==='eur') return `<td>€${Math.round(v).toLocaleString('ru-RU')}</td>`;
+      if(fmt==='pct')   return `<td>${v.toFixed(2)}%</td>`;
+      if(fmt==='ratio') return `<td>${v.toFixed(2)}</td>`;
+      if(fmt==='eur')   return `<td>€${Math.round(v).toLocaleString('ru-RU')}</td>`;
       return `<td>${typeof v==='number'&&!Number.isInteger(v)?v.toFixed(2):v}</td>`;
     }).join('');
-    const planTotal = fmt==='pct'||fmt==='ratio' ? `${planArr[n-1].toFixed(fmt==='pct'?2:2)}${fmt==='pct'?'%':''}` : planArr.slice(0,n).reduce((a,b)=>a+b,0).toFixed(fmt==='eur'?0:2);
-    const factCells = factArr.map((v,i)=>cellFact(v, planArr[i], i, fmt)).join('');
-    const factTotal = factArr.reduce((a,b)=>a+b,0);
-    const ftxt = fmt==='eur' ? `€${Math.round(factTotal).toLocaleString('ru-RU')}` : fmt==='pct' ? `${(factTotal/n).toFixed(2)}%` : factTotal;
+    const planTotal = fmt==='pct'
+      ? `${planArr[n-1].toFixed(2)}%`
+      : fmt==='ratio'
+        ? `${planArr[n-1].toFixed(2)}`
+        : planArr.slice(0,n).reduce((a,b)=>a+b,0).toFixed(fmt==='eur'?0:2);
+
+    /* Всегда генерируем ровно 12 ячеек — по одной на каждый месяц */
+    const factCells = planArr.map((_, i) => {
+      const v = factArr[i];
+      return cellFact(v === undefined ? null : v, planArr[i], i, fmt, lowerIsBetter);
+    }).join('');
+
+    /* Итого только по заполненным месяцам, исключая null */
+    const filledFact = factArr.filter(v => v !== null && v !== undefined);
+    const factTotal  = filledFact.reduce((a,b)=>a+b,0);
+    const ftxt = fmt==='eur'
+      ? `€${Math.round(factTotal).toLocaleString('ru-RU')}`
+      : fmt==='pct'
+        ? `${(factTotal/filledFact.length).toFixed(2)}%`
+        : fmt==='ratio'
+          ? `${(factTotal/filledFact.length).toFixed(2)}`
+          : factTotal;
     return `
       <tr><td>${label} · план</td>${planCells}<td>${planTotal}</td></tr>
       <tr class="${cls}"><td>${label} · факт</td>${factCells}<td>${ftxt}</td></tr>`;
@@ -583,8 +609,8 @@ function render(d){
     ${row('Конверсия лид→продажа', d.plan.conv3, d.fact.conv3, 'pct')}
     <tr class="gr"><td colspan="14">Unit Economics</td></tr>
     ${row('LTV', d.plan.ltv, d.fact.ltv, 'eur')}
-    ${row('CAC', d.plan.cac, d.fact.cac, 'eur')}
-    ${row('LTV / CAC', d.plan.ltvcac, d.fact.ltvcac, 'pct')}
+    ${row('CAC', d.plan.cac, d.fact.cac, 'eur', 'fact', true)}
+    ${row('LTV / CAC', d.plan.ltvcac, d.fact.ltvcac, 'ratio')}
   `;
 }
 
