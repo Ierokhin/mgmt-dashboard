@@ -1,800 +1,1142 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Management Dashboard 2025</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Dashboard · FY 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f1ede5;
+      --card: #ffffff;
+      --card-border: #e3dfd6;
+      --card-border-light: #ece8df;
 
-:root {
-  --bg:       #f0f0ed;
-  --surface:  #ffffff;
-  --border:   #e4e4e0;
-  --text:     #1a1a1a;
-  --muted:    #888884;
-  --blue:     #2563eb;
-  --red:      #dc2626;
-  --green:    #16a34a;
-  --orange:   #ea580c;
-  --purple:   #7c3aed;
-}
+      --text: #1a1a1a;
+      --text-dim: #6e6b66;
+      --text-faint: #a8a59f;
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  min-height: 100vh;
-}
+      --c-ebitda: #ea580c;
+      --c-margin: #7c3aed;
+      --c-gp: #0d9488;
+      --c-sales: #2563eb;
+      --c-cash: #0891b2;
 
-/* ── TOP BAR ── */
-.topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 32px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.topbar-logo {
-  width: 28px; height: 28px;
-  background: #14a800;
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: -0.5px;
-  flex-shrink: 0;
-}
-.topbar-title {
-  font-size: 13px;
-  color: var(--muted);
-}
-.topbar-title span {
-  color: var(--text);
-  font-weight: 500;
-}
-.topbar-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.live-badge {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 11px;
-  color: var(--green);
-  font-weight: 500;
-}
-.live-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity:1; }
-  50%      { opacity:0.4; }
-}
-.topbar-date {
-  font-size: 12px;
-  color: var(--muted);
-}
-#dataStatus {
-  font-size: 11px;
-  color: var(--muted);
-}
+      --c-pos: #16a34a;
+      --c-neg: #dc2626;
+      --c-warn: #d97706;
 
-/* ── MAIN CONTENT ── */
-.content {
-  padding: 28px 32px 48px;
-  max-width: 1280px;
-}
+      --c-pos-soft: #dcfce7;
+      --c-neg-soft: #fee2e2;
+      --c-warn-soft: #fef3c7;
+      --c-pos-text: #166534;
+      --c-neg-text: #991b1b;
+      --c-warn-text: #92400e;
+      --c-ebitda-soft: #fff1e6;
+    }
 
-/* ── SECTION HEADER ── */
-.section-header {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 28px 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.section-header::after {
-  content:'';
-  flex:1;
-  height:1px;
-  background: var(--border);
-}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── KPI CARD ── */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--card-color, var(--blue));
-  border-radius: 6px;
-  padding: 18px 20px 16px;
-}
-.kpi-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-.kpi-value {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--card-color, var(--blue));
-  line-height: 1;
-  letter-spacing: -1px;
-  margin-bottom: 10px;
-}
-.kpi-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--muted);
-}
-.kpi-delta {
-  font-weight: 600;
-  font-size: 12px;
-}
-.kpi-delta.pos { color: var(--green); }
-.kpi-delta.neg { color: var(--red); }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      line-height: 1.5;
+      font-weight: 400;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-.kpi-bar {
-  height: 3px;
-  background: #e8e8e5;
-  border-radius: 2px;
-  margin-top: 12px;
-  overflow: hidden;
-}
-.kpi-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width .8s ease;
-}
+    body { padding: 32px 40px 80px; }
+    .container { max-width: 1480px; margin: 0 auto; }
 
-/* ── CASH ROW ── */
-.cash-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-.cash-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--card-color, var(--purple));
-  border-radius: 6px;
-  padding: 18px 20px 16px;
-}
-.cash-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-.cash-value {
-  font-size: 36px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -1px;
-  margin-bottom: 6px;
-}
-.cash-note {
-  font-size: 12px;
-  color: var(--muted);
-}
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 28px;
+      margin-bottom: 18px;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .logo-section { display: flex; align-items: center; gap: 14px; }
+    .logo {
+      width: 40px; height: 40px;
+      background: var(--text); color: var(--bg);
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 22px;
+      letter-spacing: -0.05em; border-radius: 6px;
+    }
+    .title {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--text);
+    }
+    .title .sep { color: var(--text-faint); font-weight: 300; margin: 0 8px; }
+    .title .sub { color: var(--text-dim); font-weight: 400; }
 
-/* ── CHART CARD ── */
-.chart-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.chart-grid-1 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-.chart-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 20px 22px;
-}
-.chart-card-title {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-.chart-card-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 16px;
-}
-.chart-legend {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-.leg {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--muted);
-}
-.leg-line {
-  width: 16px;
-  height: 2px;
-  border-radius: 1px;
-}
-.leg-dash {
-  width: 16px;
-  height: 0;
-  border-top: 2px dashed;
-  opacity: 0.5;
-}
-.chart-wrap { position: relative; height: 190px; }
-.chart-wrap-tall { position: relative; height: 220px; }
+    .header-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .date-stamp {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--text-dim); font-weight: 500;
+    }
+    .live-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--c-pos-soft); color: var(--c-pos-text);
+      padding: 8px 14px; border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    }
+    .live-pill::before {
+      content: ''; width: 7px; height: 7px;
+      background: var(--c-pos); border-radius: 99px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .live-pill.demo { background: var(--c-ebitda-soft); color: var(--c-ebitda); }
+    .live-pill.demo::before { background: var(--c-ebitda); }
+    .refresh-btn {
+      background: var(--card); border: 1px solid var(--card-border);
+      color: var(--text); padding: 8px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; letter-spacing: 0.08em;
+      border-radius: 4px; text-transform: uppercase;
+    }
+    .refresh-btn:hover { border-color: var(--text); background: var(--text); color: var(--bg); }
 
-/* ── MARGIN PRODUCT CARDS ── */
-.margin-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.margin-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--card-color, var(--blue));
-  border-radius: 6px;
-  padding: 18px 20px 16px;
-}
-.margin-name {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-.margin-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--card-color, var(--blue));
-  letter-spacing: -1px;
-  line-height: 1;
-  margin-bottom: 6px;
-}
-.margin-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 14px;
-}
-.spark-wrap { height: 60px; position: relative; }
-</style>
+    /* ===== SCENARIO TABS ===== */
+    .scenario-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+    }
+    .scenario-tabs {
+      display: inline-flex;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 99px;
+      padding: 5px;
+    }
+    .tab {
+      padding: 9px 22px;
+      border: none;
+      background: transparent;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-radius: 99px;
+      transition: all 0.25s;
+      letter-spacing: -0.005em;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab.active { background: var(--text); color: var(--bg); }
+    .tab .tab-sub {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.12em;
+      opacity: 0.6;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .scenario-caption {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ===== SECTION LABEL ===== */
+    .section-label {
+      display: flex; align-items: center; gap: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 0.18em;
+      font-weight: 500; margin: 48px 0 20px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--card-border);
+    }
+    .section-label:first-of-type { margin-top: 0; }
+
+    /* ===== KPI CARDS ===== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .cash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-left: 4px solid var(--accent);
+      padding: 24px 26px 22px;
+      border-radius: 6px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    }
+    .kpi-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 0.18em;
+      font-weight: 500; margin-bottom: 18px;
+    }
+    .kpi-value {
+      font-size: 48px; font-weight: 700; color: var(--accent);
+      letter-spacing: -0.035em; line-height: 0.95;
+      font-variant-numeric: tabular-nums; margin-bottom: 18px;
+    }
+    .kpi-value .unit { font-size: 24px; font-weight: 500; color: var(--text-dim); margin-left: 6px; letter-spacing: -0.01em; }
+    .kpi-meta {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 14px;
+    }
+    .kpi-plan {
+      font-size: 13px; color: var(--text-dim);
+      font-variant-numeric: tabular-nums; font-weight: 500;
+    }
+    .kpi-delta {
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .kpi-delta.pos { background: var(--c-pos-soft); color: var(--c-pos-text); }
+    .kpi-delta.neg { background: var(--c-neg-soft); color: var(--c-neg-text); }
+    .kpi-delta.warn { background: var(--c-warn-soft); color: var(--c-warn-text); }
+    .kpi-bar {
+      height: 3px; background: rgba(0,0,0,0.05);
+      overflow: hidden; border-radius: 99px;
+    }
+    .kpi-bar-fill {
+      height: 100%; background: var(--accent);
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 99px;
+    }
+
+    /* ===== CHARTS ===== */
+    .charts-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      padding: 24px 28px 28px;
+      border-radius: 6px;
+    }
+    .chart-card.full-width { grid-column: 1 / -1; }
+
+    .chart-header {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 20px; gap: 16px;
+    }
+    .chart-title {
+      font-size: 17px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.015em; margin-bottom: 4px;
+    }
+    .chart-subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.15em; color: var(--text-faint); font-weight: 500;
+    }
+    .chart-tag {
+      padding: 4px 10px; border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .chart-wrap { height: 260px; position: relative; }
+    .chart-card.full-width .chart-wrap { height: 360px; }
+
+    .legend-chips {
+      display: flex; gap: 24px; flex-wrap: wrap;
+      margin-top: 18px; padding-top: 18px;
+      border-top: 1px solid var(--card-border-light);
+    }
+    .chip { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+    .chip-dot { width: 10px; height: 10px; border-radius: 99px; }
+    .chip-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700; font-variant-numeric: tabular-nums; margin-left: 4px;
+    }
+    .chip-label { color: var(--text-dim); font-weight: 500; }
+
+    /* ===== TABLE ===== */
+    .table-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 6px; overflow: hidden;
+    }
+    .table-wrap { overflow-x: auto; }
+    .table-wrap::-webkit-scrollbar { height: 8px; }
+    .table-wrap::-webkit-scrollbar-track { background: var(--card-border-light); }
+    .table-wrap::-webkit-scrollbar-thumb { background: var(--text-faint); border-radius: 4px; }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 12px; min-width: 1150px;
+    }
+    thead { background: var(--card-border-light); }
+    th {
+      padding: 14px; text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.12em; font-size: 10px;
+      color: var(--text-dim); white-space: nowrap;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th:first-child {
+      text-align: left; position: sticky; left: 0;
+      background: var(--card-border-light); z-index: 2;
+      min-width: 210px;
+    }
+    th.total-col { color: var(--text); border-left: 1px solid var(--card-border); }
+    td {
+      padding: 10px 14px; text-align: right;
+      border-bottom: 1px solid var(--card-border-light);
+      white-space: nowrap; color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    td:first-child {
+      text-align: left; font-family: 'Plus Jakarta Sans', sans-serif;
+      position: sticky; left: 0; background: var(--card); z-index: 1;
+      font-size: 13px; font-weight: 500;
+    }
+    td.total-col {
+      border-left: 1px solid var(--card-border);
+      background: var(--card-border-light); font-weight: 700;
+    }
+    tr.group-header td {
+      font-size: 12px; font-weight: 700; color: var(--text);
+      padding: 22px 14px 8px; text-transform: uppercase;
+      letter-spacing: 0.12em; background: var(--card) !important;
+      font-family: 'JetBrains Mono', monospace;
+      border-bottom: 1px solid var(--card-border);
+    }
+    tr.group-header td .accent-mark {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 99px; margin-right: 8px;
+      vertical-align: middle; background: var(--text-faint);
+    }
+    tr.plan td { color: var(--text-dim); }
+    tr.fact td { color: var(--text); font-weight: 600; }
+    tr.fact td:first-child::before {
+      content: "▸"; color: var(--accent, var(--text));
+      margin-right: 6px; font-weight: 700;
+    }
+    tr.plan td:first-child::before {
+      content: "◦"; color: var(--text-faint); margin-right: 6px;
+    }
+    .cell-pos { color: var(--c-pos) !important; font-weight: 700; }
+    .cell-neg { color: var(--c-neg) !important; font-weight: 700; }
+    .cell-future { color: var(--text-faint) !important; }
+
+    /* ===== STATES ===== */
+    .loading {
+      padding: 120px 32px; text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--text-faint);
+    }
+    .error {
+      max-width: 600px; margin: 80px auto;
+      padding: 28px 32px; background: var(--card);
+      border: 1px solid var(--c-neg);
+      border-left: 4px solid var(--c-neg);
+      border-radius: 6px; font-size: 13px; line-height: 1.7;
+    }
+    .error b {
+      display: block; margin-bottom: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      font-size: 11px; color: var(--c-neg);
+    }
+    .error code {
+      background: var(--card-border-light);
+      padding: 2px 6px; border-radius: 3px; font-size: 12px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1100px) {
+      body { padding: 24px 20px 60px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .cash-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .kpi-value { font-size: 40px; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .title { font-size: 18px; }
+      .scenario-row { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
 </head>
 <body>
-
-<!-- ── TOP BAR ── -->
-<div class="topbar">
-  <div class="topbar-logo">M</div>
-  <div class="topbar-title">Management / <span>Dashboard 2025</span></div>
-  <div class="topbar-right">
-    <span id="dataStatus"></span>
-    <span class="topbar-date" id="periodBadge">2025</span>
-    <span class="live-badge"><span class="live-dot"></span>Live</span>
-  </div>
-</div>
-
-<div class="content">
-
-  <!-- ── KPI ── -->
-  <div class="section-header">Ключевые показатели · накопительно</div>
-  <div class="kpi-grid">
-
-    <div class="kpi-card" style="--card-color:var(--blue)">
-      <div class="kpi-label">EBITDA Margin %</div>
-      <div class="kpi-value" id="valEbitdaMargin">—</div>
-      <div class="kpi-footer">
-        <span>план: 14%</span>
-        <span class="kpi-delta" id="badgeEbitdaMargin">—</span>
-      </div>
-      <div class="kpi-bar"><div class="kpi-bar-fill" id="progEbitdaMargin" style="background:var(--blue)"></div></div>
-    </div>
-
-    <div class="kpi-card" style="--card-color:var(--green)">
-      <div class="kpi-label">EBITDA факт</div>
-      <div class="kpi-value" id="valEbitda">—</div>
-      <div class="kpi-footer">
-        <span>план: <span id="planEbitda">—</span></span>
-        <span class="kpi-delta" id="badgeEbitda">—</span>
-      </div>
-      <div class="kpi-bar"><div class="kpi-bar-fill" id="progEbitda" style="background:var(--green)"></div></div>
-    </div>
-
-    <div class="kpi-card" style="--card-color:var(--orange)">
-      <div class="kpi-label">Gross Profit факт</div>
-      <div class="kpi-value" id="valGP">—</div>
-      <div class="kpi-footer">
-        <span>план: <span id="planGP">—</span></span>
-        <span class="kpi-delta" id="badgeGP">—</span>
-      </div>
-      <div class="kpi-bar"><div class="kpi-bar-fill" id="progGP" style="background:var(--orange)"></div></div>
-    </div>
-
+  <div class="container" id="app">
+    <div class="loading">Loading data…</div>
   </div>
 
-  <!-- ── CASH ── -->
-  <div class="section-header">Денежная позиция</div>
-  <div class="cash-grid">
+  <script>
+    // ============================================================
+    //  CONFIG — replace with your Apps Script Web App URL
+    // ============================================================
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeftZdtLpKXWwi_PIv6Pt9q8647BnJ3MiQwcZL14q53TpBmCqYFmWrT7jAnaj-D-JMJw/exec';
+    // ============================================================
 
-    <div class="cash-card" style="--card-color:var(--blue)">
-      <div class="cash-label">💰 Деньги в кассе</div>
-      <div class="cash-value" id="cashVal" style="color:var(--blue)">—</div>
-      <div class="cash-note" id="cashNote">загрузка…</div>
-    </div>
+    const SCENARIO_CAPTIONS = {
+      baseline: 'No channel investment · organic sales only',
+      growth:   'With channel investment · Upwork, Fiverr, partners, CSR',
+    };
 
-    <div class="cash-card" style="--card-color:var(--purple)">
-      <div class="cash-label">Operating Cash Buffer</div>
-      <div class="cash-value" id="runwayVal" style="color:var(--purple)">— мес.</div>
-      <div class="cash-note" id="runwayNote">загрузка…</div>
-    </div>
-
-  </div>
-
-  <!-- ── CHARTS ── -->
-  <div class="section-header">Динамика EBITDA и Gross Profit</div>
-  <div class="chart-grid-2">
-
-    <div class="chart-card">
-      <div class="chart-card-title">EBITDA накопительно</div>
-      <div class="chart-card-sub">план vs факт · €</div>
-      <div class="chart-legend">
-        <div class="leg"><div class="leg-line" style="background:var(--green)"></div>Факт</div>
-        <div class="leg"><div class="leg-dash" style="border-color:var(--muted)"></div>План</div>
-      </div>
-      <div class="chart-wrap"><canvas id="chartEbitda"></canvas></div>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-card-title">Gross Profit накопительно</div>
-      <div class="chart-card-sub">план vs факт · €</div>
-      <div class="chart-legend">
-        <div class="leg"><div class="leg-line" style="background:var(--orange)"></div>Факт</div>
-        <div class="leg"><div class="leg-dash" style="border-color:var(--muted)"></div>План</div>
-      </div>
-      <div class="chart-wrap"><canvas id="chartGP"></canvas></div>
-    </div>
-
-  </div>
-
-  <!-- ── MARGIN TREND ── -->
-  <div class="section-header">Рентабельность · тренд</div>
-  <div class="chart-grid-1">
-    <div class="chart-card">
-      <div class="chart-card-title">EBITDA Margin %</div>
-      <div class="chart-card-sub">факт vs план 14%</div>
-      <div class="chart-legend">
-        <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>Факт</div>
-        <div class="leg"><div class="leg-dash" style="border-color:var(--muted)"></div>План 14%</div>
-      </div>
-      <div class="chart-wrap-tall"><canvas id="chartMarginTrend"></canvas></div>
-    </div>
-  </div>
-
-  <!-- ── PRODUCT MARGINS ── -->
-  <div class="section-header">Маржинальность продуктов · тренд</div>
-  <div class="margin-grid">
-
-    <div class="margin-card" style="--card-color:var(--green)">
-      <div class="margin-name">Branding</div>
-      <div class="margin-value" id="brandingLast">—</div>
-      <div class="margin-meta">
-        <span>план: 60%</span>
-        <span class="kpi-delta" id="brandingBadge">—</span>
-      </div>
-      <div class="spark-wrap"><canvas id="sparkBranding"></canvas></div>
-    </div>
-
-    <div class="margin-card" style="--card-color:var(--blue)">
-      <div class="margin-name">Web</div>
-      <div class="margin-value" id="webLast">—</div>
-      <div class="margin-meta">
-        <span>план: 30%</span>
-        <span class="kpi-delta" id="webBadge">—</span>
-      </div>
-      <div class="spark-wrap"><canvas id="sparkWeb"></canvas></div>
-    </div>
-
-    <div class="margin-card" style="--card-color:var(--orange)">
-      <div class="margin-name">Marketing</div>
-      <div class="margin-value" id="mktLast">—</div>
-      <div class="margin-meta">
-        <span>план: 30%</span>
-        <span class="kpi-delta" id="mktBadge">—</span>
-      </div>
-      <div class="spark-wrap"><canvas id="sparkMkt"></canvas></div>
-    </div>
-
-  </div>
-
-</div><!-- /content -->
-
-<script>
-// ══════════════════════════════════════════
-//  КОНФИГ
-// ══════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw36nrATLLcCmObsP884WvULlXafjC6yl1sZIWYy00wh55oEKhm9XuGcpTkfsosnVsa8g/exec';
-
-const MONTHS      = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
-const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-
-const FALLBACK = {
-  ebitdaMarginFact: [9.35,-2.98,-10.56,null,null,null,null,null,null,null,null,null],
-  ebitdaMarginPlan: [14,14,14,14,14,14,14,14,14,14,14,14],
-  ebitdaFact:       [2500,-1438,-7330,null,null,null,null,null,null,null,null,null],
-  ebitdaPlan:       [3400,7000,10800,14800,19000,23400,28000,32800,37800,43000,48400,54000],
-  gpFact:           [9734,16865,21657,null,null,null,null,null,null,null,null,null],
-  gpPlan:           [14814,30500,47057,64486,82786,101957,122000,142914,164700,187357,210886,235286],
-  brandingFact:     [57.02,57.21,53.59,null,null,null,null,null,null,null,null,null],
-  brandingPlan:     [60,60,60,60,60,60,60,60,60,60,60,60],
-  webFact:          [19.59,21.01,20.12,null,null,null,null,null,null,null,null,null],
-  webPlan:          [30,30,30,30,30,30,30,30,30,30,30,30],
-  mktFact:          [0,15.91,16.61,null,null,null,null,null,null,null,null,null],
-  mktPlan:          [30,30,30,30,30,30,30,30,30,30,30,30],
-  cash:             [23749.59,null,null,null,null,null,null,null,null,null,null,null],
-  runway:           [3.5,null,null,null,null,null,null,null,null,null,null,null],
-};
-
-let data = FALLBACK;
-
-// ── HELPERS ──
-const factMonths = () => data.ebitdaFact.filter(v => v !== null).length;
-const euro = v => '€' + Math.round(v).toLocaleString('ru');
-
-function lastFact(arr) {
-  const vals = arr.filter(v => v !== null);
-  return vals[vals.length - 1];
-}
-
-// ── KPI ──
-function updateKPIs() {
-  const fm = factMonths();
-
-  // EBITDA Margin
-  const emLast = lastFact(data.ebitdaMarginFact);
-  const emDiff = emLast - 14;
-  document.getElementById('valEbitdaMargin').textContent = emLast.toFixed(1) + '%';
-  const emBadge = document.getElementById('badgeEbitdaMargin');
-  emBadge.textContent = (emDiff > 0 ? '+' : '') + emDiff.toFixed(1) + '%';
-  emBadge.className = 'kpi-delta ' + (emDiff >= 0 ? 'pos' : 'neg');
-  document.getElementById('progEbitdaMargin').style.width =
-    Math.max(0, Math.min(100, (emLast / 14) * 100)) + '%';
-  document.getElementById('progEbitdaMargin').style.background =
-    emDiff >= 0 ? 'var(--green)' : 'var(--red)';
-
-  // EBITDA
-  const eLast = lastFact(data.ebitdaFact);
-  const ePlan = data.ebitdaPlan[fm - 1];
-  const ePct  = ((eLast / ePlan - 1) * 100).toFixed(1);
-  document.getElementById('valEbitda').textContent = euro(eLast);
-  document.getElementById('planEbitda').textContent = euro(ePlan);
-  const eBadge = document.getElementById('badgeEbitda');
-  eBadge.textContent = (ePct > 0 ? '+' : '') + ePct + '%';
-  eBadge.className = 'kpi-delta ' + (eLast >= ePlan ? 'pos' : 'neg');
-  document.getElementById('progEbitda').style.width =
-    Math.max(0, Math.min(100, (eLast / ePlan) * 100)) + '%';
-  document.getElementById('progEbitda').style.background =
-    eLast >= ePlan ? 'var(--green)' : 'var(--red)';
-
-  // GP
-  const gpLast = lastFact(data.gpFact);
-  const gpPlan = data.gpPlan[fm - 1];
-  const gpPct  = ((gpLast / gpPlan - 1) * 100).toFixed(1);
-  document.getElementById('valGP').textContent = euro(gpLast);
-  document.getElementById('planGP').textContent = euro(gpPlan);
-  const gpBadge = document.getElementById('badgeGP');
-  gpBadge.textContent = (gpPct > 0 ? '+' : '') + gpPct + '%';
-  gpBadge.className = 'kpi-delta ' + (gpLast >= gpPlan ? 'pos' : 'neg');
-  document.getElementById('progGP').style.width =
-    Math.max(0, Math.min(100, (gpLast / gpPlan) * 100)) + '%';
-  document.getElementById('progGP').style.background =
-    gpLast >= gpPlan ? 'var(--green)' : 'var(--red)';
-}
-
-// ── MARGIN CARDS ──
-function updateMarginCards() {
-  [
-    { fact: data.brandingFact, plan: 60, idVal: 'brandingLast', idBadge: 'brandingBadge' },
-    { fact: data.webFact,      plan: 30, idVal: 'webLast',      idBadge: 'webBadge' },
-    { fact: data.mktFact,      plan: 30, idVal: 'mktLast',      idBadge: 'mktBadge' },
-  ].forEach(p => {
-    const last = lastFact(p.fact);
-    const diff = last - p.plan;
-    document.getElementById(p.idVal).textContent = last.toFixed(1) + '%';
-    const b = document.getElementById(p.idBadge);
-    b.textContent = (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%';
-    b.className = 'kpi-delta ' + (diff >= 0 ? 'pos' : 'neg');
-  });
-}
-
-// ── CASH ──
-function updateCash() {
-  const cashArr = data.cash || [];
-  const cashVal = lastFact(cashArr);
-  const cashEl  = document.getElementById('cashVal');
-  const cashNote = document.getElementById('cashNote');
-  if (cashVal !== null && cashVal !== undefined) {
-    cashEl.textContent = euro(cashVal);
-    // сравнение с предыдущим месяцем
-    const facts = cashArr.filter(v => v !== null);
-    if (facts.length >= 2) {
-      const prev = facts[facts.length - 2];
-      const diff = cashVal - prev;
-      const pct  = ((diff / Math.abs(prev)) * 100).toFixed(1);
-      cashNote.textContent = (diff >= 0 ? '▲ +' : '▼ ') + euro(diff) + ' (' + (diff >= 0 ? '+' : '') + pct + '%) vs прошлый месяц';
-      cashNote.style.color = diff >= 0 ? 'var(--green)' : 'var(--red)';
-    } else {
-      cashNote.textContent = 'данные только за один месяц';
-      cashNote.style.color = 'var(--muted)';
-    }
-  } else {
-    cashEl.textContent = '—';
-    cashNote.textContent = 'нет данных';
-    cashNote.style.color = 'var(--muted)';
-  }
-
-  const rwVal  = lastFact(data.runway || []);
-  const rwEl   = document.getElementById('runwayVal');
-  const rwNote = document.getElementById('runwayNote');
-  if (rwVal !== null && rwVal !== undefined) {
-    rwEl.textContent = rwVal.toFixed(1) + ' мес.';
-    rwEl.style.color = rwVal < 3 ? 'var(--red)' : rwVal < 6 ? 'var(--orange)' : 'var(--purple)';
-    rwNote.textContent = rwVal < 3 ? '⚠ критично' : rwVal < 6 ? '⚡ требует внимания' : '✓ комфортный запас';
-  } else {
-    rwEl.textContent = '— мес.';
-    rwNote.textContent = 'нет данных';
-  }
-}
-
-// ── CHARTS ──
-Chart.defaults.color = '#888884';
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.font.size = 11;
-
-const gridStyle = { color: '#e8e8e4', drawBorder: false };
-
-function baseOpts(fmt) {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#fff',
-        borderColor: '#e4e4e0',
-        borderWidth: 1,
-        titleColor: '#888884',
-        bodyColor: '#1a1a1a',
-        padding: 10,
-        callbacks: {
-          label: ctx => {
-            const v = ctx.parsed.y;
-            if (v === null) return null;
-            return fmt === '€' ? ' ' + euro(v) : ' ' + v + '%';
-          }
-        }
-      }
-    },
-    scales: {
-      x: { grid: gridStyle, ticks: { maxRotation: 0 } },
-      y: { grid: gridStyle, ticks: {
-        callback: v => fmt === '€' ? '€' + Math.round(v/1000) + 'k' : v + '%'
-      }}
-    }
-  };
-}
-
-function buildCharts() {
-  // EBITDA
-  new Chart(document.getElementById('chartEbitda'), {
-    type: 'bar',
-    data: {
-      labels: MONTHS,
-      datasets: [
-        {
-          label: 'Факт',
-          data: data.ebitdaFact,
-          backgroundColor: data.ebitdaFact.map(v =>
-            v === null ? 'transparent' : v >= 0 ? 'rgba(22,163,74,0.75)' : 'rgba(220,38,38,0.75)'
-          ),
-          borderRadius: 3,
-          order: 2,
-        },
-        {
-          label: 'План',
-          data: data.ebitdaPlan,
-          type: 'line',
-          borderColor: '#aaa',
-          borderWidth: 1.5,
-          borderDash: [5,4],
-          pointRadius: 0,
-          fill: false,
-          order: 1,
-        }
-      ]
-    },
-    options: baseOpts('€'),
-  });
-
-  // GP
-  new Chart(document.getElementById('chartGP'), {
-    type: 'bar',
-    data: {
-      labels: MONTHS,
-      datasets: [
-        {
-          label: 'Факт',
-          data: data.gpFact,
-          backgroundColor: 'rgba(234,88,12,0.75)',
-          borderRadius: 3,
-          order: 2,
-        },
-        {
-          label: 'План',
-          data: data.gpPlan,
-          type: 'line',
-          borderColor: '#aaa',
-          borderWidth: 1.5,
-          borderDash: [5,4],
-          pointRadius: 0,
-          fill: false,
-          order: 1,
-        }
-      ]
-    },
-    options: baseOpts('€'),
-  });
-
-  // Margin trend
-  new Chart(document.getElementById('chartMarginTrend'), {
-    type: 'line',
-    data: {
-      labels: MONTHS,
-      datasets: [
-        {
-          label: 'Факт %',
-          data: data.ebitdaMarginFact,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37,99,235,0.06)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointBackgroundColor: '#2563eb',
-          fill: true,
-          tension: 0.35,
-          spanGaps: false,
-        },
-        {
-          label: 'План 14%',
-          data: data.ebitdaMarginPlan,
-          borderColor: '#bbb',
-          borderWidth: 1.5,
-          borderDash: [6,4],
-          pointRadius: 0,
-          fill: false,
-        }
-      ]
-    },
-    options: baseOpts('%'),
-  });
-
-  // Sparklines
-  function spark(id, fact, plan, color) {
-    const fd = fact.filter(v => v !== null);
-    new Chart(document.getElementById(id), {
-      type: 'line',
-      data: {
-        labels: MONTHS.slice(0, fd.length),
-        datasets: [
-          {
-            data: fd,
-            borderColor: color,
-            backgroundColor: color + '18',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: color,
-            fill: true,
-            tension: 0.4,
+    const DEMO_DATA = {
+      updatedAt: new Date().toISOString(),
+      sheetName: 'DEMO',
+      months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+      scenarios: {
+        baseline: {
+          label: 'Baseline',
+          series: {
+            ebitdaMarginPlan:  [0.02,0.02,0.04,0.04,0.07,0.07,0.07,0.07,0.07,0.07,0.10,0.10],
+            ebitdaMarginFact:  [0.17,0.03,-0.12,-0.19,0,0,0,0,0,0,0,0],
+            ebitdaPlan:        [204,204,642,642,1088,1088,1088,1088,1088,1088,1563,1563],
+            ebitdaFact:        [4477,602,-2437,-3269,0,0,0,0,0,0,0,0],
+            clientServicePlan: [1060,1060,1060,1060,1060,1060,1060,1060,1060,1060,1060,1060],
+            clientServiceFact: [1060,1060,1060,1060,0,0,0,0,0,0,0,0],
+            bdPlan:            [2200,2200,2200,2200,2200,2200,2200,2200,2200,2200,2200,2200],
+            bdFact:            [1685,2187,1584,2488,0,0,0,0,0,0,0,0],
+            backOfficePlan:    [2700,2700,2700,2700,2700,2700,2700,2700,2700,2700,2700,2700],
+            backOfficeFact:    [2280,3004,3880,3307,0,0,0,0,0,0,0,0],
+            grossProfitPlan:   [6700,6700,7176,7176,7662,7662,7662,7662,7662,7662,8177,8177],
+            grossProfitFact:   [9734,7132,4366,3891,0,0,0,0,0,0,0,0],
+            salesPlan:         [1,1,2,1,2,1,2,1,2,1,2,1],
+            salesFact:         [0,1,1,1,0,0,0,0,0,0,0,0],
           },
-          {
-            data: plan.slice(0, fd.length),
-            borderColor: '#ccc',
-            borderWidth: 1,
-            borderDash: [4,3],
-            pointRadius: 0,
-            fill: false,
+          totals: {
+            ebitdaMarginPlan: 0.06, ebitdaMarginFact: null,
+            ebitdaPlan: 11346, ebitdaFact: -627,
+            clientServicePlan: 12724, clientServiceFact: 4240,
+            bdPlan: 26400, bdFact: 7944,
+            backOfficePlan: 32400, backOfficeFact: 12471,
+            grossProfitPlan: 90076, grossProfitFact: 25123,
+            salesPlan: 17, salesFact: 3,
           }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: true } },
-        scales: { x: { display: false }, y: { display: false } }
+        },
+        growth: {
+          label: 'Growth',
+          series: {
+            ebitdaMarginPlan:  [-0.46,-0.46,-0.40,-0.40,-0.35,-0.35,-0.30,-0.18,-0.09,-0.01,0.07,0.12],
+            ebitdaMarginFact:  [0.09,-0.18,-0.31,-0.40,0,0,0,0,0,0,0,0],
+            ebitdaPlan:        [-6196,-6196,-5758,-5758,-5312,-5312,-4856,-3475,-2080,-202,2169,4564],
+            ebitdaFact:        [2500,-3939,-6318,-6890,0,0,0,0,0,0,0,0],
+            clientServicePlan: [1060,1060,1060,1060,1060,1060,1060,1060,1060,1060,1060,1060],
+            clientServiceFact: [1060,1060,1060,1060,0,0,0,0,0,0,0,0],
+            bdPlan:            [8200,8200,8200,8200,8200,8200,8200,8200,8200,8200,8200,8200],
+            bdFact:            [3662,6727,6665,7450,0,0,0,0,0,0,0,0],
+            backOfficePlan:    [3100,3100,3100,3100,3100,3100,3100,3100,3100,3100,3100,3100],
+            backOfficeFact:    [2280,3004,3880,3307,0,0,0,0,0,0,0,0],
+            grossProfitPlan:   [6700,6700,7176,7176,7662,7662,8157,9658,11174,13216,15793,18396],
+            grossProfitFact:   [9734,7132,4366,3891,0,0,0,0,0,0,0,0],
+            salesPlan:         [1,1,2,1,2,1,3,4,5,5,6,6],
+            salesFact:         [0,1,0,1,0,0,0,0,0,0,0,0],
+            cashOnHand:        [30122,28220,23323,18369,0,0,0,0,0,0,0,0],
+            cashRunway:        [4.14,3.2,3.3,2.8,0,0,0,0,0,0,0,0],
+          },
+          totals: {
+            ebitdaMarginPlan: -0.16, ebitdaMarginFact: null,
+            ebitdaPlan: -38412, ebitdaFact: -14646,
+            clientServicePlan: 12724, clientServiceFact: 4240,
+            bdPlan: 98400, bdFact: 24504,
+            backOfficePlan: 37200, backOfficeFact: 12471,
+            grossProfitPlan: 119469, grossProfitFact: 25123,
+            salesPlan: 37, salesFact: 2,
+            cashOnHand: null, cashRunway: null,
+          }
+        }
       }
-    });
-  }
+    };
 
-  spark('sparkBranding', data.brandingFact, data.brandingPlan, '#16a34a');
-  spark('sparkWeb',      data.webFact,      data.webPlan,      '#2563eb');
-  spark('sparkMkt',      data.mktFact,      data.mktPlan,      '#ea580c');
-}
+    const isDemoMode = () => !APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PASTE_YOUR');
 
-// ── INIT ──
-function renderAll() {
-  document.getElementById('periodBadge').textContent =
-    `2025 · до ${MONTHS_FULL[factMonths()-1]}`;
-  updateKPIs();
-  updateMarginCards();
-  updateCash();
-  buildCharts();
-}
+    // ---------- Formatters ----------
+    const fmtEur = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      const sign = n < 0 ? '−' : '';
+      return sign + '€' + Math.round(Math.abs(n)).toLocaleString('en-US');
+    };
+    const fmtEurDelta = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return (n >= 0 ? '+' : '−') + '€' + Math.round(Math.abs(n)).toLocaleString('en-US');
+    };
+    const fmtPct = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return (n * 100).toFixed(1) + '%';
+    };
+    const fmtPctDelta = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return (n >= 0 ? '+' : '') + (n * 100).toFixed(1) + 'pp';
+    };
+    const fmtInt = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return Math.round(n).toString();
+    };
+    const fmtIntDelta = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return (n >= 0 ? '+' : '') + Math.round(n).toString();
+    };
+    const fmtMonths = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return n.toFixed(1);
+    };
+    const fmtMonthsDelta = (n) => {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return (n >= 0 ? '+' : '') + n.toFixed(1) + ' mo';
+    };
 
-function showStatus(msg, isError) {
-  const el = document.getElementById('dataStatus');
-  el.textContent = msg;
-  el.style.color = isError ? 'var(--red)' : 'var(--green)';
-}
+    // ---------- Math ----------
+    const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
+    const cumulative = (arr) => {
+      let t = 0; return arr.map(v => t += (Number(v) || 0));
+    };
+    function findLastFactMonth(scenario) {
+      const s = scenario.series;
+      for (let i = 11; i >= 0; i--) {
+        if (
+          Math.abs(s.ebitdaFact[i])        > 0.001 ||
+          Math.abs(s.grossProfitFact[i])   > 0.001 ||
+          (s.salesFact[i] || 0)            > 0     ||
+          Math.abs(s.clientServiceFact[i]) > 0.001
+        ) return i;
+      }
+      return -1;
+    }
+    function findLastCashMonth(cashArr) {
+      for (let i = 11; i >= 0; i--) {
+        if (Math.abs(cashArr[i]) > 0.001) return i;
+      }
+      return -1;
+    }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-    showStatus('⚠ Fallback-данные', true);
-    renderAll();
-    return;
-  }
-  showStatus('↻ Загрузка…', false);
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, { redirect: 'follow' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    data = JSON.parse(text);
-    showStatus('✓ Обновлено из Google Sheets', false);
-  } catch(e) {
-    showStatus('⚠ Fallback-данные', true);
-    console.error(e);
-  }
-  renderAll();
-});
-</script>
+    const MONTH_SHORT = {
+      January:'Jan', February:'Feb', March:'Mar', April:'Apr',
+      May:'May', June:'Jun', July:'Jul', August:'Aug',
+      September:'Sep', October:'Oct', November:'Nov', December:'Dec'
+    };
+    const shortMonth = (m) => MONTH_SHORT[String(m).trim()] || String(m).slice(0,3);
+
+    function runwayColor(months) {
+      if (months >= 6) return 'var(--c-pos)';
+      if (months >= 3) return 'var(--c-warn)';
+      return 'var(--c-neg)';
+    }
+    function runwayDeltaClass(months) {
+      if (months >= 6) return 'pos';
+      if (months >= 3) return 'warn';
+      return 'neg';
+    }
+
+    // ---------- State ----------
+    let dashboardData = null;
+    let currentScenario = 'baseline';
+    const charts = new Map();
+
+    function destroyCharts() {
+      charts.forEach(c => { try { c.destroy(); } catch(e){} });
+      charts.clear();
+    }
+
+    function setScenario(name) {
+      if (currentScenario === name) return;
+      currentScenario = name;
+      render();
+    }
+
+    async function load() {
+      const btn = document.querySelector('.refresh-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '… Loading'; }
+
+      if (isDemoMode()) { dashboardData = DEMO_DATA; render(); return; }
+
+      try {
+        const res = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now());
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        dashboardData = data;
+        render();
+      } catch (err) {
+        destroyCharts();
+        document.getElementById('app').innerHTML = `
+          <div class="error">
+            <b>Failed to load data</b>
+            ${err.message}<br><br>
+            Check that the Apps Script is deployed with <code>Anyone</code> access
+            and that <code>APPS_SCRIPT_URL</code> is set correctly.
+          </div>`;
+      }
+    }
+
+    // ---------- Render ----------
+    function render() {
+      destroyCharts();
+
+      const d = dashboardData;
+      const scenario = d.scenarios[currentScenario];
+      const isGrowth = currentScenario === 'growth';
+      const lastIdx = findLastFactMonth(scenario);
+      const monthsThrough = Math.max(lastIdx + 1, 0);
+
+      const ytd = {
+        ebitdaPlan:       sum(scenario.series.ebitdaPlan.slice(0, monthsThrough)),
+        ebitdaFact:       sum(scenario.series.ebitdaFact.slice(0, monthsThrough)),
+        grossProfitPlan:  sum(scenario.series.grossProfitPlan.slice(0, monthsThrough)),
+        grossProfitFact:  sum(scenario.series.grossProfitFact.slice(0, monthsThrough)),
+        salesPlan:        sum(scenario.series.salesPlan.slice(0, monthsThrough)),
+        salesFact:        sum(scenario.series.salesFact.slice(0, monthsThrough)),
+      };
+
+      const marginPlan = lastIdx >= 0 ? scenario.series.ebitdaMarginPlan[lastIdx] : 0;
+      const marginFact = lastIdx >= 0 ? scenario.series.ebitdaMarginFact[lastIdx] : 0;
+      const lastMonth  = lastIdx >= 0 ? shortMonth(d.months[lastIdx]) : '—';
+      const firstMonth = shortMonth(d.months[0]);
+
+      const dateStamp = new Date(d.updatedAt).toLocaleDateString('en-US', {
+        day: 'numeric', month: 'short', year: 'numeric'
+      });
+
+      // Build scenario tabs
+      const tabs = ['baseline', 'growth'].map(name => {
+        const sc = d.scenarios[name];
+        const active = name === currentScenario;
+        return `<button class="tab ${active ? 'active' : ''}" onclick="setScenario('${name}')">
+          <span>${sc.label}</span>
+          <span class="tab-sub">${name === 'baseline' ? 'No invest' : 'With invest'}</span>
+        </button>`;
+      }).join('');
+
+      document.getElementById('app').innerHTML = `
+        <header class="header">
+          <div class="logo-section">
+            <div class="logo">€</div>
+            <div class="title">FY 2026 <span class="sep">/</span><span class="sub">Financial Dashboard</span></div>
+          </div>
+          <div class="header-meta">
+            <div class="date-stamp">${dateStamp}</div>
+            <div class="live-pill ${isDemoMode() ? 'demo' : ''}">${isDemoMode() ? 'Demo · Sample data' : 'Live · Google Sheets'}</div>
+            <button class="refresh-btn" onclick="load()">↻ Refresh</button>
+          </div>
+        </header>
+
+        <div class="scenario-row">
+          <div class="scenario-tabs">${tabs}</div>
+          <div class="scenario-caption">${SCENARIO_CAPTIONS[currentScenario]}</div>
+        </div>
+
+        <div class="section-label">Key metrics · YTD ${firstMonth} — ${lastMonth} 2026 · ${scenario.label}</div>
+        <div class="kpi-grid">
+          ${kpiCard('EBITDA · YTD', fmtEur(ytd.ebitdaFact), fmtEur(ytd.ebitdaPlan), ytd.ebitdaFact, ytd.ebitdaPlan, fmtEurDelta, 'var(--c-ebitda)')}
+          ${kpiCard('EBITDA Margin · ' + lastMonth, fmtPct(marginFact), fmtPct(marginPlan), marginFact, marginPlan, fmtPctDelta, 'var(--c-margin)')}
+          ${kpiCard('Gross Profit · YTD', fmtEur(ytd.grossProfitFact), fmtEur(ytd.grossProfitPlan), ytd.grossProfitFact, ytd.grossProfitPlan, fmtEurDelta, 'var(--c-gp)')}
+          ${kpiCard('Sales · YTD', fmtInt(ytd.salesFact), fmtInt(ytd.salesPlan), ytd.salesFact, ytd.salesPlan, fmtIntDelta, 'var(--c-sales)')}
+        </div>
+
+        ${isGrowth ? renderCashSection(scenario) : ''}
+
+        <div class="section-label">Cumulative trends · plan vs actual</div>
+        <div class="charts-grid">
+          ${chartCard('chart-margin',  'EBITDA Margin %',  'Monthly · plan vs actual',     '#7c3aed')}
+          ${chartCard('chart-ebitda',  'EBITDA',           'Cumulative · €',               '#ea580c')}
+          ${chartCard('chart-gp',      'Gross Profit',     'Cumulative · €',               '#0d9488')}
+          ${chartCard('chart-sales',   'Sales',            'Cumulative · units',           '#2563eb')}
+        </div>
+
+        <div class="section-label">Cross-metric performance · how the three actuals move together</div>
+        <div class="charts-grid">
+          <div class="chart-card full-width">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">Performance Index</div>
+                <div class="chart-subtitle">Cumulative actual as % of annual plan · linear pace = perfect pacing</div>
+              </div>
+              <span class="chart-tag" style="background: #f0ebe1; color: #6e6b66;">Same scale</span>
+            </div>
+            <div class="chart-wrap"><canvas id="chart-cross"></canvas></div>
+            <div class="legend-chips" id="legend-cross"></div>
+          </div>
+        </div>
+
+        <div class="section-label">Monthly breakdown · plan vs actual by month</div>
+        <div class="table-card"><div class="table-wrap">${buildTable(scenario, lastIdx, isGrowth)}</div></div>
+      `;
+
+      drawCharts(d, scenario, lastIdx);
+      if (isGrowth) drawCashChart(d, scenario);
+    }
+
+    function kpiCard(label, factStr, planStr, fact, plan, deltaFmt, accentColor, opts) {
+      opts = opts || {};
+      const delta = (fact || 0) - (plan || 0);
+      const isPositive = delta >= 0;
+      const pct = (plan && plan !== 0) ? (fact / plan) * 100 : 0;
+      const barWidth = Math.min(Math.max(pct, 0), 130);
+      const deltaCls = opts.deltaCls || (isPositive ? 'pos' : 'neg');
+      const planLabel = opts.planLabel || 'Plan';
+      const unit = opts.unit ? `<span class="unit">${opts.unit}</span>` : '';
+
+      return `
+        <div class="kpi-card" style="--accent: ${accentColor}">
+          <div class="kpi-label">${label}</div>
+          <div class="kpi-value">${factStr}${unit}</div>
+          <div class="kpi-meta">
+            <span class="kpi-plan">${planLabel} ${planStr}</span>
+            <span class="kpi-delta ${deltaCls}">${deltaFmt(delta)}</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${barWidth}%"></div></div>
+        </div>`;
+    }
+
+    function renderCashSection(scenario) {
+      const cash = scenario.series.cashOnHand || [];
+      const runway = scenario.series.cashRunway || [];
+      const lastCashIdx = findLastCashMonth(cash);
+
+      if (lastCashIdx < 0) return '';
+
+      const currentCash = cash[lastCashIdx];
+      const prevCash = lastCashIdx > 0 ? cash[lastCashIdx - 1] : currentCash;
+      const cashDelta = currentCash - prevCash;
+
+      const currentRunway = runway[lastCashIdx];
+      const prevRunway = lastCashIdx > 0 ? runway[lastCashIdx - 1] : currentRunway;
+      const runwayDelta = currentRunway - prevRunway;
+
+      const cashColor = cashDelta >= 0 ? 'var(--c-cash)' : 'var(--c-cash)';
+      const rwColor = runwayColor(currentRunway);
+      const rwCls = runwayDeltaClass(currentRunway);
+
+      // Cash KPI — using prev month as "plan" for delta context
+      const cashCard = `
+        <div class="kpi-card" style="--accent: ${cashColor}">
+          <div class="kpi-label">Cash on hand · current</div>
+          <div class="kpi-value">${fmtEur(currentCash)}</div>
+          <div class="kpi-meta">
+            <span class="kpi-plan">Last month ${fmtEur(prevCash)}</span>
+            <span class="kpi-delta ${cashDelta >= 0 ? 'pos' : 'neg'}">${fmtEurDelta(cashDelta)}</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:100%"></div></div>
+        </div>`;
+
+      // Runway KPI — color-coded threshold
+      const runwayCard = `
+        <div class="kpi-card" style="--accent: ${rwColor}">
+          <div class="kpi-label">Cash Runway · months</div>
+          <div class="kpi-value">${fmtMonths(currentRunway)}<span class="unit">mo</span></div>
+          <div class="kpi-meta">
+            <span class="kpi-plan">Last month ${fmtMonths(prevRunway)}</span>
+            <span class="kpi-delta ${runwayDelta >= 0 ? 'pos' : 'neg'}">${fmtMonthsDelta(runwayDelta)}</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${Math.min(currentRunway * 10, 100)}%"></div></div>
+        </div>`;
+
+      return `
+        <div class="section-label">Cash position · liquidity &amp; runway</div>
+        <div class="cash-grid">
+          ${cashCard}
+          ${runwayCard}
+        </div>
+        <div class="charts-grid">
+          <div class="chart-card full-width">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">Cash trajectory</div>
+                <div class="chart-subtitle">Cash on hand by month · dashed line = projection at recent burn rate</div>
+              </div>
+              <span class="chart-tag" style="background: #cffafe; color: #0891b2;">Burn rate</span>
+            </div>
+            <div class="chart-wrap"><canvas id="chart-cash"></canvas></div>
+          </div>
+        </div>`;
+    }
+
+    function chartCard(canvasId, title, subtitle, accentColor) {
+      return `
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">${title}</div>
+              <div class="chart-subtitle">${subtitle}</div>
+            </div>
+            <span class="chart-tag" style="background: ${accentColor}1f; color: ${accentColor};">Plan vs Actual</span>
+          </div>
+          <div class="chart-wrap"><canvas id="${canvasId}"></canvas></div>
+        </div>`;
+    }
+
+    function buildTable(scenario, lastIdx, isGrowth) {
+      const m = dashboardData.months;
+      const s = scenario.series;
+      const t = scenario.totals;
+      const monthHead = m.map(mo => `<th>${shortMonth(mo)}</th>`).join('');
+
+      const renderRow = (label, planArr, factArr, planTotal, factTotal, fmt, isCost = false, isFact = false, accent = '') => {
+        const cells = (isFact ? factArr : planArr).map((v, i) => {
+          if (isFact && i > lastIdx) return `<td class="cell-future">—</td>`;
+          if (isFact) {
+            const planV = planArr[i];
+            let cls = '';
+            if (planV !== 0 && v !== 0) {
+              const diff = v - planV;
+              cls = isCost ? (diff <= 0 ? 'cell-pos' : 'cell-neg') : (diff >= 0 ? 'cell-pos' : 'cell-neg');
+            }
+            return `<td class="${cls}">${fmt(v)}</td>`;
+          }
+          return `<td>${fmt(v)}</td>`;
+        }).join('');
+
+        const total = isFact ? factTotal : planTotal;
+        const rowStyle = accent ? `style="--accent: ${accent}"` : '';
+        return `<tr class="${isFact ? 'fact' : 'plan'}" ${rowStyle}>
+          <td>${label} · ${isFact ? 'Actual' : 'Plan'}</td>${cells}
+          <td class="total-col">${fmt(total)}</td>
+        </tr>`;
+      };
+
+      const group = (title, accentColor, rowsHtml) =>
+        `<tr class="group-header"><td colspan="14"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
+
+      const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '') =>
+        renderRow(label, pArr, fArr, pT, fT, fmt, isCost, false, accent) +
+        renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent);
+
+      const sPT = t.salesPlan || sum(s.salesPlan);
+      const sFT = t.salesFact || sum(s.salesFact);
+
+      // Build cash rows for Growth scenario
+      let cashSection = '';
+      if (isGrowth && s.cashOnHand) {
+        const cashLastIdx = findLastCashMonth(s.cashOnHand);
+        const cashCells = s.cashOnHand.map((v, i) => {
+          if (i > cashLastIdx) return `<td class="cell-future">—</td>`;
+          return `<td>${fmtEur(v)}</td>`;
+        }).join('');
+        const runwayCells = s.cashRunway.map((v, i) => {
+          if (i > cashLastIdx) return `<td class="cell-future">—</td>`;
+          const cls = v < 3 ? 'cell-neg' : (v < 6 ? '' : 'cell-pos');
+          return `<td class="${cls}">${fmtMonths(v)}</td>`;
+        }).join('');
+        cashSection = group('Cash position', 'var(--c-cash)',
+          `<tr class="fact" style="--accent: var(--c-cash)">
+            <td>Cash on hand</td>${cashCells}<td class="total-col">—</td>
+          </tr>
+          <tr class="fact" style="--accent: var(--c-cash)">
+            <td>Runway · months</td>${runwayCells}<td class="total-col">—</td>
+          </tr>`);
+      }
+
+      return `<table>
+        <thead><tr><th>Metric</th>${monthHead}<th class="total-col">Total</th></tr></thead>
+        <tbody>
+          ${group('EBITDA Margin %', '#7c3aed',
+            pair('Margin', s.ebitdaMarginPlan, s.ebitdaMarginFact, t.ebitdaMarginPlan, t.ebitdaMarginFact, fmtPct, false, '#7c3aed'))}
+          ${group('EBITDA', '#ea580c',
+            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, t.ebitdaFact, fmtEur, false, '#ea580c'))}
+          ${group('Operating costs', '#a8a59f',
+            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, t.clientServiceFact, fmtEur, true) +
+            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            t.bdFact,            fmtEur, true) +
+            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    t.backOfficeFact,    fmtEur, true))}
+          ${group('Gross Profit', '#0d9488',
+            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, t.grossProfitFact, fmtEur, false, '#0d9488'))}
+          ${group('Sales (units)', '#2563eb',
+            pair('Sales', s.salesPlan, s.salesFact, sPT, sFT, fmtInt, false, '#2563eb'))}
+          ${cashSection}
+        </tbody>
+      </table>`;
+    }
+
+    function drawCharts(d, scenario, lastIdx) {
+      const labels = d.months.map(shortMonth);
+
+      const drawPair = (canvasId, planArr, factArr, color, fmt) => {
+        const factWithGap = factArr.map((v, i) => i <= lastIdx ? v : null);
+        drawLineChart(canvasId, labels, [
+          { label: 'Plan',   data: planArr,     color: color, alpha: 0.32, dashed: true },
+          { label: 'Actual', data: factWithGap, color: color, alpha: 1.0,  dashed: false }
+        ], fmt);
+      };
+
+      const planMargin = scenario.series.ebitdaMarginPlan.map(v => v * 100);
+      const factMargin = scenario.series.ebitdaMarginFact.map(v => v * 100);
+      drawPair('chart-margin', planMargin, factMargin, '#7c3aed', v => v.toFixed(1) + '%');
+      drawPair('chart-ebitda', cumulative(scenario.series.ebitdaPlan), cumulative(scenario.series.ebitdaFact),
+               '#ea580c', v => '€' + Math.round(v).toLocaleString('en-US'));
+      drawPair('chart-gp', cumulative(scenario.series.grossProfitPlan), cumulative(scenario.series.grossProfitFact),
+               '#0d9488', v => '€' + Math.round(v).toLocaleString('en-US'));
+      drawPair('chart-sales', cumulative(scenario.series.salesPlan), cumulative(scenario.series.salesFact),
+               '#2563eb', v => Math.round(v) + ' u');
+
+      drawCrossMetric(d, scenario, lastIdx, labels);
+    }
+
+    function drawCrossMetric(d, scenario, lastIdx, labels) {
+      const annualSales  = sum(scenario.series.salesPlan);
+      const annualGP     = sum(scenario.series.grossProfitPlan);
+      const annualEbitda = sum(scenario.series.ebitdaPlan);
+
+      const cumSales = cumulative(scenario.series.salesFact);
+      const cumGP    = cumulative(scenario.series.grossProfitFact);
+      const cumE     = cumulative(scenario.series.ebitdaFact);
+
+      const pctOf = (arr, total) => arr.map((v, i) =>
+        (i <= lastIdx && total) ? (v / total) * 100 : null);
+
+      const salesPct  = pctOf(cumSales,  annualSales);
+      const gpPct     = pctOf(cumGP,     annualGP);
+      const ebitdaPct = pctOf(cumE,      annualEbitda);
+      const linearPace = labels.map((_, i) => Math.round(((i + 1) / 12) * 100 * 10) / 10);
+
+      const ctx = document.getElementById('chart-cross');
+      if (!ctx) return;
+
+      const datasets = [
+        { label: 'Sales',        data: salesPct,   color: '#2563eb', dashed: false, isRef: false },
+        { label: 'Gross Profit', data: gpPct,      color: '#0d9488', dashed: false, isRef: false },
+        { label: 'EBITDA',       data: ebitdaPct,  color: '#ea580c', dashed: false, isRef: false },
+        { label: 'Linear pace',  data: linearPace, color: '#a8a59f', dashed: true,  isRef: true  },
+      ];
+
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: datasets.map(ds => ({
+            label: ds.label,
+            data: ds.data,
+            borderColor: ds.color,
+            backgroundColor: ds.color + '14',
+            borderWidth: ds.isRef ? 1.5 : 2.5,
+            borderDash: ds.dashed ? [4, 4] : [],
+            tension: 0.32,
+            pointRadius: ds.isRef ? 0 : 3,
+            pointHoverRadius: ds.isRef ? 0 : 6,
+            pointBackgroundColor: ds.color,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            fill: false, spanGaps: false,
+          }))
+        },
+        options: chartOptions((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : c.parsed.y.toFixed(1) + '%'}`, (v) => v + '%')
+      });
+      charts.set('chart-cross', chart);
+
+      const curIdx = lastIdx >= 0 ? lastIdx : 0;
+      const legend = document.getElementById('legend-cross');
+      const items = [
+        { label: 'Sales',        color: '#2563eb', value: salesPct[curIdx] },
+        { label: 'Gross Profit', color: '#0d9488', value: gpPct[curIdx] },
+        { label: 'EBITDA',       color: '#ea580c', value: ebitdaPct[curIdx] },
+        { label: 'Linear pace',  color: '#a8a59f', value: linearPace[curIdx], ref: true },
+      ];
+      legend.innerHTML = items.map(it => `
+        <div class="chip">
+          <div class="chip-dot" style="background:${it.color}${it.ref ? '; border: 1px dashed #6e6b66' : ''}"></div>
+          <span class="chip-label">${it.label}</span>
+          <span class="chip-value" style="color:${it.color}">${it.value === null || isNaN(it.value) ? '—' : it.value.toFixed(1) + '%'}</span>
+        </div>
+      `).join('');
+    }
+
+    function drawCashChart(d, scenario) {
+      const cash = scenario.series.cashOnHand;
+      const lastCashIdx = findLastCashMonth(cash);
+      if (lastCashIdx < 0) return;
+
+      const labels = d.months.map(shortMonth);
+
+      // Actual data points up to lastCashIdx
+      const actualLine = cash.map((v, i) => i <= lastCashIdx ? v : null);
+
+      // Projection: linear extrapolation from recent burn rate
+      // Use the avg of the last 2-3 months of change
+      let recentBurn = 0;
+      const window = Math.min(3, lastCashIdx);
+      if (window >= 1) {
+        let total = 0;
+        for (let i = lastCashIdx - window + 1; i <= lastCashIdx; i++) {
+          total += cash[i] - cash[i - 1];
+        }
+        recentBurn = total / window;
+      }
+
+      const projectionLine = labels.map((_, i) => {
+        if (i < lastCashIdx) return null;
+        if (i === lastCashIdx) return cash[lastCashIdx];
+        const projected = cash[lastCashIdx] + recentBurn * (i - lastCashIdx);
+        return projected;
+      });
+
+      // Zero line for reference
+      const zeroLine = labels.map(() => 0);
+
+      const ctx = document.getElementById('chart-cash');
+      if (!ctx) return;
+
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Actual',
+              data: actualLine,
+              borderColor: '#0891b2',
+              backgroundColor: '#0891b220',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 4,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#0891b2',
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 2,
+              fill: true,
+              spanGaps: false,
+            },
+            {
+              label: 'Projection',
+              data: projectionLine,
+              borderColor: '#0891b2',
+              backgroundColor: 'transparent',
+              borderWidth: 1.8,
+              borderDash: [5, 4],
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              fill: false,
+              spanGaps: false,
+            },
+            {
+              label: 'Zero',
+              data: zeroLine,
+              borderColor: '#dc262640',
+              backgroundColor: 'transparent',
+              borderWidth: 1,
+              borderDash: [2, 4],
+              tension: 0,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              fill: false,
+            },
+          ]
+        },
+        options: chartOptions(
+          (c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : '€' + Math.round(c.parsed.y).toLocaleString('en-US')}`,
+          (v) => '€' + Math.round(v).toLocaleString('en-US')
+        )
+      });
+      charts.set('chart-cash', chart);
+    }
+
+    function drawLineChart(canvasId, labels, datasets, fmt) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: datasets.map(ds => ({
+            label: ds.label,
+            data: ds.data,
+            borderColor: ds.color + (ds.alpha < 1 ? Math.round(ds.alpha * 255).toString(16).padStart(2,'0') : ''),
+            backgroundColor: ds.color + '12',
+            borderWidth: ds.dashed ? 1.8 : 2.5,
+            borderDash: ds.dashed ? [5, 4] : [],
+            tension: 0.32,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointBackgroundColor: ds.color,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            fill: false, spanGaps: false,
+          }))
+        },
+        options: chartOptions(
+          (c) => `  ${c.dataset.label}: ${fmt(c.parsed.y)}`,
+          (v) => fmt(v),
+          true
+        )
+      });
+      charts.set(canvasId, chart);
+    }
+
+    function chartOptions(tooltipLabelFn, yTickFn, showLegend) {
+      return {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 800, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: showLegend ? {
+            display: true, position: 'top', align: 'end',
+            labels: {
+              color: '#6e6b66',
+              font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+              usePointStyle: true, pointStyle: 'line',
+              boxWidth: 18, boxHeight: 2, padding: 14,
+              filter: (item) => item.text !== 'Zero',
+            }
+          } : { display: false },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            titleColor: '#1a1a1a', bodyColor: '#1a1a1a',
+            borderColor: '#e3dfd6', borderWidth: 1,
+            padding: 12, cornerRadius: 6, displayColors: true,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '700' },
+            bodyFont:  { family: "'JetBrains Mono', monospace", size: 11 },
+            filter: (item) => item.dataset.label !== 'Zero',
+            callbacks: { label: tooltipLabelFn }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { color: '#e3dfd6' },
+            ticks: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' } }
+          },
+          y: {
+            grid: { color: '#ece8df' },
+            border: { display: false },
+            ticks: {
+              color: '#6e6b66',
+              font: { family: "'JetBrains Mono', monospace", size: 10 },
+              callback: (v) => yTickFn(v)
+            }
+          }
+        }
+      };
+    }
+
+    load();
+  </script>
 </body>
 </html>
