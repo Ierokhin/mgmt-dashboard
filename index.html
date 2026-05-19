@@ -831,8 +831,11 @@
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, false, accent) +
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent);
 
+      // Fact totals — always compute from monthly data, since sheet's SUM
+      // formulas in column N are not consistently set for every fact row.
+      const tf = (val, arr) => val || sum(arr);
       const sPT = t.salesPlan || sum(s.salesPlan);
-      const sFT = t.salesFact || sum(s.salesFact);
+      const sFT = tf(t.salesFact, s.salesFact);
 
       // Build cash rows for Growth scenario
       let cashSection = '';
@@ -862,13 +865,13 @@
           ${group('EBITDA Margin %', '#7c3aed',
             pair('Margin', s.ebitdaMarginPlan, s.ebitdaMarginFact, t.ebitdaMarginPlan, t.ebitdaMarginFact, fmtPct, false, '#7c3aed'))}
           ${group('EBITDA', '#ea580c',
-            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, t.ebitdaFact, fmtEur, false, '#ea580c'))}
+            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, tf(t.ebitdaFact, s.ebitdaFact), fmtEur, false, '#ea580c'))}
           ${group('Operating costs', '#a8a59f',
-            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, t.clientServiceFact, fmtEur, true) +
-            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            t.bdFact,            fmtEur, true) +
-            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    t.backOfficeFact,    fmtEur, true))}
+            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, tf(t.clientServiceFact, s.clientServiceFact), fmtEur, true) +
+            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            tf(t.bdFact, s.bdFact),                       fmtEur, true) +
+            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    tf(t.backOfficeFact, s.backOfficeFact),       fmtEur, true))}
           ${group('Gross Profit', '#0d9488',
-            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, t.grossProfitFact, fmtEur, false, '#0d9488'))}
+            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, tf(t.grossProfitFact, s.grossProfitFact), fmtEur, false, '#0d9488'))}
           ${group('Sales (units)', '#2563eb',
             pair('Sales', s.salesPlan, s.salesFact, sPT, sFT, fmtInt, false, '#2563eb'))}
           ${cashSection}
