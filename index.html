@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <style>
     :root {
       --bg: #f1ede5;
@@ -24,6 +25,7 @@
       --c-gp: #0d9488;
       --c-sales: #2563eb;
       --c-cash: #0891b2;
+      --c-channel: #be185d;
 
       --c-pos: #16a34a;
       --c-neg: #dc2626;
@@ -49,19 +51,13 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
-
     body { padding: 32px 40px 80px; }
     .container { max-width: 1480px; margin: 0 auto; }
 
     /* ===== HEADER ===== */
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 28px;
-      margin-bottom: 18px;
-      gap: 24px;
-      flex-wrap: wrap;
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 28px; margin-bottom: 18px; gap: 24px; flex-wrap: wrap;
     }
     .logo-section { display: flex; align-items: center; gap: 14px; }
     .logo {
@@ -110,52 +106,35 @@
 
     /* ===== SCENARIO TABS ===== */
     .scenario-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 36px;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 36px;
     }
     .scenario-tabs {
       display: inline-flex;
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: 99px;
-      padding: 5px;
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 99px; padding: 5px;
     }
     .tab {
-      padding: 9px 22px;
-      border: none;
-      background: transparent;
+      padding: 9px 22px; border: none; background: transparent;
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--text-dim);
-      cursor: pointer;
-      border-radius: 99px;
-      transition: all 0.25s;
+      font-weight: 600; font-size: 13px;
+      color: var(--text-dim); cursor: pointer;
+      border-radius: 99px; transition: all 0.25s;
       letter-spacing: -0.005em;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
+      display: inline-flex; align-items: center; gap: 10px;
     }
     .tab:hover:not(.active) { color: var(--text); }
     .tab.active { background: var(--text); color: var(--bg); }
     .tab .tab-sub {
       font-size: 10px;
       font-family: 'JetBrains Mono', monospace;
-      letter-spacing: 0.12em;
-      opacity: 0.6;
-      text-transform: uppercase;
-      font-weight: 500;
+      letter-spacing: 0.12em; opacity: 0.6;
+      text-transform: uppercase; font-weight: 500;
     }
     .scenario-caption {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--text-faint);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+      font-size: 11px; color: var(--text-faint);
+      letter-spacing: 0.1em; text-transform: uppercase;
       font-weight: 500;
     }
 
@@ -173,17 +152,8 @@
     .section-label:first-of-type { margin-top: 0; }
 
     /* ===== KPI CARDS ===== */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-    .cash-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .cash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .kpi-card {
       background: var(--card);
       border: 1px solid var(--card-border);
@@ -192,10 +162,7 @@
       border-radius: 6px;
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
     .kpi-label {
       font-family: 'JetBrains Mono', monospace;
       font-size: 10px; color: var(--text-faint);
@@ -212,10 +179,7 @@
       display: flex; justify-content: space-between;
       align-items: center; margin-bottom: 14px;
     }
-    .kpi-plan {
-      font-size: 13px; color: var(--text-dim);
-      font-variant-numeric: tabular-nums; font-weight: 500;
-    }
+    .kpi-plan { font-size: 13px; color: var(--text-dim); font-variant-numeric: tabular-nums; font-weight: 500; }
     .kpi-delta {
       padding: 4px 10px; border-radius: 99px;
       font-size: 11px; font-weight: 700;
@@ -225,36 +189,23 @@
     .kpi-delta.pos { background: var(--c-pos-soft); color: var(--c-pos-text); }
     .kpi-delta.neg { background: var(--c-neg-soft); color: var(--c-neg-text); }
     .kpi-delta.warn { background: var(--c-warn-soft); color: var(--c-warn-text); }
-    .kpi-bar {
-      height: 3px; background: rgba(0,0,0,0.05);
-      overflow: hidden; border-radius: 99px;
-    }
-    .kpi-bar-fill {
-      height: 100%; background: var(--accent);
-      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-      border-radius: 99px;
-    }
+    .kpi-delta.neutral { background: var(--card-border-light); color: var(--text-dim); }
+    .kpi-bar { height: 3px; background: rgba(0,0,0,0.05); overflow: hidden; border-radius: 99px; }
+    .kpi-bar-fill { height: 100%; background: var(--accent); transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 99px; }
 
     /* ===== CHARTS ===== */
-    .charts-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-    }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .charts-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
     .chart-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      padding: 24px 28px 28px;
-      border-radius: 6px;
+      background: var(--card); border: 1px solid var(--card-border);
+      padding: 24px 28px 28px; border-radius: 6px;
     }
     .chart-card.full-width { grid-column: 1 / -1; }
-
     .chart-header {
       display: flex; justify-content: space-between;
       align-items: flex-start; margin-bottom: 20px; gap: 16px;
     }
-    .chart-title {
-      font-size: 17px; font-weight: 700; color: var(--text);
-      letter-spacing: -0.015em; margin-bottom: 4px;
-    }
+    .chart-title { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.015em; margin-bottom: 4px; }
     .chart-subtitle {
       font-family: 'JetBrains Mono', monospace;
       font-size: 10px; text-transform: uppercase;
@@ -268,7 +219,7 @@
       flex-shrink: 0;
     }
     .chart-wrap { height: 260px; position: relative; }
-    .chart-card.full-width .chart-wrap { height: 360px; }
+    .chart-card.full-width .chart-wrap { height: 380px; }
 
     .legend-chips {
       display: flex; gap: 24px; flex-wrap: wrap;
@@ -293,10 +244,8 @@
     .table-wrap::-webkit-scrollbar-track { background: var(--card-border-light); }
     .table-wrap::-webkit-scrollbar-thumb { background: var(--text-faint); border-radius: 4px; }
 
-    table {
-      width: 100%; border-collapse: collapse;
-      font-size: 12px; min-width: 1150px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1150px; }
+    table.wide { min-width: 2200px; }
     thead { background: var(--card-border-light); }
     th {
       padding: 14px; text-align: right;
@@ -324,10 +273,7 @@
       position: sticky; left: 0; background: var(--card); z-index: 1;
       font-size: 13px; font-weight: 500;
     }
-    td.total-col {
-      border-left: 1px solid var(--card-border);
-      background: var(--card-border-light); font-weight: 700;
-    }
+    td.total-col { border-left: 1px solid var(--card-border); background: var(--card-border-light); font-weight: 700; }
     tr.group-header td {
       font-size: 12px; font-weight: 700; color: var(--text);
       padding: 22px 14px 8px; text-transform: uppercase;
@@ -342,13 +288,8 @@
     }
     tr.plan td { color: var(--text-dim); }
     tr.fact td { color: var(--text); font-weight: 600; }
-    tr.fact td:first-child::before {
-      content: "▸"; color: var(--accent, var(--text));
-      margin-right: 6px; font-weight: 700;
-    }
-    tr.plan td:first-child::before {
-      content: "◦"; color: var(--text-faint); margin-right: 6px;
-    }
+    tr.fact td:first-child::before { content: "▸"; color: var(--accent, var(--text)); margin-right: 6px; font-weight: 700; }
+    tr.plan td:first-child::before { content: "◦"; color: var(--text-faint); margin-right: 6px; }
     .cell-pos { color: var(--c-pos) !important; font-weight: 700; }
     .cell-neg { color: var(--c-neg) !important; font-weight: 700; }
     .cell-future { color: var(--text-faint) !important; }
@@ -373,20 +314,15 @@
       letter-spacing: 0.12em; text-transform: uppercase;
       font-size: 11px; color: var(--c-neg);
     }
-    .error code {
-      background: var(--card-border-light);
-      padding: 2px 6px; border-radius: 3px; font-size: 12px;
-    }
+    .error code { background: var(--card-border-light); padding: 2px 6px; border-radius: 3px; font-size: 12px; }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 1100px) {
       body { padding: 24px 20px 60px; }
       .kpi-grid { grid-template-columns: 1fr 1fr; }
-      .charts-grid { grid-template-columns: 1fr; }
+      .charts-grid, .charts-grid.three-col { grid-template-columns: 1fr; }
     }
-    @media (max-width: 700px) {
-      .cash-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 700px) { .cash-grid { grid-template-columns: 1fr; } }
     @media (max-width: 600px) {
       .kpi-grid { grid-template-columns: 1fr; }
       .kpi-value { font-size: 40px; }
@@ -397,9 +333,7 @@
   </style>
 </head>
 <body>
-  <div class="container" id="app">
-    <div class="loading">Loading data…</div>
-  </div>
+  <div class="container" id="app"><div class="loading">Loading data…</div></div>
 
   <script>
     // ============================================================
@@ -411,8 +345,15 @@
     const SCENARIO_CAPTIONS = {
       baseline: 'No channel investment · organic sales only',
       growth:   'With channel investment · Upwork, Fiverr, partners, CSR',
+      channel:  'Deep-dive into new channel economics · J-curve over 24 months',
+    };
+    const SCENARIO_SUBS = {
+      baseline: 'No invest',
+      growth:   'With invest',
+      channel:  'ROI analysis',
     };
 
+    // Demo data — used when APPS_SCRIPT_URL is not set yet
     const DEMO_DATA = {
       updatedAt: new Date().toISOString(),
       sheetName: 'DEMO',
@@ -420,6 +361,7 @@
       scenarios: {
         baseline: {
           label: 'Baseline',
+          months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
           series: {
             ebitdaMarginPlan:  [0.02,0.02,0.04,0.04,0.07,0.07,0.07,0.07,0.07,0.07,0.10,0.10],
             ebitdaMarginFact:  [0.17,0.03,-0.12,-0.19,0,0,0,0,0,0,0,0],
@@ -436,18 +378,14 @@
             salesPlan:         [1,1,2,1,2,1,2,1,2,1,2,1],
             salesFact:         [0,1,1,1,0,0,0,0,0,0,0,0],
           },
-          totals: {
-            ebitdaMarginPlan: 0.06, ebitdaMarginFact: null,
-            ebitdaPlan: 11346, ebitdaFact: -627,
-            clientServicePlan: 12724, clientServiceFact: 4240,
-            bdPlan: 26400, bdFact: 7944,
-            backOfficePlan: 32400, backOfficeFact: 12471,
-            grossProfitPlan: 90076, grossProfitFact: 25123,
-            salesPlan: 17, salesFact: 3,
-          }
+          totals: { ebitdaMarginPlan: 0.06, ebitdaMarginFact: null, ebitdaPlan: 11346, ebitdaFact: -627,
+            clientServicePlan: 12724, clientServiceFact: null, bdPlan: 26400, bdFact: null,
+            backOfficePlan: 32400, backOfficeFact: null, grossProfitPlan: 90076, grossProfitFact: null,
+            salesPlan: 17, salesFact: null }
         },
         growth: {
           label: 'Growth',
+          months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
           series: {
             ebitdaMarginPlan:  [-0.46,-0.46,-0.40,-0.40,-0.35,-0.35,-0.30,-0.18,-0.09,-0.01,0.07,0.12],
             ebitdaMarginFact:  [0.09,-0.18,-0.31,-0.40,0,0,0,0,0,0,0,0],
@@ -461,21 +399,31 @@
             backOfficeFact:    [2280,3004,3880,3307,0,0,0,0,0,0,0,0],
             grossProfitPlan:   [6700,6700,7176,7176,7662,7662,8157,9658,11174,13216,15793,18396],
             grossProfitFact:   [9734,7132,4366,3891,0,0,0,0,0,0,0,0],
-            salesPlan:         [1,1,2,1,2,1,3,4,5,5,6,6],
+            salesPlan:         [1,1,1,1,2,1,3,4,5,5,6,6],
             salesFact:         [0,1,0,1,0,0,0,0,0,0,0,0],
             cashOnHand:        [30122,28220,23323,18369,0,0,0,0,0,0,0,0],
             cashRunway:        [4.14,3.2,3.3,2.8,0,0,0,0,0,0,0,0],
           },
-          totals: {
-            ebitdaMarginPlan: -0.16, ebitdaMarginFact: null,
-            ebitdaPlan: -38412, ebitdaFact: -14646,
-            clientServicePlan: 12724, clientServiceFact: 4240,
-            bdPlan: 98400, bdFact: 24504,
-            backOfficePlan: 37200, backOfficeFact: 12471,
-            grossProfitPlan: 119469, grossProfitFact: 25123,
-            salesPlan: 37, salesFact: 2,
-            cashOnHand: null, cashRunway: null,
-          }
+          totals: { ebitdaMarginPlan: -0.16, ebitdaMarginFact: null, ebitdaPlan: -38412, ebitdaFact: -14646,
+            clientServicePlan: 12724, clientServiceFact: null, bdPlan: 98400, bdFact: null,
+            backOfficePlan: 37200, backOfficeFact: null, grossProfitPlan: 119469, grossProfitFact: null,
+            salesPlan: 36, salesFact: null, cashOnHand: null, cashRunway: null }
+        },
+        channel: {
+          label: 'Channel',
+          months: ['1 мес','2 мес','3 мес','4 мес','5 мес','6 мес','7 мес','8 мес','9 мес','10 мес','11 мес','12 мес','13 мес','14 мес','15 мес','16 мес','17 мес','18 мес','19 мес','20 мес','21 мес','22 мес','23 мес','24 мес'],
+          series: {
+            // Investments DOWN (negative), returns UP (positive) — matches sheet sign convention
+            netInvestCumPlan:  [-6000,-12000,-18000,-24000,-30000,-36000,-41067,-44533,-46400,-46333,-44333,-40067,-33867,-25400,-15000,-2333,12267,29133,47600,67333,88000,109600,131800,154600],
+            netInvestCumFact:  [-1977,-6517,-10398,-14019,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            monthlyInvestPlan: [6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000],
+            monthlyInvestFact: [1977,4540,3881,3621,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            monthlyValuePlan:  [0,0,0,0,0,0,933,2533,4133,6067,8000,10267,12200,14467,16400,18667,20600,22667,24467,25733,26667,27600,28200,28800],
+            monthlyValueFact:  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            salesPlan:         [0,0,0,0,0,0,1,3,3,4,4,4,4,4,5,4,4,5,5,3,2,1,1,0],
+            salesFact:         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          },
+          totals: {}
         }
       }
     };
@@ -516,6 +464,10 @@
       if (n === null || n === undefined || isNaN(n)) return '—';
       return (n >= 0 ? '+' : '') + n.toFixed(1) + ' mo';
     };
+    const fmtMonthLabel = (n) => {
+      if (n === null || n === undefined || isNaN(n) || n < 0) return '—';
+      return 'M' + (Number.isInteger(n) ? n : n.toFixed(1));
+    };
 
     // ---------- Math ----------
     const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
@@ -524,39 +476,81 @@
     };
     function findLastFactMonth(scenario) {
       const s = scenario.series;
-      for (let i = 11; i >= 0; i--) {
-        if (
-          Math.abs(s.ebitdaFact[i])        > 0.001 ||
-          Math.abs(s.grossProfitFact[i])   > 0.001 ||
-          (s.salesFact[i] || 0)            > 0     ||
-          Math.abs(s.clientServiceFact[i]) > 0.001
-        ) return i;
+      const arrs = ['ebitdaFact','grossProfitFact','clientServiceFact','monthlyInvestFact','monthlyValueFact','salesFact'];
+      const length = (s.ebitdaFact || s.monthlyInvestFact || []).length;
+      for (let i = length - 1; i >= 0; i--) {
+        for (const key of arrs) {
+          if (s[key] && Math.abs(s[key][i]) > 0.001) return i;
+        }
       }
       return -1;
     }
     function findLastCashMonth(cashArr) {
-      for (let i = 11; i >= 0; i--) {
+      for (let i = cashArr.length - 1; i >= 0; i--) {
         if (Math.abs(cashArr[i]) > 0.001) return i;
       }
       return -1;
     }
-
     const MONTH_SHORT = {
       January:'Jan', February:'Feb', March:'Mar', April:'Apr',
       May:'May', June:'Jun', July:'Jul', August:'Aug',
       September:'Sep', October:'Oct', November:'Nov', December:'Dec'
     };
-    const shortMonth = (m) => MONTH_SHORT[String(m).trim()] || String(m).slice(0,3);
+    const shortMonth = (m) => MONTH_SHORT[String(m).trim()] || String(m).trim();
 
     function runwayColor(months) {
       if (months >= 6) return 'var(--c-pos)';
       if (months >= 3) return 'var(--c-warn)';
       return 'var(--c-neg)';
     }
-    function runwayDeltaClass(months) {
-      if (months >= 6) return 'pos';
-      if (months >= 3) return 'warn';
-      return 'neg';
+
+    // Find the three key channel points based on netInvestCumPlan.
+    // Sign convention: investments are NEGATIVE (cash out), returns POSITIVE (cash in).
+    // Peak = deepest hole (most negative), payback = zero-crossing upward.
+    function calcChannelPoints(series) {
+      const cum = series.netInvestCumPlan || [];
+      const invMonthly = series.monthlyInvestPlan || [];
+      const valMonthly = series.monthlyValuePlan || [];
+
+      // Peak investment: argmin (most negative = deepest hole)
+      let peakIdx = 0;
+      for (let i = 1; i < cum.length; i++) {
+        if (cum[i] < cum[peakIdx]) peakIdx = i;
+      }
+
+      // Operating breakeven: first month where monthly value >= monthly investment
+      // (monthly values stay positive in their own rows, so logic unchanged)
+      let opBreakIdx = -1;
+      for (let i = 0; i < Math.min(invMonthly.length, valMonthly.length); i++) {
+        if (valMonthly[i] >= invMonthly[i] && invMonthly[i] > 0) {
+          opBreakIdx = i;
+          break;
+        }
+      }
+
+      // Payback: where cum crosses zero from negative to positive (with linear interp)
+      let paybackIdx = -1;
+      let paybackInterp = -1;
+      for (let i = 1; i < cum.length; i++) {
+        if (cum[i - 1] <= 0 && cum[i] > 0) {
+          paybackIdx = i;
+          const fraction = -cum[i - 1] / (cum[i] - cum[i - 1]);
+          paybackInterp = (i - 1) + fraction + 1; // +1 → 1-indexed month
+          break;
+        }
+      }
+
+      // Net return at end (now directly positive in the data)
+      const lastIdx = cum.length - 1;
+      const netReturn = cum[lastIdx];
+
+      return {
+        peakIdx, peakMonth: peakIdx + 1,
+        peakValue: Math.abs(cum[peakIdx]),  // absolute, since KPI says "invested"
+        opBreakIdx, opBreakMonth: opBreakIdx + 1,
+        paybackIdx, paybackMonth: paybackInterp,
+        netReturn,
+      };
     }
 
     // ---------- State ----------
@@ -565,7 +559,7 @@
     const charts = new Map();
 
     function destroyCharts() {
-      charts.forEach(c => { try { c.destroy(); } catch(e){} });
+      charts.forEach(c => { try { c.destroy(); } catch (e) {} });
       charts.clear();
     }
 
@@ -578,9 +572,7 @@
     async function load() {
       const btn = document.querySelector('.refresh-btn');
       if (btn) { btn.disabled = true; btn.textContent = '… Loading'; }
-
       if (isDemoMode()) { dashboardData = DEMO_DATA; render(); return; }
-
       try {
         const res = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now());
         const data = await res.json();
@@ -599,45 +591,27 @@
       }
     }
 
-    // ---------- Render ----------
+    // ---------- Render dispatch ----------
     function render() {
       destroyCharts();
-
       const d = dashboardData;
       const scenario = d.scenarios[currentScenario];
+      const isChannel = currentScenario === 'channel';
       const isGrowth = currentScenario === 'growth';
-      const lastIdx = findLastFactMonth(scenario);
-      const monthsThrough = Math.max(lastIdx + 1, 0);
-
-      const ytd = {
-        ebitdaPlan:       sum(scenario.series.ebitdaPlan.slice(0, monthsThrough)),
-        ebitdaFact:       sum(scenario.series.ebitdaFact.slice(0, monthsThrough)),
-        grossProfitPlan:  sum(scenario.series.grossProfitPlan.slice(0, monthsThrough)),
-        grossProfitFact:  sum(scenario.series.grossProfitFact.slice(0, monthsThrough)),
-        salesPlan:        sum(scenario.series.salesPlan.slice(0, monthsThrough)),
-        salesFact:        sum(scenario.series.salesFact.slice(0, monthsThrough)),
-      };
-
-      const marginPlan = lastIdx >= 0 ? scenario.series.ebitdaMarginPlan[lastIdx] : 0;
-      const marginFact = lastIdx >= 0 ? scenario.series.ebitdaMarginFact[lastIdx] : 0;
-      const lastMonth  = lastIdx >= 0 ? shortMonth(d.months[lastIdx]) : '—';
-      const firstMonth = shortMonth(d.months[0]);
 
       const dateStamp = new Date(d.updatedAt).toLocaleDateString('en-US', {
         day: 'numeric', month: 'short', year: 'numeric'
       });
 
-      // Build scenario tabs
-      const tabs = ['baseline', 'growth'].map(name => {
+      const tabsHtml = ['baseline', 'growth', 'channel'].map(name => {
         const sc = d.scenarios[name];
         const active = name === currentScenario;
         return `<button class="tab ${active ? 'active' : ''}" onclick="setScenario('${name}')">
-          <span>${sc.label}</span>
-          <span class="tab-sub">${name === 'baseline' ? 'No invest' : 'With invest'}</span>
+          <span>${sc.label}</span><span class="tab-sub">${SCENARIO_SUBS[name]}</span>
         </button>`;
       }).join('');
 
-      document.getElementById('app').innerHTML = `
+      const headerHtml = `
         <header class="header">
           <div class="logo-section">
             <div class="logo">€</div>
@@ -649,12 +623,44 @@
             <button class="refresh-btn" onclick="load()">↻ Refresh</button>
           </div>
         </header>
-
         <div class="scenario-row">
-          <div class="scenario-tabs">${tabs}</div>
+          <div class="scenario-tabs">${tabsHtml}</div>
           <div class="scenario-caption">${SCENARIO_CAPTIONS[currentScenario]}</div>
-        </div>
+        </div>`;
 
+      const bodyHtml = isChannel
+        ? buildChannelBody(scenario)
+        : buildPLBody(d, scenario, isGrowth);
+
+      document.getElementById('app').innerHTML = headerHtml + bodyHtml;
+
+      if (isChannel) drawChannelCharts(scenario);
+      else drawPLCharts(d, scenario, isGrowth);
+    }
+
+    // ============================================================
+    //  P&L view (Baseline / Growth)
+    // ============================================================
+    function buildPLBody(d, scenario, isGrowth) {
+      const lastIdx = findLastFactMonth(scenario);
+      const monthsThrough = Math.max(lastIdx + 1, 0);
+      const months = scenario.months || d.months;
+      const s = scenario.series;
+
+      const ytd = {
+        ebitdaPlan:       sum(s.ebitdaPlan.slice(0, monthsThrough)),
+        ebitdaFact:       sum(s.ebitdaFact.slice(0, monthsThrough)),
+        grossProfitPlan:  sum(s.grossProfitPlan.slice(0, monthsThrough)),
+        grossProfitFact:  sum(s.grossProfitFact.slice(0, monthsThrough)),
+        salesPlan:        sum(s.salesPlan.slice(0, monthsThrough)),
+        salesFact:        sum(s.salesFact.slice(0, monthsThrough)),
+      };
+      const marginPlan = lastIdx >= 0 ? s.ebitdaMarginPlan[lastIdx] : 0;
+      const marginFact = lastIdx >= 0 ? s.ebitdaMarginFact[lastIdx] : 0;
+      const lastMonth  = lastIdx >= 0 ? shortMonth(months[lastIdx]) : '—';
+      const firstMonth = shortMonth(months[0]);
+
+      return `
         <div class="section-label">Key metrics · YTD ${firstMonth} — ${lastMonth} 2026 · ${scenario.label}</div>
         <div class="kpi-grid">
           ${kpiCard('EBITDA · YTD', fmtEur(ytd.ebitdaFact), fmtEur(ytd.ebitdaPlan), ytd.ebitdaFact, ytd.ebitdaPlan, fmtEurDelta, 'var(--c-ebitda)')}
@@ -662,9 +668,7 @@
           ${kpiCard('Gross Profit · YTD', fmtEur(ytd.grossProfitFact), fmtEur(ytd.grossProfitPlan), ytd.grossProfitFact, ytd.grossProfitPlan, fmtEurDelta, 'var(--c-gp)')}
           ${kpiCard('Sales · YTD', fmtInt(ytd.salesFact), fmtInt(ytd.salesPlan), ytd.salesFact, ytd.salesPlan, fmtIntDelta, 'var(--c-sales)')}
         </div>
-
         ${isGrowth ? renderCashSection(scenario) : ''}
-
         <div class="section-label">Cumulative trends · plan vs actual</div>
         <div class="charts-grid">
           ${chartCard('chart-margin',  'EBITDA Margin %',  'Monthly · plan vs actual',     '#7c3aed')}
@@ -672,7 +676,6 @@
           ${chartCard('chart-gp',      'Gross Profit',     'Cumulative · €',               '#0d9488')}
           ${chartCard('chart-sales',   'Sales',            'Cumulative · units',           '#2563eb')}
         </div>
-
         <div class="section-label">Cross-metric performance · how the three actuals move together</div>
         <div class="charts-grid">
           <div class="chart-card full-width">
@@ -687,59 +690,26 @@
             <div class="legend-chips" id="legend-cross"></div>
           </div>
         </div>
-
         <div class="section-label">Monthly breakdown · plan vs actual by month</div>
-        <div class="table-card"><div class="table-wrap">${buildTable(scenario, lastIdx, isGrowth)}</div></div>
-      `;
-
-      drawCharts(d, scenario, lastIdx);
-      if (isGrowth) drawCashChart(d, scenario);
-    }
-
-    function kpiCard(label, factStr, planStr, fact, plan, deltaFmt, accentColor, opts) {
-      opts = opts || {};
-      const delta = (fact || 0) - (plan || 0);
-      const isPositive = delta >= 0;
-      const pct = (plan && plan !== 0) ? (fact / plan) * 100 : 0;
-      const barWidth = Math.min(Math.max(pct, 0), 130);
-      const deltaCls = opts.deltaCls || (isPositive ? 'pos' : 'neg');
-      const planLabel = opts.planLabel || 'Plan';
-      const unit = opts.unit ? `<span class="unit">${opts.unit}</span>` : '';
-
-      return `
-        <div class="kpi-card" style="--accent: ${accentColor}">
-          <div class="kpi-label">${label}</div>
-          <div class="kpi-value">${factStr}${unit}</div>
-          <div class="kpi-meta">
-            <span class="kpi-plan">${planLabel} ${planStr}</span>
-            <span class="kpi-delta ${deltaCls}">${deltaFmt(delta)}</span>
-          </div>
-          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${barWidth}%"></div></div>
-        </div>`;
+        <div class="table-card"><div class="table-wrap">${buildPLTable(scenario, lastIdx, isGrowth)}</div></div>`;
     }
 
     function renderCashSection(scenario) {
       const cash = scenario.series.cashOnHand || [];
       const runway = scenario.series.cashRunway || [];
       const lastCashIdx = findLastCashMonth(cash);
-
       if (lastCashIdx < 0) return '';
 
       const currentCash = cash[lastCashIdx];
       const prevCash = lastCashIdx > 0 ? cash[lastCashIdx - 1] : currentCash;
       const cashDelta = currentCash - prevCash;
-
       const currentRunway = runway[lastCashIdx];
       const prevRunway = lastCashIdx > 0 ? runway[lastCashIdx - 1] : currentRunway;
       const runwayDelta = currentRunway - prevRunway;
-
-      const cashColor = cashDelta >= 0 ? 'var(--c-cash)' : 'var(--c-cash)';
       const rwColor = runwayColor(currentRunway);
-      const rwCls = runwayDeltaClass(currentRunway);
 
-      // Cash KPI — using prev month as "plan" for delta context
       const cashCard = `
-        <div class="kpi-card" style="--accent: ${cashColor}">
+        <div class="kpi-card" style="--accent: var(--c-cash)">
           <div class="kpi-label">Cash on hand · current</div>
           <div class="kpi-value">${fmtEur(currentCash)}</div>
           <div class="kpi-meta">
@@ -748,8 +718,6 @@
           </div>
           <div class="kpi-bar"><div class="kpi-bar-fill" style="width:100%"></div></div>
         </div>`;
-
-      // Runway KPI — color-coded threshold
       const runwayCard = `
         <div class="kpi-card" style="--accent: ${rwColor}">
           <div class="kpi-label">Cash Runway · months</div>
@@ -763,21 +731,296 @@
 
       return `
         <div class="section-label">Cash position · liquidity &amp; runway</div>
-        <div class="cash-grid">
-          ${cashCard}
-          ${runwayCard}
-        </div>
+        <div class="cash-grid">${cashCard}${runwayCard}</div>
         <div class="charts-grid">
           <div class="chart-card full-width">
             <div class="chart-header">
               <div>
                 <div class="chart-title">Cash trajectory</div>
-                <div class="chart-subtitle">Cash on hand by month · dashed line = projection at recent burn rate</div>
+                <div class="chart-subtitle">Cash on hand by month · dashed = projection at recent burn rate</div>
               </div>
               <span class="chart-tag" style="background: #cffafe; color: #0891b2;">Burn rate</span>
             </div>
             <div class="chart-wrap"><canvas id="chart-cash"></canvas></div>
           </div>
+        </div>`;
+    }
+
+    // ============================================================
+    //  Channel view (J-curve)
+    // ============================================================
+    function buildChannelBody(scenario) {
+      const points = calcChannelPoints(scenario.series);
+      const months = scenario.months;
+      const s = scenario.series;
+      const lastFactIdx = findLastFactMonth(scenario);
+
+      const kpis = `
+        <div class="kpi-grid">
+          ${channelKpiCard('Peak investment', fmtEur(points.peakValue), points.peakIdx >= 0 ? ('Month ' + points.peakMonth) : '—', 'Max capital at risk', 'var(--c-ebitda)', 'warn')}
+          ${channelKpiCard('Operating B/E', fmtMonthLabel(points.opBreakMonth), points.opBreakIdx >= 0 ? 'Channel covers monthly cost' : 'Not within horizon', 'Self-sustaining point', 'var(--c-warn)', 'neutral')}
+          ${channelKpiCard('Payback', fmtMonthLabel(points.paybackMonth), points.paybackMonth > 0 ? ('Cumulative net hits zero') : 'Not within horizon', 'Full investment recovery', 'var(--c-pos)', 'pos')}
+          ${channelKpiCard('Net return · M' + months.length, fmtEur(points.netReturn), 'After recovery of investment', 'Total value created', 'var(--c-channel)', points.netReturn >= 0 ? 'pos' : 'neg')}
+        </div>`;
+
+      return `
+        <div class="section-label">Channel ROI · key inflection points</div>
+        ${kpis}
+
+        <div class="section-label">J-curve · cumulative net investment position</div>
+        <div class="charts-grid">
+          <div class="chart-card full-width">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">Net cash position from channel</div>
+                <div class="chart-subtitle">Positive = still invested · zero crossing = payback · negative = pure return</div>
+              </div>
+              <span class="chart-tag" style="background: #fce7f3; color: #be185d;">24-month projection</span>
+            </div>
+            <div class="chart-wrap"><canvas id="chart-jcurve"></canvas></div>
+            <div class="legend-chips">
+              <div class="chip"><div class="chip-dot" style="background: var(--c-ebitda)"></div><span class="chip-label">Peak (M${points.peakMonth})</span><span class="chip-value" style="color: var(--c-ebitda)">${fmtEur(points.peakValue)}</span></div>
+              <div class="chip"><div class="chip-dot" style="background: var(--c-warn)"></div><span class="chip-label">Op B/E</span><span class="chip-value" style="color: var(--c-warn)">${fmtMonthLabel(points.opBreakMonth)}</span></div>
+              <div class="chip"><div class="chip-dot" style="background: var(--c-pos)"></div><span class="chip-label">Payback</span><span class="chip-value" style="color: var(--c-pos)">${fmtMonthLabel(points.paybackMonth)}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Cumulative trends · plan vs actual</div>
+        <div class="charts-grid three-col">
+          ${chartCard('chart-ch-invest', 'Investments', 'Cumulative · €', '#ea580c')}
+          ${chartCard('chart-ch-value',  'Channel value (Gross Margin)', 'Cumulative · €', '#0d9488')}
+          ${chartCard('chart-ch-sales',  'Channel sales', 'Cumulative · units', '#2563eb')}
+        </div>
+
+        <div class="section-label">Monthly breakdown · 24 months</div>
+        <div class="table-card"><div class="table-wrap">${buildChannelTable(scenario, lastFactIdx)}</div></div>`;
+    }
+
+    function channelKpiCard(label, bigValue, subLine, secondaryLabel, accentColor, deltaCls) {
+      return `
+        <div class="kpi-card" style="--accent: ${accentColor}">
+          <div class="kpi-label">${label}</div>
+          <div class="kpi-value" style="font-size: 42px;">${bigValue}</div>
+          <div class="kpi-meta">
+            <span class="kpi-plan">${secondaryLabel}</span>
+            <span class="kpi-delta ${deltaCls}">${subLine}</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:100%"></div></div>
+        </div>`;
+    }
+
+    function buildChannelTable(scenario, lastFactIdx) {
+      const months = scenario.months;
+      const s = scenario.series;
+      const monthHead = months.map(mo => `<th>${mo}</th>`).join('');
+
+      const row = (label, arr, fmt, isFact = false, accent = '#be185d') => {
+        const cells = arr.map((v, i) => {
+          if (isFact && i > lastFactIdx) return `<td class="cell-future">—</td>`;
+          return `<td>${fmt(v)}</td>`;
+        }).join('');
+        const total = arr.reduce((a, b) => a + (Number(b) || 0), 0);
+        const rowStyle = `style="--accent: ${accent}"`;
+        return `<tr class="${isFact ? 'fact' : 'plan'}" ${rowStyle}>
+          <td>${label} · ${isFact ? 'Actual' : 'Plan'}</td>${cells}
+          <td class="total-col">${fmt(total)}</td>
+        </tr>`;
+      };
+
+      const group = (title, accentColor, rowsHtml) =>
+        `<tr class="group-header"><td colspan="${months.length + 2}"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
+
+      // Cumulative net plan/fact rows (negative = invested, positive = returned)
+      const cumNetRow = (label, arr, isFact = false) => {
+        const cells = arr.map((v, i) => {
+          if (isFact && i > lastFactIdx) return `<td class="cell-future">—</td>`;
+          const cls = v < 0 ? 'cell-neg' : (v > 0 ? 'cell-pos' : '');
+          return `<td class="${cls}">${fmtEur(v)}</td>`;
+        }).join('');
+        const last = arr[arr.length - 1];
+        return `<tr class="${isFact ? 'fact' : 'plan'}" style="--accent: var(--c-channel)">
+          <td>${label} · ${isFact ? 'Actual' : 'Plan'}</td>${cells}
+          <td class="total-col">${fmtEur(last)}</td>
+        </tr>`;
+      };
+
+      return `<table class="wide">
+        <thead><tr><th>Metric</th>${monthHead}<th class="total-col">Total</th></tr></thead>
+        <tbody>
+          ${group('Monthly investments', '#ea580c',
+            row('Investments', s.monthlyInvestPlan, fmtEur, false, '#ea580c') +
+            row('Investments', s.monthlyInvestFact, fmtEur, true,  '#ea580c'))}
+          ${group('Channel value · gross margin', '#0d9488',
+            row('Value', s.monthlyValuePlan, fmtEur, false, '#0d9488') +
+            row('Value', s.monthlyValueFact, fmtEur, true,  '#0d9488'))}
+          ${group('Sales (units)', '#2563eb',
+            row('Sales', s.salesPlan, fmtInt, false, '#2563eb') +
+            row('Sales', s.salesFact, fmtInt, true,  '#2563eb'))}
+          ${group('Cumulative net position', '#be185d',
+            cumNetRow('Net invested', s.netInvestCumPlan, false) +
+            cumNetRow('Net invested', s.netInvestCumFact, true))}
+        </tbody>
+      </table>`;
+    }
+
+    function drawChannelCharts(scenario) {
+      const labels = scenario.months;
+      const s = scenario.series;
+      const points = calcChannelPoints(s);
+      const lastFactIdx = findLastFactMonth(scenario);
+
+      // ===== J-curve main chart =====
+      const factWithGap = s.netInvestCumFact.map((v, i) => i <= lastFactIdx ? v : null);
+
+      // Build annotations for the 3 key points
+      const annotations = {
+        zeroLine: {
+          type: 'line', yMin: 0, yMax: 0,
+          borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1, borderDash: [3, 4],
+        },
+        peakLine: {
+          type: 'line',
+          xMin: points.peakIdx, xMax: points.peakIdx,
+          borderColor: '#ea580c', borderWidth: 1.5, borderDash: [4, 4],
+          label: {
+            display: true,
+            content: `Peak · M${points.peakMonth}`,
+            position: 'start',
+            backgroundColor: '#ea580c', color: '#fff',
+            font: { size: 10, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            padding: { top: 4, bottom: 4, left: 8, right: 8 },
+            borderRadius: 4, yAdjust: 0,
+          }
+        }
+      };
+      if (points.opBreakIdx >= 0) {
+        annotations.opBreakLine = {
+          type: 'line',
+          xMin: points.opBreakIdx, xMax: points.opBreakIdx,
+          borderColor: '#d97706', borderWidth: 1.5, borderDash: [4, 4],
+          label: {
+            display: true,
+            content: `Op B/E · M${points.opBreakMonth}`,
+            position: 'start', yAdjust: 24,
+            backgroundColor: '#d97706', color: '#fff',
+            font: { size: 10, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            padding: { top: 4, bottom: 4, left: 8, right: 8 },
+            borderRadius: 4,
+          }
+        };
+      }
+      if (points.paybackIdx >= 0) {
+        annotations.paybackLine = {
+          type: 'line',
+          xMin: points.paybackIdx, xMax: points.paybackIdx,
+          borderColor: '#16a34a', borderWidth: 1.5, borderDash: [4, 4],
+          label: {
+            display: true,
+            content: `Payback · ${fmtMonthLabel(points.paybackMonth)}`,
+            position: 'end',
+            backgroundColor: '#16a34a', color: '#fff',
+            font: { size: 10, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            padding: { top: 4, bottom: 4, left: 8, right: 8 },
+            borderRadius: 4,
+          }
+        };
+      }
+
+      const jctx = document.getElementById('chart-jcurve');
+      if (jctx) {
+        const chart = new Chart(jctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Plan',
+                data: s.netInvestCumPlan,
+                borderColor: '#be185d',
+                fill: {
+                  target: 'origin',
+                  above: 'rgba(22, 163, 74, 0.18)',  // green above zero (recovery)
+                  below: 'rgba(220, 38, 38, 0.10)',  // red below zero (investment)
+                },
+                borderWidth: 2.5,
+                tension: 0.32,
+                pointRadius: 0, pointHoverRadius: 6,
+                pointBackgroundColor: '#be185d', pointBorderColor: '#fff', pointBorderWidth: 2,
+              },
+              {
+                label: 'Actual',
+                data: factWithGap,
+                borderColor: '#7c1d4d',
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                tension: 0.32,
+                pointRadius: 4, pointHoverRadius: 7,
+                pointBackgroundColor: '#7c1d4d', pointBorderColor: '#fff', pointBorderWidth: 2,
+                fill: false, spanGaps: false,
+              }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              annotation: { annotations: annotations },
+              legend: {
+                display: true, position: 'top', align: 'end',
+                labels: {
+                  color: '#6e6b66',
+                  font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+                  usePointStyle: true, pointStyle: 'line',
+                  boxWidth: 18, boxHeight: 2, padding: 14,
+                }
+              },
+              tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmtEur(c.parsed.y)}`),
+            },
+            scales: chartScales((v) => fmtEur(v))
+          }
+        });
+        charts.set('chart-jcurve', chart);
+      }
+
+      // ===== Three smaller cumulative charts =====
+      const drawPair = (canvasId, planArr, factArr, color, fmt) => {
+        const factWithGap = factArr.map((v, i) => i <= lastFactIdx ? v : null);
+        drawLineChart(canvasId, labels, [
+          { label: 'Plan',   data: planArr,     color: color, alpha: 0.32, dashed: true },
+          { label: 'Actual', data: factWithGap, color: color, alpha: 1.0,  dashed: false }
+        ], fmt);
+      };
+
+      drawPair('chart-ch-invest',
+        cumulative(s.monthlyInvestPlan), cumulative(s.monthlyInvestFact),
+        '#ea580c', (v) => fmtEur(v));
+      drawPair('chart-ch-value',
+        cumulative(s.monthlyValuePlan), cumulative(s.monthlyValueFact),
+        '#0d9488', (v) => fmtEur(v));
+      drawPair('chart-ch-sales',
+        cumulative(s.salesPlan), cumulative(s.salesFact),
+        '#2563eb', (v) => Math.round(v) + ' u');
+    }
+
+    // ============================================================
+    //  Shared helpers
+    // ============================================================
+    function kpiCard(label, factStr, planStr, fact, plan, deltaFmt, accentColor) {
+      const delta = (fact || 0) - (plan || 0);
+      const isPositive = delta >= 0;
+      const pct = (plan && plan !== 0) ? (fact / plan) * 100 : 0;
+      const barWidth = Math.min(Math.max(pct, 0), 130);
+      return `
+        <div class="kpi-card" style="--accent: ${accentColor}">
+          <div class="kpi-label">${label}</div>
+          <div class="kpi-value">${factStr}</div>
+          <div class="kpi-meta">
+            <span class="kpi-plan">Plan ${planStr}</span>
+            <span class="kpi-delta ${isPositive ? 'pos' : 'neg'}">${deltaFmt(delta)}</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${barWidth}%"></div></div>
         </div>`;
     }
 
@@ -795,11 +1038,12 @@
         </div>`;
     }
 
-    function buildTable(scenario, lastIdx, isGrowth) {
-      const m = dashboardData.months;
+    function buildPLTable(scenario, lastIdx, isGrowth) {
+      const months = scenario.months || dashboardData.months;
       const s = scenario.series;
       const t = scenario.totals;
-      const monthHead = m.map(mo => `<th>${shortMonth(mo)}</th>`).join('');
+      const monthHead = months.map(mo => `<th>${shortMonth(mo)}</th>`).join('');
+      const tf = (val, arr) => val || sum(arr);
 
       const renderRow = (label, planArr, factArr, planTotal, factTotal, fmt, isCost = false, isFact = false, accent = '') => {
         const cells = (isFact ? factArr : planArr).map((v, i) => {
@@ -815,7 +1059,6 @@
           }
           return `<td>${fmt(v)}</td>`;
         }).join('');
-
         const total = isFact ? factTotal : planTotal;
         const rowStyle = accent ? `style="--accent: ${accent}"` : '';
         return `<tr class="${isFact ? 'fact' : 'plan'}" ${rowStyle}>
@@ -825,19 +1068,15 @@
       };
 
       const group = (title, accentColor, rowsHtml) =>
-        `<tr class="group-header"><td colspan="14"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
+        `<tr class="group-header"><td colspan="${months.length + 2}"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
 
       const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '') =>
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, false, accent) +
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent);
 
-      // Fact totals — always compute from monthly data, since sheet's SUM
-      // formulas in column N are not consistently set for every fact row.
-      const tf = (val, arr) => val || sum(arr);
       const sPT = t.salesPlan || sum(s.salesPlan);
       const sFT = tf(t.salesFact, s.salesFact);
 
-      // Build cash rows for Growth scenario
       let cashSection = '';
       if (isGrowth && s.cashOnHand) {
         const cashLastIdx = findLastCashMonth(s.cashOnHand);
@@ -879,8 +1118,10 @@
       </table>`;
     }
 
-    function drawCharts(d, scenario, lastIdx) {
-      const labels = d.months.map(shortMonth);
+    function drawPLCharts(d, scenario, isGrowth) {
+      const labels = (scenario.months || d.months).map(shortMonth);
+      const s = scenario.series;
+      const lastIdx = findLastFactMonth(scenario);
 
       const drawPair = (canvasId, planArr, factArr, color, fmt) => {
         const factWithGap = factArr.map((v, i) => i <= lastIdx ? v : null);
@@ -890,67 +1131,67 @@
         ], fmt);
       };
 
-      const planMargin = scenario.series.ebitdaMarginPlan.map(v => v * 100);
-      const factMargin = scenario.series.ebitdaMarginFact.map(v => v * 100);
+      const planMargin = s.ebitdaMarginPlan.map(v => v * 100);
+      const factMargin = s.ebitdaMarginFact.map(v => v * 100);
       drawPair('chart-margin', planMargin, factMargin, '#7c3aed', v => v.toFixed(1) + '%');
-      drawPair('chart-ebitda', cumulative(scenario.series.ebitdaPlan), cumulative(scenario.series.ebitdaFact),
-               '#ea580c', v => '€' + Math.round(v).toLocaleString('en-US'));
-      drawPair('chart-gp', cumulative(scenario.series.grossProfitPlan), cumulative(scenario.series.grossProfitFact),
-               '#0d9488', v => '€' + Math.round(v).toLocaleString('en-US'));
-      drawPair('chart-sales', cumulative(scenario.series.salesPlan), cumulative(scenario.series.salesFact),
+      drawPair('chart-ebitda', cumulative(s.ebitdaPlan), cumulative(s.ebitdaFact),
+               '#ea580c', v => fmtEur(v));
+      drawPair('chart-gp', cumulative(s.grossProfitPlan), cumulative(s.grossProfitFact),
+               '#0d9488', v => fmtEur(v));
+      drawPair('chart-sales', cumulative(s.salesPlan), cumulative(s.salesFact),
                '#2563eb', v => Math.round(v) + ' u');
 
       drawCrossMetric(d, scenario, lastIdx, labels);
+      if (isGrowth) drawCashChart(d, scenario);
     }
 
     function drawCrossMetric(d, scenario, lastIdx, labels) {
       const annualSales  = sum(scenario.series.salesPlan);
       const annualGP     = sum(scenario.series.grossProfitPlan);
       const annualEbitda = sum(scenario.series.ebitdaPlan);
-
       const cumSales = cumulative(scenario.series.salesFact);
       const cumGP    = cumulative(scenario.series.grossProfitFact);
       const cumE     = cumulative(scenario.series.ebitdaFact);
-
       const pctOf = (arr, total) => arr.map((v, i) =>
         (i <= lastIdx && total) ? (v / total) * 100 : null);
-
       const salesPct  = pctOf(cumSales,  annualSales);
       const gpPct     = pctOf(cumGP,     annualGP);
       const ebitdaPct = pctOf(cumE,      annualEbitda);
-      const linearPace = labels.map((_, i) => Math.round(((i + 1) / 12) * 100 * 10) / 10);
+      const linearPace = labels.map((_, i) => Math.round(((i + 1) / labels.length) * 100 * 10) / 10);
 
       const ctx = document.getElementById('chart-cross');
       if (!ctx) return;
-
       const datasets = [
-        { label: 'Sales',        data: salesPct,   color: '#2563eb', dashed: false, isRef: false },
-        { label: 'Gross Profit', data: gpPct,      color: '#0d9488', dashed: false, isRef: false },
-        { label: 'EBITDA',       data: ebitdaPct,  color: '#ea580c', dashed: false, isRef: false },
-        { label: 'Linear pace',  data: linearPace, color: '#a8a59f', dashed: true,  isRef: true  },
+        { label: 'Sales',        data: salesPct,   color: '#2563eb' },
+        { label: 'Gross Profit', data: gpPct,      color: '#0d9488' },
+        { label: 'EBITDA',       data: ebitdaPct,  color: '#ea580c' },
+        { label: 'Linear pace',  data: linearPace, color: '#a8a59f', dashed: true, isRef: true },
       ];
-
       const chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: datasets.map(ds => ({
-            label: ds.label,
-            data: ds.data,
-            borderColor: ds.color,
-            backgroundColor: ds.color + '14',
+            label: ds.label, data: ds.data,
+            borderColor: ds.color, backgroundColor: ds.color + '14',
             borderWidth: ds.isRef ? 1.5 : 2.5,
             borderDash: ds.dashed ? [4, 4] : [],
             tension: 0.32,
-            pointRadius: ds.isRef ? 0 : 3,
-            pointHoverRadius: ds.isRef ? 0 : 6,
-            pointBackgroundColor: ds.color,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
+            pointRadius: ds.isRef ? 0 : 3, pointHoverRadius: ds.isRef ? 0 : 6,
+            pointBackgroundColor: ds.color, pointBorderColor: '#fff', pointBorderWidth: 2,
             fill: false, spanGaps: false,
           }))
         },
-        options: chartOptions((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : c.parsed.y.toFixed(1) + '%'}`, (v) => v + '%')
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : c.parsed.y.toFixed(1) + '%'}`),
+          },
+          scales: chartScales((v) => v + '%')
+        }
       });
       charts.set('chart-cross', chart);
 
@@ -975,14 +1216,9 @@
       const cash = scenario.series.cashOnHand;
       const lastCashIdx = findLastCashMonth(cash);
       if (lastCashIdx < 0) return;
-
-      const labels = d.months.map(shortMonth);
-
-      // Actual data points up to lastCashIdx
+      const labels = (scenario.months || d.months).map(shortMonth);
       const actualLine = cash.map((v, i) => i <= lastCashIdx ? v : null);
 
-      // Projection: linear extrapolation from recent burn rate
-      // Use the avg of the last 2-3 months of change
       let recentBurn = 0;
       const window = Math.min(3, lastCashIdx);
       if (window >= 1) {
@@ -992,71 +1228,46 @@
         }
         recentBurn = total / window;
       }
-
       const projectionLine = labels.map((_, i) => {
         if (i < lastCashIdx) return null;
         if (i === lastCashIdx) return cash[lastCashIdx];
-        const projected = cash[lastCashIdx] + recentBurn * (i - lastCashIdx);
-        return projected;
+        return cash[lastCashIdx] + recentBurn * (i - lastCashIdx);
       });
-
-      // Zero line for reference
       const zeroLine = labels.map(() => 0);
 
       const ctx = document.getElementById('chart-cash');
       if (!ctx) return;
-
       const chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: [
-            {
-              label: 'Actual',
-              data: actualLine,
-              borderColor: '#0891b2',
-              backgroundColor: '#0891b220',
-              borderWidth: 2.5,
-              tension: 0.3,
-              pointRadius: 4,
-              pointHoverRadius: 7,
-              pointBackgroundColor: '#0891b2',
-              pointBorderColor: '#ffffff',
-              pointBorderWidth: 2,
-              fill: true,
-              spanGaps: false,
-            },
-            {
-              label: 'Projection',
-              data: projectionLine,
-              borderColor: '#0891b2',
-              backgroundColor: 'transparent',
-              borderWidth: 1.8,
-              borderDash: [5, 4],
-              tension: 0.3,
-              pointRadius: 0,
-              pointHoverRadius: 0,
-              fill: false,
-              spanGaps: false,
-            },
-            {
-              label: 'Zero',
-              data: zeroLine,
-              borderColor: '#dc262640',
-              backgroundColor: 'transparent',
-              borderWidth: 1,
-              borderDash: [2, 4],
-              tension: 0,
-              pointRadius: 0,
-              pointHoverRadius: 0,
-              fill: false,
-            },
+            { label: 'Actual', data: actualLine, borderColor: '#0891b2',
+              backgroundColor: '#0891b220', borderWidth: 2.5, tension: 0.3,
+              pointRadius: 4, pointHoverRadius: 7,
+              pointBackgroundColor: '#0891b2', pointBorderColor: '#fff', pointBorderWidth: 2,
+              fill: true, spanGaps: false },
+            { label: 'Projection', data: projectionLine, borderColor: '#0891b2',
+              backgroundColor: 'transparent', borderWidth: 1.8, borderDash: [5, 4],
+              tension: 0.3, pointRadius: 0, fill: false, spanGaps: false },
+            { label: 'Zero', data: zeroLine, borderColor: '#dc262640',
+              backgroundColor: 'transparent', borderWidth: 1, borderDash: [2, 4],
+              tension: 0, pointRadius: 0, fill: false },
           ]
         },
-        options: chartOptions(
-          (c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : '€' + Math.round(c.parsed.y).toLocaleString('en-US')}`,
-          (v) => '€' + Math.round(v).toLocaleString('en-US')
-        )
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 800, easing: 'easeOutQuart' },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmtEur(c.parsed.y)}`),
+              filter: (item) => item.dataset.label !== 'Zero',
+            }
+          },
+          scales: chartScales((v) => fmtEur(v))
+        }
       });
       charts.set('chart-cash', chart);
     }
@@ -1069,72 +1280,62 @@
         data: {
           labels,
           datasets: datasets.map(ds => ({
-            label: ds.label,
-            data: ds.data,
+            label: ds.label, data: ds.data,
             borderColor: ds.color + (ds.alpha < 1 ? Math.round(ds.alpha * 255).toString(16).padStart(2,'0') : ''),
             backgroundColor: ds.color + '12',
             borderWidth: ds.dashed ? 1.8 : 2.5,
             borderDash: ds.dashed ? [5, 4] : [],
             tension: 0.32,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: ds.color,
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
+            pointRadius: 0, pointHoverRadius: 6,
+            pointBackgroundColor: ds.color, pointBorderColor: '#fff', pointBorderWidth: 2,
             fill: false, spanGaps: false,
           }))
         },
-        options: chartOptions(
-          (c) => `  ${c.dataset.label}: ${fmt(c.parsed.y)}`,
-          (v) => fmt(v),
-          true
-        )
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 800, easing: 'easeOutQuart' },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: true, position: 'top', align: 'end',
+              labels: {
+                color: '#6e6b66',
+                font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+                usePointStyle: true, pointStyle: 'line',
+                boxWidth: 18, boxHeight: 2, padding: 14,
+              }
+            },
+            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${fmt(c.parsed.y)}`)
+          },
+          scales: chartScales((v) => fmt(v))
+        }
       });
       charts.set(canvasId, chart);
     }
 
-    function chartOptions(tooltipLabelFn, yTickFn, showLegend) {
+    function tooltipConfig(labelFn) {
       return {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 800, easing: 'easeOutQuart' },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: showLegend ? {
-            display: true, position: 'top', align: 'end',
-            labels: {
-              color: '#6e6b66',
-              font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
-              usePointStyle: true, pointStyle: 'line',
-              boxWidth: 18, boxHeight: 2, padding: 14,
-              filter: (item) => item.text !== 'Zero',
-            }
-          } : { display: false },
-          tooltip: {
-            backgroundColor: '#ffffff',
-            titleColor: '#1a1a1a', bodyColor: '#1a1a1a',
-            borderColor: '#e3dfd6', borderWidth: 1,
-            padding: 12, cornerRadius: 6, displayColors: true,
-            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '700' },
-            bodyFont:  { family: "'JetBrains Mono', monospace", size: 11 },
-            filter: (item) => item.dataset.label !== 'Zero',
-            callbacks: { label: tooltipLabelFn }
-          }
+        backgroundColor: '#ffffff',
+        titleColor: '#1a1a1a', bodyColor: '#1a1a1a',
+        borderColor: '#e3dfd6', borderWidth: 1,
+        padding: 12, cornerRadius: 6, displayColors: true,
+        titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '700' },
+        bodyFont:  { family: "'JetBrains Mono', monospace", size: 11 },
+        callbacks: { label: labelFn }
+      };
+    }
+
+    function chartScales(yTickFn) {
+      return {
+        x: {
+          grid: { display: false },
+          border: { color: '#e3dfd6' },
+          ticks: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' }, maxRotation: 0, autoSkip: true }
         },
-        scales: {
-          x: {
-            grid: { display: false },
-            border: { color: '#e3dfd6' },
-            ticks: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' } }
-          },
-          y: {
-            grid: { color: '#ece8df' },
-            border: { display: false },
-            ticks: {
-              color: '#6e6b66',
-              font: { family: "'JetBrains Mono', monospace", size: 10 },
-              callback: (v) => yTickFn(v)
-            }
-          }
+        y: {
+          grid: { color: '#ece8df' },
+          border: { display: false },
+          ticks: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: yTickFn }
         }
       };
     }
