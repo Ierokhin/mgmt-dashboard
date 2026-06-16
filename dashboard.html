@@ -126,7 +126,9 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .wk-table tr.wk-plan td { color:var(--text-muted); }
 .wk-table tr.wk-fact td { color:var(--text); font-weight:500; }
 .wk-table tr.wk-fact td:first-child { color:var(--text-dim); }
-.wk-table tr.wk-conv td { color:var(--text-faint); font-style:italic; }
+.wk-table tr.wk-conv td { font-style:italic; }
+.wk-table tr.wk-conv td:first-child { color:var(--text-faint); }
+.wk-table tr.wk-plan.wk-conv td { color:var(--text-faint); }
 .wk-table tr.wk-group td { background:var(--surface2); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); padding:6px 14px; }
 .wk-cell-good { color:var(--green)!important; }
 .wk-cell-bad { color:var(--red)!important; }
@@ -422,12 +424,13 @@ function buildWeekly(rows, currentMonth){
     const planCells = plan.map(v=>`<td>${fmtV(v,r.fmt)}</td>`).join('');
     const factCells = fact.map((v,i)=>{
       if(v==null) return `<td class="cv-zero">—</td>`;
-      if(isPct) return `<td>${fmtV(v,r.fmt)}</td>`;
       const good = plan[i]!=null && v>=plan[i];
       return `<td class="${good?'wk-cell-good':'wk-cell-bad'}">${fmtV(v,r.fmt)}</td>`;
     }).join('');
+    const totGood = (planTot!=null && factTot!=null) ? factTot>=planTot : null;
+    const totCls = totGood==null ? '' : (totGood?'wk-cell-good':'wk-cell-bad');
     body += `<tr class="wk-plan ${isPct?'wk-conv':''}"><td>${r.label} · plan</td>${planCells}<td class="wk-tot">${fmtV(planTot,r.fmt)}</td></tr>`;
-    body += `<tr class="wk-fact ${isPct?'wk-conv':''}"><td>${r.label} · actual</td>${factCells}<td class="wk-tot">${fmtV(factTot,r.fmt)}</td></tr>`;
+    body += `<tr class="wk-fact ${isPct?'wk-conv':''}"><td>${r.label} · actual</td>${factCells}<td class="wk-tot ${totCls}">${fmtV(factTot,r.fmt)}</td></tr>`;
   });
   document.getElementById('weekly-table').innerHTML = head + '<tbody>'+body+'</tbody>';
 }
