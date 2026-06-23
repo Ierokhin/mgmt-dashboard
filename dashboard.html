@@ -411,11 +411,16 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
    ══════════════════════════════════════════════════════ */
 function buildWeekly(rows, currentMonth, currentWeek){
   document.getElementById('weekly-month').textContent = M_NAMES[currentMonth] + ' 2025';
-  const cw = currentWeek || 0;   // 1-4, 0 = none
-  const hl = w => (w===cw) ? ' class="wk-now"' : '';
+  /* highlight = last week index (0-3) that has any actual value across all rows */
+  let cw = -1;
+  rows.forEach(r=>{
+    const fact = (r.data && r.data.fact) || [];
+    for(let i=0;i<4;i++){ if(fact[i]!=null && i>cw) cw=i; }
+  });
+  const hl = i => (i===cw) ? ' class="wk-now"' : '';
   const head = `<thead><tr>
       <th>Metric</th>
-      <th${hl(1)}>Week 1</th><th${hl(2)}>Week 2</th><th${hl(3)}>Week 3</th><th${hl(4)}>Week 4</th>
+      <th${hl(0)}>Week 1</th><th${hl(1)}>Week 2</th><th${hl(2)}>Week 3</th><th${hl(3)}>Week 4</th>
       <th>Total</th>
     </tr></thead>`;
   const fmtV = (v,fmt) => v==null ? '—' : (fmt==='pct' ? v.toFixed(1)+'%' : (fmt==='dec1' ? v.toFixed(1) : Math.round(v)));
@@ -427,17 +432,18 @@ function buildWeekly(rows, currentMonth, currentWeek){
     const sum = arr => { const f=arr.filter(v=>v!=null); return f.length?f.reduce((a,b)=>a+b,0):null; };
     const planTot = isPct ? (plan.filter(v=>v!=null).length? plan.filter(v=>v!=null).reduce((a,b)=>a+b,0)/plan.filter(v=>v!=null).length : null) : sum(plan);
     const factTot = isPct ? (fact.filter(v=>v!=null).length? fact.filter(v=>v!=null).reduce((a,b)=>a+b,0)/fact.filter(v=>v!=null).length : null) : sum(fact);
-    const nowCls = i => (i+1===cw) ? 'wk-now' : '';
+    const nowCls = i => (i===cw) ? 'wk-now' : '';
+    const factFmt = r.factFmt || r.fmt;
     const planCells = plan.map((v,i)=>`<td class="${nowCls(i)}">${fmtV(v,r.fmt)}</td>`).join('');
     const factCells = fact.map((v,i)=>{
       if(v==null) return `<td class="cv-zero ${nowCls(i)}">—</td>`;
       const good = plan[i]!=null && v>=plan[i];
-      return `<td class="${good?'wk-cell-good':'wk-cell-bad'} ${nowCls(i)}">${fmtV(v,r.fmt)}</td>`;
+      return `<td class="${good?'wk-cell-good':'wk-cell-bad'} ${nowCls(i)}">${fmtV(v,factFmt)}</td>`;
     }).join('');
     const totGood = (planTot!=null && factTot!=null) ? factTot>=planTot : null;
     const totCls = totGood==null ? '' : (totGood?'wk-cell-good':'wk-cell-bad');
     body += `<tr class="wk-plan ${isPct?'wk-conv':''}"><td>${r.label} · plan</td>${planCells}<td class="wk-tot">${fmtV(planTot,r.fmt)}</td></tr>`;
-    body += `<tr class="wk-fact ${isPct?'wk-conv':''}"><td>${r.label} · actual</td>${factCells}<td class="wk-tot ${totCls}">${fmtV(factTot,r.fmt)}</td></tr>`;
+    body += `<tr class="wk-fact ${isPct?'wk-conv':''}"><td>${r.label} · actual</td>${factCells}<td class="wk-tot ${totCls}">${fmtV(factTot,factFmt)}</td></tr>`;
   });
   document.getElementById('weekly-table').innerHTML = head + '<tbody>'+body+'</tbody>';
 }
@@ -534,7 +540,7 @@ function renderStandard(d){
       {label:'Inquiries',     data:d.weekly.inquires,   fmt:'num'},
       {label:'Leads',         data:d.weekly.leads,      fmt:'num'},
       {label:'Calls',         data:d.weekly.calls,      fmt:'num'},
-      {label:'Sales',         data:d.weekly.sales,      fmt:'dec1'},
+      {label:'Sales',         data:d.weekly.sales,      fmt:'dec1', factFmt:'num'},
     ], d.currentMonth, d.currentWeek);
   } else {
     wkSection.style.display='none';
