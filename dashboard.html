@@ -118,6 +118,8 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .cmp-bar-track > i { position:absolute; left:0; top:0; height:100%; border-radius:3px; }
 
 /* WEEKLY TABLE */
+.wk-table th.wk-now { background:#E6F1FB; color:var(--blue); border-radius:6px 6px 0 0; }
+.wk-table td.wk-now { background:#E6F1FB; }
 .wk-table { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; }
 .wk-table th { background:var(--surface2); padding:9px 14px; text-align:center; color:var(--text-muted); font-weight:500; font-size:10px; letter-spacing:.5px; border-bottom:1px solid var(--border); }
 .wk-table th:first-child { text-align:left; width:230px; }
@@ -407,12 +409,16 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
    rows: [{label, data:{plan:[4], fact:[4]}, fmt}]  fmt: 'num'|'pct'
    currentMonth: 0-11 (for the header label)
    ══════════════════════════════════════════════════════ */
-function buildWeekly(rows, currentMonth){
+function buildWeekly(rows, currentMonth, currentWeek){
   document.getElementById('weekly-month').textContent = M_NAMES[currentMonth] + ' 2025';
+  const cw = currentWeek || 0;   // 1-4, 0 = none
+  const hl = w => (w===cw) ? ' class="wk-now"' : '';
   const head = `<thead><tr>
-      <th>Metric</th><th>Week 1</th><th>Week 2</th><th>Week 3</th><th>Week 4</th><th>Total</th>
+      <th>Metric</th>
+      <th${hl(1)}>Week 1</th><th${hl(2)}>Week 2</th><th${hl(3)}>Week 3</th><th${hl(4)}>Week 4</th>
+      <th>Total</th>
     </tr></thead>`;
-  const fmtV = (v,fmt) => v==null ? '—' : (fmt==='pct' ? v.toFixed(1)+'%' : Math.round(v));
+  const fmtV = (v,fmt) => v==null ? '—' : (fmt==='pct' ? v.toFixed(1)+'%' : (fmt==='dec1' ? v.toFixed(1) : Math.round(v)));
   let body = '';
   rows.forEach(r=>{
     const plan = r.data.plan || [null,null,null,null];
@@ -421,11 +427,12 @@ function buildWeekly(rows, currentMonth){
     const sum = arr => { const f=arr.filter(v=>v!=null); return f.length?f.reduce((a,b)=>a+b,0):null; };
     const planTot = isPct ? (plan.filter(v=>v!=null).length? plan.filter(v=>v!=null).reduce((a,b)=>a+b,0)/plan.filter(v=>v!=null).length : null) : sum(plan);
     const factTot = isPct ? (fact.filter(v=>v!=null).length? fact.filter(v=>v!=null).reduce((a,b)=>a+b,0)/fact.filter(v=>v!=null).length : null) : sum(fact);
-    const planCells = plan.map(v=>`<td>${fmtV(v,r.fmt)}</td>`).join('');
+    const nowCls = i => (i+1===cw) ? 'wk-now' : '';
+    const planCells = plan.map((v,i)=>`<td class="${nowCls(i)}">${fmtV(v,r.fmt)}</td>`).join('');
     const factCells = fact.map((v,i)=>{
-      if(v==null) return `<td class="cv-zero">—</td>`;
+      if(v==null) return `<td class="cv-zero ${nowCls(i)}">—</td>`;
       const good = plan[i]!=null && v>=plan[i];
-      return `<td class="${good?'wk-cell-good':'wk-cell-bad'}">${fmtV(v,r.fmt)}</td>`;
+      return `<td class="${good?'wk-cell-good':'wk-cell-bad'} ${nowCls(i)}">${fmtV(v,r.fmt)}</td>`;
     }).join('');
     const totGood = (planTot!=null && factTot!=null) ? factTot>=planTot : null;
     const totCls = totGood==null ? '' : (totGood?'wk-cell-good':'wk-cell-bad');
@@ -527,8 +534,8 @@ function renderStandard(d){
       {label:'Inquiries',     data:d.weekly.inquires,   fmt:'num'},
       {label:'Leads',         data:d.weekly.leads,      fmt:'num'},
       {label:'Calls',         data:d.weekly.calls,      fmt:'num'},
-      {label:'Sales',         data:d.weekly.sales,      fmt:'num'},
-    ], d.currentMonth);
+      {label:'Sales',         data:d.weekly.sales,      fmt:'dec1'},
+    ], d.currentMonth, d.currentWeek);
   } else {
     wkSection.style.display='none';
   }
@@ -668,7 +675,7 @@ function renderPartnership(d){
       {label:'Relevant responses',       data:d.weekly.relevant,    fmt:'num'},
       {label:'Relevant → Meeting conv.', data:d.weekly.convRelMeet, fmt:'pct'},
       {label:'Meetings',                 data:d.weekly.meetings,    fmt:'num'},
-    ], d.currentMonth);
+    ], d.currentMonth, d.currentWeek);
   } else {
     wkSection.style.display='none';
   }
