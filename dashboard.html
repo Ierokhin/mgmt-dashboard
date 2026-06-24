@@ -411,12 +411,10 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
    ══════════════════════════════════════════════════════ */
 function buildWeekly(rows, currentMonth, currentWeek){
   document.getElementById('weekly-month').textContent = M_NAMES[currentMonth] + ' 2025';
-  /* highlight = last week index (0-3) that has any actual value across all rows */
+  /* highlight = last week with actual data in the FIRST row (main inbound metric) */
   let cw = -1;
-  rows.forEach(r=>{
-    const fact = (r.data && r.data.fact) || [];
-    for(let i=0;i<4;i++){ if(fact[i]!=null && i>cw) cw=i; }
-  });
+  const firstFact = (rows[0] && rows[0].data && rows[0].data.fact) || [];
+  for(let i=0;i<4;i++){ if(firstFact[i]!=null) cw=i; }
   const hl = i => (i===cw) ? ' class="wk-now"' : '';
   const head = `<thead><tr>
       <th>Metric</th>
