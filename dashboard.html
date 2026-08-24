@@ -51,7 +51,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
 /* KPI */
-.kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
+.kpi-grid { display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:14px; margin-bottom:28px; }
 .kpi { border-radius:var(--radius); padding:20px 22px 16px; border-left:3px solid transparent; transition:background .25s, border-color .25s; }
 .kpi.status-bad  { background:#FCEBEB; border:1px solid #F7C1C1; border-left:3px solid #A32D2D; }
 .kpi.status-good { background:#E1F5EE; border:1px solid #9FE1CB; border-left:3px solid #0F6E56; }
@@ -81,16 +81,17 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-track-row { display:flex; justify-content:space-between; margin-top:4px; font-size:9px; font-family:'DM Mono',monospace; color:var(--text-muted); }
 
 /* GAUGE CARD (Revenue speedometer) */
-.gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; grid-column:1 / -1; }
+.gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; }
+#gz-canvas { max-width:100%; height:auto; display:block; margin:0 auto; }
 .gauge-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); margin-bottom:10px; text-align:center; }
-.gauge-top-row { display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:8px; margin-bottom:14px; }
-.gauge-metric { background:var(--surface2); border-radius:8px; padding:10px 12px; }
-.gauge-metric-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; font-family:'DM Mono',monospace; }
-.gauge-metric-value { font-size:20px; font-weight:600; color:var(--text); }
-.gauge-metric-sub { font-size:11px; color:var(--text-faint); margin-top:2px; }
-.gauge-status { border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-.gauge-status .gz-val { font-size:18px; font-weight:700; line-height:1.15; }
-.gauge-status .gz-sub { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; opacity:.75; font-family:'DM Mono',monospace; }
+.gauge-top-row { display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:6px; margin-bottom:12px; }
+.gauge-metric { background:var(--surface2); border-radius:8px; padding:8px 9px; }
+.gauge-metric-label { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; font-family:'DM Mono',monospace; }
+.gauge-metric-value { font-size:16px; font-weight:600; color:var(--text); }
+.gauge-metric-sub { font-size:10px; color:var(--text-faint); margin-top:2px; }
+.gauge-status { border-radius:8px; padding:8px 9px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.gauge-status .gz-val { font-size:14px; font-weight:700; line-height:1.15; }
+.gauge-status .gz-sub { font-size:9px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; opacity:.75; font-family:'DM Mono',monospace; }
 .gauge-status-ahead { background:var(--green-l); color:#0F6E56; }
 .gauge-status-behind { background:var(--red-l); color:#A32D2D; }
 .gauge-status-ok { background:var(--amber-l); color:#7A4A00; }
