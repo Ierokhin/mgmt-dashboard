@@ -80,6 +80,25 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-target-mark { position:absolute; top:-3px; width:2px; height:11px; background:var(--text); transform:translateX(-1px); }
 .kpi-track-row { display:flex; justify-content:space-between; margin-top:4px; font-size:9px; font-family:'DM Mono',monospace; color:var(--text-muted); }
 
+/* GAUGE CARD (Revenue speedometer) */
+.gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; grid-column:1 / -1; }
+.gauge-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); margin-bottom:10px; text-align:center; }
+.gauge-top-row { display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:8px; margin-bottom:14px; }
+.gauge-metric { background:var(--surface2); border-radius:8px; padding:10px 12px; }
+.gauge-metric-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; font-family:'DM Mono',monospace; }
+.gauge-metric-value { font-size:20px; font-weight:600; color:var(--text); }
+.gauge-metric-sub { font-size:11px; color:var(--text-faint); margin-top:2px; }
+.gauge-status { border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.gauge-status .gz-val { font-size:18px; font-weight:700; line-height:1.15; }
+.gauge-status .gz-sub { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; opacity:.75; font-family:'DM Mono',monospace; }
+.gauge-status-ahead { background:var(--green-l); color:#0F6E56; }
+.gauge-status-behind { background:var(--red-l); color:#A32D2D; }
+.gauge-status-ok { background:var(--amber-l); color:#7A4A00; }
+.gauge-wrap { display:flex; justify-content:center; }
+.gauge-legend { display:flex; gap:12px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+.gauge-leg-item { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+.gauge-leg-dot { width:22px; height:9px; border-radius:2px; flex-shrink:0; }
+
 /* FUNNEL */
 
 /* CHARTS */
@@ -183,6 +202,26 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       <div class="kpi-sub">actual vs plan</div>
       <div class="kpi-track"><div class="kpi-track-fill" id="kbar-ltvcac" style="width:0%"></div><div class="kpi-target-mark" id="kmark-ltvcac"></div></div>
       <div class="kpi-track-row"><span>actual</span><span>target</span></div>
+    </div>
+
+    <!-- GAUGE (Revenue speedometer) — Consolidated only -->
+    <div class="gauge-card" id="gauge-card" style="display:none;">
+      <div class="gauge-date" id="gz-date">—</div>
+      <div class="gauge-top-row">
+        <div class="gauge-metric"><div class="gauge-metric-label">Доход</div><div class="gauge-metric-value" id="gz-fact">—</div><div class="gauge-metric-sub">от плана</div></div>
+        <div class="gauge-status gauge-status-ok" id="gz-status-card">
+          <span class="gz-val" id="gz-status-val">—</span>
+          <span class="gz-sub">от графика</span>
+        </div>
+        <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
+      </div>
+      <div class="gauge-wrap"><canvas id="gz-canvas" width="620" height="330"></canvas></div>
+      <div class="gauge-legend">
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>0 → Break-Even</span>
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
+        <span class="gauge-leg-item"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6 L4 4.2 L17 6 L4 7.8 Z" fill="#c0392b"/></svg>Время</span>
+        <span class="gauge-leg-item"><svg width="20" height="14" viewBox="0 0 20 14"><path d="M0 7 L5 2 L19 7 L5 12 Z" fill="#1a1a1a"/></svg>Доход</span>
+      </div>
     </div>
   </div>
 
@@ -505,9 +544,214 @@ function buildTable(rows, n){
 }
 
 /* ══════════════════════════════════════════════════════
+   GAUGE (спидометр Доход / Break-Even / План) — только Consolidated
+   ══════════════════════════════════════════════════════ */
+function getMonthWorkdayDates(){
+  const now=new Date();
+  const y=now.getFullYear(), m=now.getMonth();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const dates=[];
+  for(let day=1; day<=daysInMonth; day++){
+    const dow=new Date(y,m,day).getDay();
+    if(dow!==0 && dow!==6) dates.push(day); // будни: пн-пт
+  }
+  return dates;
+}
+const GZ_ZR='#C0392B', GZ_ZO='#E67E22', GZ_ZG='#27AE60', GZ_ZY='#F0B429', GZ_RN='#c0392b';
+const GZ_OV=1.3;
+function gzLerp(a,b,t){ return a+(b-a)*t; }
+function gzLerpColor(c1,c2,t){
+  const h=s=>parseInt(s,16);
+  const r1=h(c1.slice(1,3)),g1=h(c1.slice(3,5)),b1=h(c1.slice(5,7));
+  const r2=h(c2.slice(1,3)),g2=h(c2.slice(3,5)),b2=h(c2.slice(5,7));
+  return `rgb(${Math.round(gzLerp(r1,r2,t))},${Math.round(gzLerp(g1,g2,t))},${Math.round(gzLerp(b1,b2,t))})`;
+}
+function gzPct(v,p){ return p ? Math.round(v/p*100)+'%' : '—'; }
+
+function renderGaugeCard(d){
+  const card = document.getElementById('gauge-card');
+  if(!d.gauge || d.channel!=='consolidated'){ card.style.display='none'; return; }
+  card.style.display='block';
+
+  const g = d.gauge;
+  const workdayDates = getMonthWorkdayDates();
+  const today = new Date().getDate();
+  const dt = workdayDates.length;
+  const dp = workdayDates.filter(x=>x<=today).length;
+
+  document.getElementById('gz-date').textContent = new Date().toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('gz-fact').textContent = gzPct(g.fact, g.plan);
+  document.getElementById('gz-time').textContent = gzPct(dp, dt);
+  document.getElementById('gz-time-sub').textContent = dp+' из '+dt+' рабочих дней';
+
+  const diff = Math.round((g.fact/g.plan - dp/dt)*100);
+  const statusCard = document.getElementById('gz-status-card');
+  const statusVal  = document.getElementById('gz-status-val');
+  if(diff>=4){ statusCard.className='gauge-status gauge-status-ahead'; statusVal.textContent='↑ Опережаем на '+diff+'%'; }
+  else if(diff<=-4){ statusCard.className='gauge-status gauge-status-behind'; statusVal.textContent='↓ Отстаём на '+Math.abs(diff)+'%'; }
+  else { statusCard.className='gauge-status gauge-status-ok'; statusVal.textContent='≈ В графике'; }
+
+  drawGaugeCanvas(g, dt, dp, workdayDates);
+}
+
+function drawGaugeCanvas(g, dt, dp, workdayDates){
+  const cv=document.getElementById('gz-canvas');
+  const ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  const bg='#ffffff', mu='rgba(0,0,0,.36)', tk='rgba(0,0,0,.13)';
+  const ckM='rgba(0,0,0,.22)', ckF='rgba(250,249,246,.99)', ckR='rgba(0,0,0,.26)';
+  const sN='#1a1a1a', bM='rgba(0,0,0,.8)';
+
+  const ox=W/2, oy=H-36;
+  const Ro=Math.min(W*.43,H-50);
+  const Ri=Ro*.56;
+  const SA=Math.PI, EA=2*Math.PI;
+
+  const br=g.bepBaseline/g.plan;
+  const ber=g.bepGrowth/g.plan;
+  const sr=g.fact/g.plan;
+
+  function vA(r){ return SA+(Math.min(r,GZ_OV)/GZ_OV)*Math.PI; }
+  const aBr=vA(br), aBer=vA(ber), aPl=vA(1);
+
+  function drawArcGrad(ri,ro,a1,a2,cfn,steps){
+    const dA=(a2-a1)/steps;
+    for(let i=0;i<steps;i++){
+      const sa=a1+i*dA, ea=sa+dA+0.003, t=i/(steps-1);
+      ctx.beginPath();
+      ctx.arc(ox,oy,ri,sa,ea);
+      ctx.arc(ox,oy,ro,ea,sa,true);
+      ctx.closePath();
+      ctx.fillStyle=cfn(t);
+      ctx.fill();
+    }
+  }
+  drawArcGrad(Ri,Ro,SA,aBer,t=>gzLerpColor(GZ_ZR,GZ_ZO,t),80);
+  function solidArc(a1,a2,col){
+    ctx.beginPath();ctx.arc(ox,oy,Ri,a1,a2);ctx.arc(ox,oy,Ro,a2,a1,true);ctx.closePath();
+    ctx.fillStyle=col;ctx.fill();
+  }
+  solidArc(aBer,aPl,GZ_ZY);
+  solidArc(aPl,EA,GZ_ZG);
+
+  ctx.beginPath();ctx.moveTo(ox,oy);ctx.arc(ox,oy,Ri,SA,EA);ctx.closePath();
+  ctx.fillStyle=bg;ctx.fill();
+
+  [SA,aBer,aPl,EA].forEach(a=>{
+    ctx.beginPath();
+    ctx.moveTo(ox+Math.cos(a)*Ri,oy+Math.sin(a)*Ri);
+    ctx.lineTo(ox+Math.cos(a)*Ro,oy+Math.sin(a)*Ro);
+    ctx.strokeStyle=bg;ctx.lineWidth=3;ctx.stroke();
+  });
+
+  for(let i=0;i<=26;i++){
+    const v=i*5, a=vA(v/100), mj=(i%5===0);
+    ctx.beginPath();
+    ctx.moveTo(ox+Math.cos(a)*(Ro+1),oy+Math.sin(a)*(Ro+1));
+    ctx.lineTo(ox+Math.cos(a)*(Ri-1),oy+Math.sin(a)*(Ri-1));
+    ctx.strokeStyle=tk;ctx.lineWidth=mj?1.5:.7;ctx.stroke();
+    if(mj&&v<=100){
+      ctx.font='11px sans-serif'; ctx.fillStyle=mu;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(v+'%', ox+Math.cos(a)*(Ro+22), oy+Math.sin(a)*(Ro+22));
+      if(v===100){
+        ctx.font='bold 10px sans-serif'; ctx.fillStyle='rgba(0,0,0,.55)';
+        ctx.fillText('План', ox+Math.cos(a)*(Ro+36), oy+Math.sin(a)*(Ro+36));
+      }
+    }
+  }
+
+  (function(){
+    const a=aBer;
+    ctx.beginPath();
+    ctx.moveTo(ox+Math.cos(a)*(Ro+5),oy+Math.sin(a)*(Ro+5));
+    ctx.lineTo(ox+Math.cos(a)*(Ri-5),oy+Math.sin(a)*(Ri-5));
+    ctx.strokeStyle=bM;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
+    const mR=(Ri+Ro)/2;
+    ctx.beginPath();ctx.arc(ox+Math.cos(a)*mR,oy+Math.sin(a)*mR,3.5,0,2*Math.PI);
+    ctx.fillStyle=bM;ctx.fill();
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold 10px sans-serif';ctx.fillStyle=bM;
+    ctx.fillText('BREAK-',ox+Math.cos(a)*(Ro+28),oy+Math.sin(a)*(Ro+27));
+    ctx.fillText('EVEN',ox+Math.cos(a)*(Ro+28),oy+Math.sin(a)*(Ro+38));
+  })();
+
+  (function(){
+    const a=aBr;
+    const tipR=Ro-2, baseR=Ro+9;
+    const tipX=ox+Math.cos(a)*tipR, tipY=oy+Math.sin(a)*tipR;
+    const perpX=-Math.sin(a), perpY=Math.cos(a);
+    const baseCX=ox+Math.cos(a)*baseR, baseCY=oy+Math.sin(a)*baseR;
+    const w=4.5;
+    ctx.beginPath();
+    ctx.moveTo(tipX,tipY);
+    ctx.lineTo(baseCX+perpX*w,baseCY+perpY*w);
+    ctx.lineTo(baseCX-perpX*w,baseCY-perpY*w);
+    ctx.closePath();
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.4)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+  })();
+
+  const cR=Ri*.87;
+  ctx.beginPath();ctx.arc(ox,oy,cR,SA,EA);ctx.lineTo(ox,oy);ctx.closePath();
+  ctx.fillStyle=ckF;ctx.fill();
+  ctx.beginPath();ctx.arc(ox,oy,cR,SA,EA);ctx.strokeStyle=ckR;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ox-cR+2,oy);ctx.lineTo(ox+cR-2,oy);
+  ctx.strokeStyle=ckM;ctx.lineWidth=.5;ctx.stroke();
+
+  for(let i=0;i<=dt;i++){
+    const a=SA+i/dt*Math.PI;
+    const tL=8, tW=1;
+    ctx.beginPath();
+    ctx.moveTo(ox+Math.cos(a)*(cR-1),oy+Math.sin(a)*(cR-1));
+    ctx.lineTo(ox+Math.cos(a)*(cR-tL),oy+Math.sin(a)*(cR-tL));
+    ctx.strokeStyle=ckM;ctx.lineWidth=tW;ctx.lineCap='butt';ctx.stroke();
+    if(i>=1){
+      const numR=cR-tL-8;
+      const realDate = workdayDates[i-1]!==undefined ? workdayDates[i-1] : i;
+      ctx.font='7px sans-serif';
+      ctx.fillStyle='rgba(0,0,0,.42)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(String(realDate), ox+Math.cos(a)*numR, oy+Math.sin(a)*numR);
+    }
+  }
+
+  ctx.font='bold 12px sans-serif';
+  ctx.fillStyle='rgba(0,0,0,.5)';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('РАБОЧИЕ ДНИ', ox, oy-cR*0.58);
+
+  const tr=Math.min(dp/dt,1);
+  const tA=SA+tr*Math.PI;
+  const nL=cR*.80, nB=cR*.22;
+  ctx.save();ctx.translate(ox,oy);ctx.rotate(tA);
+  ctx.beginPath();ctx.moveTo(-nB,-3.5);ctx.lineTo(nL*.88,0);ctx.lineTo(-nB,3.5);ctx.closePath();
+  ctx.fillStyle=GZ_RN;ctx.fill();
+  ctx.restore();
+  ctx.beginPath();ctx.arc(ox,oy,7,0,2*Math.PI);ctx.fillStyle=GZ_RN;ctx.fill();
+  ctx.beginPath();ctx.arc(ox,oy,3,0,2*Math.PI);ctx.fillStyle=ckF;ctx.fill();
+
+  const sA=vA(Math.min(sr,GZ_OV));
+  ctx.save();ctx.translate(ox,oy);ctx.rotate(sA);
+  ctx.beginPath();ctx.moveTo(-Ri*.26,-6);ctx.lineTo(Ro*.84,0);ctx.lineTo(-Ri*.26,6);ctx.closePath();
+  ctx.fillStyle=sN;ctx.globalAlpha=.93;ctx.fill();
+  ctx.restore();ctx.globalAlpha=1;
+
+  ctx.beginPath();ctx.arc(ox,oy,10,0,2*Math.PI);ctx.fillStyle=sN;ctx.fill();
+  ctx.beginPath();ctx.arc(ox,oy,4.5,0,2*Math.PI);ctx.fillStyle=bg;ctx.fill();
+  ctx.beginPath();ctx.arc(ox,oy,2,0,2*Math.PI);ctx.fillStyle=GZ_RN;ctx.fill();
+}
+
+/* ══════════════════════════════════════════════════════
    RENDER — router
    ══════════════════════════════════════════════════════ */
 function render(d){
+  renderGaugeCard(d);
   if(d.type === 'partnership') renderPartnership(d);
   else renderStandard(d);
 }
