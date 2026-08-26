@@ -54,7 +54,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
 .kpi-grid.has-gauge { grid-template-columns:0.8fr 0.8fr 2fr; }
 .kpi-grid.has-gauge .kpi,
-.kpi-grid.has-gauge .gauge-card { height:460px; }
+.kpi-grid.has-gauge .gauge-card { height:380px; }
 .kpi-grid.has-gauge .kpi { display:flex; flex-direction:column; justify-content:center; }
 .kpi { border-radius:var(--radius); padding:20px 22px 16px; border-left:3px solid transparent; transition:background .25s, border-color .25s; }
 .kpi.status-bad  { background:#FCEBEB; border:1px solid #F7C1C1; border-left:3px solid #A32D2D; }
@@ -83,6 +83,19 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi.status-neu  .kpi-track-fill { background:var(--text-muted); }
 .kpi-target-mark { position:absolute; top:-3px; width:2px; height:11px; background:var(--text); transform:translateX(-1px); }
 .kpi-track-row { display:flex; justify-content:space-between; margin-top:4px; font-size:9px; font-family:'DM Mono',monospace; color:var(--text-muted); }
+
+/* Ring indicator — replaces the linear track only when the gauge is showing (Consolidated) */
+.kpi-ring-wrap { display:none; }
+.kpi-ring { width:100%; max-width:170px; max-height:170px; aspect-ratio:1/1; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; position:relative; }
+.kpi-ring::before { content:''; position:absolute; inset:15px; background:var(--surface); border-radius:50%; }
+.kpi-ring span { position:relative; font-size:26px; font-weight:800; font-family:'DM Mono',monospace; color:var(--text); }
+.kpi.status-bad .kpi-ring span { color:#A32D2D; }
+.kpi.status-good .kpi-ring span { color:#0F6E56; }
+.kpi-grid.has-gauge .kpi-sub,
+.kpi-grid.has-gauge .kpi-track,
+.kpi-grid.has-gauge .kpi-track-row { display:none; }
+.kpi-grid.has-gauge .kpi-ring-wrap { display:flex; flex:1; align-items:center; justify-content:center; min-height:0; }
+.kpi-grid.has-gauge .kpi { justify-content:flex-start; }
 
 /* GAUGE CARD (Revenue speedometer) */
 .gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; }
@@ -196,6 +209,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       <div class="kpi-sub">actual vs plan</div>
       <div class="kpi-track"><div class="kpi-track-fill" id="kbar-sales" style="width:0%"></div><div class="kpi-target-mark" id="kmark-sales"></div></div>
       <div class="kpi-track-row"><span>actual</span><span>target</span></div>
+      <div class="kpi-ring-wrap"><div class="kpi-ring" id="kring-sales"><span id="kring-val-sales">—</span></div></div>
     </div>
     <div class="kpi status-neu" id="kpi-ltvcac">
       <div class="kpi-label">LTV / CAC · last month</div>
@@ -207,6 +221,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       <div class="kpi-sub">actual vs plan</div>
       <div class="kpi-track"><div class="kpi-track-fill" id="kbar-ltvcac" style="width:0%"></div><div class="kpi-target-mark" id="kmark-ltvcac"></div></div>
       <div class="kpi-track-row"><span>actual</span><span>target</span></div>
+      <div class="kpi-ring-wrap"><div class="kpi-ring" id="kring-ltvcac"><span id="kring-val-ltvcac">—</span></div></div>
     </div>
 
     <!-- GAUGE (Revenue speedometer) — Consolidated only -->
@@ -220,7 +235,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
         </div>
         <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
       </div>
-      <div class="gauge-wrap"><canvas id="gz-canvas" width="700" height="300"></canvas></div>
+      <div class="gauge-wrap"><canvas id="gz-canvas" width="520" height="220"></canvas></div>
       <div class="gauge-legend">
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
@@ -434,10 +449,15 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
   const fill  = document.getElementById('kbar-'+prefix);
   const mark  = document.getElementById('kmark-'+prefix);
   const card  = document.getElementById('kpi-'+prefix);
+  const ring  = document.getElementById('kring-'+prefix);
+  const ringVal = document.getElementById('kring-val-'+prefix);
   if(factVal==null || planVal==null){
     badge.textContent='—'; badge.className='badge badge-neu';
     fill.style.width='0%'; mark.style.left='100%';
-    if(card) card.className='kpi status-neu'; return;
+    if(card) card.className='kpi status-neu';
+    if(ring){ ring.style.background='#e5e5e3'; }
+    if(ringVal) ringVal.textContent='—';
+    return;
   }
   const ratio = planVal ? factVal/planVal : 0;
   const good  = higherIsBetter ? ratio>=1 : ratio<=1;
@@ -448,6 +468,12 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
   if(card) card.className = 'kpi '+(good?'status-good':'status-bad');
   fill.style.width  = Math.min(ratio*100,100)+'%';
   mark.style.left   = '100%';
+  if(ring){
+    const ringPct = Math.min(Math.round(ratio*100),100);
+    const ringColor = good ? '#0F6E56' : '#A32D2D';
+    ring.style.background = `conic-gradient(${ringColor} 0% ${ringPct}%, #eceae5 ${ringPct}% 100%)`;
+    if(ringVal) ringVal.textContent = ringPct+'%';
+  }
 }
 
 /* ══════════════════════════════════════════════════════
