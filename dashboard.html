@@ -222,7 +222,8 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       </div>
       <div class="gauge-wrap"><canvas id="gz-canvas" width="780" height="415"></canvas></div>
       <div class="gauge-legend">
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>0 → Break-Even</span>
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
         <span class="gauge-leg-item"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6 L4 4.2 L17 6 L4 7.8 Z" fill="#c0392b"/></svg>Время</span>
         <span class="gauge-leg-item"><svg width="20" height="14" viewBox="0 0 20 14"><path d="M0 7 L5 2 L19 7 L5 12 Z" fill="#1a1a1a"/></svg>Доход</span>
@@ -380,6 +381,7 @@ const DEMO_PARTNER = {
    UTILS
    ══════════════════════════════════════════════════════ */
 const M_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CURRENT_YEAR = new Date().getFullYear();
 function nullPad(arr, len=12){ return [...arr, ...Array(Math.max(0,len-arr.length)).fill(null)]; }
 function pct(f,p){ return p ? Math.round(f/p*100) : 0; }
 function eur(n){ return n==null ? '—' : '€'+Math.round(n).toLocaleString('en-US'); }
@@ -454,7 +456,7 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
    currentMonth: 0-11 (for the header label)
    ══════════════════════════════════════════════════════ */
 function buildWeekly(rows, currentMonth, currentWeek){
-  document.getElementById('weekly-month').textContent = M_NAMES[currentMonth] + ' 2025';
+  document.getElementById('weekly-month').textContent = M_NAMES[currentMonth] + ' ' + CURRENT_YEAR;
   /* highlight = last week with actual data in the FIRST row (main inbound metric) */
   let cw = -1;
   const firstFact = (rows[0] && rows[0].data && rows[0].data.fact) || [];
@@ -667,10 +669,6 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
       ctx.font='11px sans-serif'; ctx.fillStyle=mu;
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(v+'%', ox+Math.cos(a)*(Ro+22), oy+Math.sin(a)*(Ro+22));
-      if(v===100){
-        ctx.font='bold 10px sans-serif'; ctx.fillStyle='rgba(0,0,0,.55)';
-        ctx.fillText('План', ox+Math.cos(a)*(Ro+36), oy+Math.sin(a)*(Ro+36));
-      }
     }
   }
 
@@ -685,8 +683,8 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
     ctx.fillStyle=bM;ctx.fill();
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='bold 10px sans-serif';ctx.fillStyle=bM;
-    ctx.fillText('BREAK-',ox+Math.cos(a)*(Ro+28),oy+Math.sin(a)*(Ro+27));
-    ctx.fillText('EVEN',ox+Math.cos(a)*(Ro+28),oy+Math.sin(a)*(Ro+38));
+    ctx.font='bold 9px sans-serif';ctx.fillStyle=bM;
+    ctx.fillText('БЕЗУБЫТОК',ox+Math.cos(a)*(Ro+30),oy+Math.sin(a)*(Ro+30));
   })();
 
   (function(){
@@ -771,7 +769,7 @@ function render(d){
 function renderStandard(d){
   const n = d.filledMonths, lastM = Math.max(0, n-1);
   const isBids = d.layout === 'bids';   // upwork has the bids funnel + weekly
-  const periodLabel = n<=1 ? M_NAMES[0] : `${M_NAMES[0]} — ${M_NAMES[lastM]} 2025`;
+  const periodLabel = n<=1 ? M_NAMES[0] : `${M_NAMES[0]} — ${M_NAMES[lastM]} ${CURRENT_YEAR}`;
   document.getElementById('kpi-period').textContent = `Key metrics · YTD ${periodLabel}`;
 
   const sumFact = k => (d.fact[k]||[]).reduce((a,b)=>a+(b||0),0);
@@ -910,7 +908,7 @@ function renderStandard(d){
 /* ---------- PARTNERSHIP ---------- */
 function renderPartnership(d){
   const n = d.filledMonths, lastM = Math.max(0, n-1);
-  const periodLabel = n<=1 ? M_NAMES[0] : `${M_NAMES[0]} — ${M_NAMES[lastM]} 2025`;
+  const periodLabel = n<=1 ? M_NAMES[0] : `${M_NAMES[0]} — ${M_NAMES[lastM]} ${CURRENT_YEAR}`;
   document.getElementById('kpi-period').textContent = `Key metrics · YTD ${periodLabel}`;
 
   const sumFact = k => (d.fact[k]||[]).reduce((a,b)=>a+(b||0),0);
@@ -1121,6 +1119,8 @@ const DEMO_SUMMARY = [
 
 /* INIT */
 document.getElementById('js-date').textContent = new Date().toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'});
+document.getElementById('footer').textContent = 'Sales Dashboard · ' + CURRENT_YEAR + ' · Data updates automatically from Google Sheets';
+document.title = 'Sales Dashboard ' + CURRENT_YEAR;
 buildTabs();
 loadData();
 setInterval(loadData, 5*60*1000);
