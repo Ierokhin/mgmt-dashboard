@@ -54,7 +54,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
 .kpi-grid.has-gauge { grid-template-columns:0.8fr 0.8fr 2fr; }
 .kpi-grid.has-gauge .kpi,
-.kpi-grid.has-gauge .gauge-card { height:380px; }
+.kpi-grid.has-gauge .gauge-card { height:460px; }
 .kpi-grid.has-gauge .kpi { display:flex; flex-direction:column; justify-content:center; }
 .kpi { border-radius:var(--radius); padding:20px 22px 16px; border-left:3px solid transparent; transition:background .25s, border-color .25s; }
 .kpi.status-bad  { background:#FCEBEB; border:1px solid #F7C1C1; border-left:3px solid #A32D2D; }
@@ -100,15 +100,15 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 /* GAUGE CARD (Revenue speedometer) */
 .gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; }
 #gz-canvas { max-width:100%; height:auto; display:block; margin:0 auto; }
-.gauge-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); margin-bottom:10px; text-align:center; }
-.gauge-top-row { display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:8px; margin-bottom:14px; }
-.gauge-metric { background:var(--surface2); border-radius:8px; padding:10px 12px; }
-.gauge-metric-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; font-family:'DM Mono',monospace; }
-.gauge-metric-value { font-size:20px; font-weight:600; color:var(--text); }
-.gauge-metric-sub { font-size:11px; color:var(--text-faint); margin-top:2px; }
-.gauge-status { border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-.gauge-status .gz-val { font-size:18px; font-weight:700; line-height:1.15; }
-.gauge-status .gz-sub { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; opacity:.75; font-family:'DM Mono',monospace; }
+.gauge-date { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:5px; text-align:center; }
+.gauge-top-row { display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:6px; margin-bottom:8px; }
+.gauge-metric { background:var(--surface2); border-radius:8px; padding:7px 10px; }
+.gauge-metric-label { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; font-family:'DM Mono',monospace; }
+.gauge-metric-value { font-size:16px; font-weight:600; color:var(--text); }
+.gauge-metric-sub { font-size:10px; color:var(--text-faint); margin-top:1px; }
+.gauge-status { border-radius:8px; padding:7px 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.gauge-status .gz-val { font-size:15px; font-weight:700; line-height:1.15; }
+.gauge-status .gz-sub { font-size:9px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; margin-top:1px; opacity:.75; font-family:'DM Mono',monospace; }
 .gauge-status-ahead { background:var(--green-l); color:#0F6E56; }
 .gauge-status-behind { background:var(--red-l); color:#A32D2D; }
 .gauge-status-ok { background:var(--amber-l); color:#7A4A00; }
@@ -235,7 +235,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
         </div>
         <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
       </div>
-      <div class="gauge-wrap"><canvas id="gz-canvas" width="520" height="220"></canvas></div>
+      <div class="gauge-wrap"><canvas id="gz-canvas" width="740" height="325"></canvas></div>
       <div class="gauge-legend">
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
