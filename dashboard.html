@@ -1124,14 +1124,22 @@ const WEEKLY_KEY_METRIC = {
 const WEEKLY_PALETTE = ['#6d28d9','#1d4ed8','#0d9488','#b45309','#059669','#dc2626','#7c3aed','#0891b2','#ca8a04'];
 const weeklyCharts = {}; // canvas id -> Chart instance
 
-function wkCumulate(weekly, field){
+/* Fact: stop accumulating at the first week with no actual yet (line ends where real data ends). */
+function wkCumulateFact(weekly){
   const out = []; let sum = 0, broken = false;
   weekly.forEach(w=>{
-    const v = w[field];
+    const v = w.fact;
     if(v == null) broken = true;
     if(broken){ out.push(null); return; }
     sum += v; out.push(+sum.toFixed(4));
   });
+  return out;
+}
+/* Plan: keep accumulating across the whole period — a blank plan cell contributes 0,
+   it never breaks the target line (plan is a full-year trajectory, not "no data"). */
+function wkCumulatePlan(weekly){
+  const out = []; let sum = 0;
+  weekly.forEach(w=>{ sum += (w.plan || 0); out.push(+sum.toFixed(4)); });
   return out;
 }
 function wkTagFor(plan, fact){
@@ -1212,7 +1220,7 @@ function renderWeekly(data){
   const lastLabel = lastIdx>=0 ? weekLabels[lastIdx] : 'ще немає завершених тижнів';
   let colorCursor = 0;
 
-  (data.groups||[]).forEach(group=>{
+  (data.groups||[]).forEach((group, gi)=>{
     const label = document.createElement('div');
     label.className = 'section-label';
     label.innerHTML = `${group.key} <span class="section-note">&nbsp;·&nbsp; тиждень ${lastLabel} · клікніть по метриці, щоб побачити графік</span>`;
@@ -1222,18 +1230,21 @@ function renderWeekly(data){
     grid.className = 'wk-grid';
     container.appendChild(grid);
 
-    group.channels.forEach(channel=>{
+    group.channels.forEach((channel, ci)=>{
       const color = WEEKLY_PALETTE[colorCursor++ % WEEKLY_PALETTE.length];
       const keyMetricName = WEEKLY_KEY_METRIC[channel.key];
       const metrics = channel.metrics.map(m=>{
-        const planCum = wkCumulate(m.weekly,'plan');
-        const factCum = wkCumulate(m.weekly,'fact');
+        const planCum = wkCumulatePlan(m.weekly);
+        const factCum = wkCumulateFact(m.weekly);
         const last = lastIdx>=0 ? m.weekly[lastIdx] : {plan:null,fact:null};
         return { label:m.label, planCum, factCum, lastPlan:last?last.plan:null, lastFact:last?last.fact:null };
       });
       let defaultIdx = metrics.findIndex(m=>m.label===keyMetricName);
       if(defaultIdx<0) defaultIdx = 0;
-      wkBuildCard(grid, { id:(group.key+'-'+channel.key).replace(/[^a-zA-Z0-9]+/g,'_'), title:channel.key, color, weekLabels, metrics, defaultIdx });
+      /* positional id — guaranteed unique regardless of channel name / language,
+         unlike the previous name-based id which stripped Cyrillic and collided
+         (e.g. "LinkedIn Бориса" and "LinkedIn Наталії" both reduced to the same id). */
+      wkBuildCard(grid, { id:'g'+gi+'_c'+ci, title:channel.key, color, weekLabels, metrics, defaultIdx });
     });
   });
 }
