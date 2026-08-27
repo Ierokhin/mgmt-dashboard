@@ -21,7 +21,6 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html { font-size:14px; }
 body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-
 /* TOPBAR */
 .topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 40px; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
 .topbar-left { display:flex; align-items:center; gap:12px; }
@@ -37,19 +36,15 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .live-pill.error .live-dot { background:var(--red); animation:none; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 .topbar-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); }
-
 /* TABS */
 .tabs { background:var(--surface); border-bottom:1px solid var(--border); padding:0 40px; display:flex; gap:2px; position:sticky; top:58px; z-index:49; overflow-x:auto; }
 .tab { padding:13px 18px; border:none; background:transparent; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:500; color:var(--text-muted); border-bottom:2px solid transparent; white-space:nowrap; transition:color .15s; }
 .tab:hover { color:var(--text-dim); }
 .tab.active { color:var(--text); border-bottom-color:var(--text); }
-
 /* LAYOUT */
 .main { padding:28px 40px 48px; max-width:1440px; margin:0 auto; }
-
 .section-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
 .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
-
 /* KPI */
 .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
 .kpi-grid.has-gauge { grid-template-columns:0.8fr 0.8fr 2fr; }
@@ -83,7 +78,6 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi.status-neu  .kpi-track-fill { background:var(--text-muted); }
 .kpi-target-mark { position:absolute; top:-3px; width:2px; height:11px; background:var(--text); transform:translateX(-1px); }
 .kpi-track-row { display:flex; justify-content:space-between; margin-top:4px; font-size:9px; font-family:'DM Mono',monospace; color:var(--text-muted); }
-
 /* Ring indicator — replaces the linear track only when the gauge is showing (Consolidated) */
 .kpi-ring-wrap { display:none; }
 .kpi-ring { width:100%; max-width:170px; max-height:170px; aspect-ratio:1/1; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; position:relative; }
@@ -96,7 +90,6 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi-track-row { display:none; }
 .kpi-grid.has-gauge .kpi-ring-wrap { display:flex; flex:1; align-items:center; justify-content:center; min-height:0; }
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
-
 /* GAUGE CARD (Revenue speedometer) */
 .gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; }
 #gz-canvas { max-width:100%; height:auto; display:block; margin:0 auto; }
@@ -116,9 +109,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .gauge-legend { display:flex; gap:12px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
 .gauge-leg-item { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; }
 .gauge-leg-dot { width:22px; height:9px; border-radius:2px; flex-shrink:0; }
-
 /* FUNNEL */
-
 /* CHARTS */
 .charts-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
 .charts-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
@@ -127,7 +118,6 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .chart-card-sub { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); margin-bottom:3px; }
 .chart-card-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); font-style:italic; margin-bottom:12px; }
 .chart-wrap { position:relative; height:190px; }
-
 /* TABLE */
 .table-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:28px; }
 .table-card-header { padding:14px 20px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
@@ -147,13 +137,11 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .cell-tag { display:inline-block; padding:1px 7px; border-radius:4px; font-size:10px; font-weight:600; }
 .cell-tag.bad { background:var(--red-l); color:var(--red); }
 .cell-tag.good { background:var(--green-l); color:var(--green); }
-
 .cmp-table td:first-child, .cmp-table th:first-child { text-align:left; }
 .cmp-table td { color:var(--text); }
 .cmp-bar { display:inline-block; height:5px; border-radius:3px; background:var(--blue); vertical-align:middle; margin-right:6px; }
 .cmp-bar-track { display:inline-block; width:54px; height:5px; border-radius:3px; background:#eceae5; vertical-align:middle; position:relative; overflow:hidden; }
 .cmp-bar-track > i { position:absolute; left:0; top:0; height:100%; border-radius:3px; }
-
 /* WEEKLY TABLE */
 .wk-table th.wk-now { background:#E6F1FB; color:var(--blue); border-radius:6px 6px 0 0; }
 .wk-table td.wk-now { background:#E6F1FB; }
@@ -172,13 +160,39 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .wk-cell-good { color:var(--green)!important; }
 .wk-cell-bad { color:var(--red)!important; }
 .wk-tot { background:rgba(0,0,0,0.02); font-weight:700; }
-
+/* WEEKLY TAB (SMM / SALES blocks, separate Google doc) */
+.section-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); text-transform:none; letter-spacing:0; font-weight:500; }
+.wk-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:32px; }
+@media (max-width:900px){ .wk-grid{ grid-template-columns:1fr; } }
+.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px 14px; }
+.wk-card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+.wk-card-title { font-size:13px; font-weight:700; color:var(--text); }
+.wk-card-hint { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-faint); }
+table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; margin-bottom:12px; }
+table.mini th { text-align:left; color:var(--text-faint); font-weight:500; font-size:9.5px; letter-spacing:.5px; text-transform:uppercase; padding:0 0 6px; border-bottom:1px solid var(--border); }
+table.mini th:not(:first-child), table.mini td:not(:first-child) { text-align:right; }
+table.mini td { padding:6px 4px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--text-dim); }
+table.mini tr:last-child td { border-bottom:none; }
+table.mini td:first-child { color:var(--text-muted); text-align:left; display:flex; align-items:center; gap:6px; }
+table.mini tr.mrow { cursor:pointer; transition:background .12s; }
+table.mini tr.mrow:hover { background:var(--surface2); }
+table.mini tr.mrow.sel { background:var(--surface2); }
+table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
+.mrow-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
+.mrow.sel .mrow-dot { background: var(--dot-color, var(--text)); }
+.cell-tag.zero { background:var(--surface2); color:var(--text-faint); }
+.wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+.wk-chart-title .dot { width:8px; height:8px; border-radius:50%; }
+.wk-chart-wrap { position:relative; height:140px; }
+.wk-chart-foot { display:flex; justify-content:space-between; font-family:'DM Mono',monospace; font-size:9.5px; color:var(--text-faint); margin-top:6px; }
+.wk-chart-foot .gap-bad { color:var(--red); font-weight:600; }
+.wk-chart-foot .gap-good { color:var(--green); font-weight:600; }
+.wk-chart-foot .gap-none { color:var(--text-faint); font-weight:500; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 </style>
 </head>
 <body>
-
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
@@ -190,12 +204,10 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
     <div class="live-pill loading" id="live-pill"><div class="live-dot"></div><span id="live-text">Loading...</span></div>
   </div>
 </div>
-
 <!-- TABS -->
 <div class="tabs" id="tabs"></div>
-
 <div class="main">
-
+<div id="standard-tab-view">
   <!-- KPI -->
   <div class="section-label" id="kpi-period">Key metrics</div>
   <div class="kpi-grid">
@@ -223,7 +235,6 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       <div class="kpi-track-row"><span>actual</span><span>target</span></div>
       <div class="kpi-ring-wrap"><div class="kpi-ring" id="kring-ltvcac"><span id="kring-val-ltvcac">—</span></div></div>
     </div>
-
     <!-- GAUGE (Revenue speedometer) — Consolidated only -->
     <div class="gauge-card" id="gauge-card" style="display:none;">
       <div class="gauge-date" id="gz-date">—</div>
@@ -245,7 +256,6 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       </div>
     </div>
   </div>
-
   <!-- WEEKLY PROGRESS (current month) -->
   <div id="weekly-section">
     <div class="section-label">Weekly progress · current month</div>
@@ -259,19 +269,15 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       </div>
     </div>
   </div>
-
   <!-- COUNT CHARTS -->
   <div class="section-label">Cumulative metrics</div>
   <div class="charts-grid" id="count-charts"></div>
-
   <!-- CONVERSION CHARTS -->
   <div class="section-label">Conversions · cumulative</div>
   <div class="charts-grid" id="conv-charts"></div>
-
   <!-- UNIT ECONOMICS -->
   <div class="section-label">Unit Economics</div>
   <div class="charts-grid-2" id="econ-charts"></div>
-
   <!-- CHANNEL COMPARISON (consolidated only) -->
   <div id="cmp-section" style="display:none;">
     <div class="section-label">Channel comparison</div>
@@ -293,7 +299,6 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       </div>
     </div>
   </div>
-
   <!-- TABLE -->
   <div class="section-label">Detailed data · plan vs actual</div>
   <div class="table-card">
@@ -317,26 +322,31 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
       </table>
     </div>
   </div>
-
 </div>
-
+<!-- WEEKLY TAB (separate Google doc: SMM / SALES per-week blocks) -->
+<div id="weekly-tab-view" style="display:none">
+  <div id="weekly-groups-container"></div>
+</div>
+</div>
 <div class="footer" id="footer">Sales Dashboard · 2025 · Data updates automatically from Google Sheets</div>
-
 <script>
 /* ══════════════════════════════════════════════════════
    CONFIG
    ══════════════════════════════════════════════════════ */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR2qdwpXxtIOeD2jBgIv22o0_5bV13PJRJqfI3C8F02VTe_pVCTwCEDgPqfoTacH76/exec';
-
+/* Weekly tab reads from a SEPARATE Apps Script bound to the second document
+   ("План/Факт weekly BD"). Deploy that script as its own web app and paste
+   the resulting /exec URL below. */
+const WEEKLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwve64_InvbnsMCtPadwQg5wz-qS0wnVN1QDs6CFGAllyNUPwtkh2TSOdXXm5kvhH_EDQ/exec';
 const CHANNELS = [
   { key:'consolidated', label:'Consolidated',   logo:'Σ' },
   { key:'upwork',       label:'Upwork',         logo:'U' },
   { key:'partnership',  label:'Partnership',    logo:'P' },
   { key:'csr',          label:'CSR',            logo:'C' },
   { key:'behance',      label:'Behance&Fiverr', logo:'B' },
+  { key:'weekly',       label:'Weekly',         logo:'W' },
 ];
 let currentChannel = 'consolidated';
-
 /* ══════════════════════════════════════════════════════
    DEMO data (preview fallback when Script unreachable)
    ══════════════════════════════════════════════════════ */
@@ -390,8 +400,6 @@ const DEMO_PARTNER = {
     conv1Cum:[0,0,null,null], conv2Cum:[null,null,null,null], conv3Cum:[0,0,null,null], convMeetPartCum:[0,0,0,0],
     ltv:[0,0,0,0], cac:[0,473,2346,2263], ltvcac:[0,0,0,0] }
 };
-
-
 /* ══════════════════════════════════════════════════════
    UTILS
    ══════════════════════════════════════════════════════ */
@@ -400,7 +408,6 @@ const CURRENT_YEAR = new Date().getFullYear();
 function nullPad(arr, len=12){ return [...arr, ...Array(Math.max(0,len-arr.length)).fill(null)]; }
 function pct(f,p){ return p ? Math.round(f/p*100) : 0; }
 function eur(n){ return n==null ? '—' : '€'+Math.round(n).toLocaleString('en-US'); }
-
 /* ══════════════════════════════════════════════════════
    CHART FACTORY
    ══════════════════════════════════════════════════════ */
@@ -411,7 +418,6 @@ const GRID = { color:'rgba(0,0,0,0.05)', drawBorder:false };
 const TOOLTIP = { backgroundColor:'#fff', borderColor:'rgba(0,0,0,0.1)', borderWidth:1, titleColor:'#0f1117', bodyColor:'#6b7280', padding:10, cornerRadius:8 };
 const planDS = data => ({ label:'Plan', data, borderColor:'#d1d5db', backgroundColor:'transparent', borderWidth:1.5, borderDash:[5,4], pointRadius:0, tension:0.3 });
 const factDS = (data,color) => ({ label:'Actual', data, borderColor:color, backgroundColor:color+'18', borderWidth:2, pointRadius:4, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:2, fill:true, tension:0.3, spanGaps:false });
-
 const charts = {};
 function makeChart(id, plan, fact, color, yFmt){
   const el = document.getElementById(id);
@@ -437,7 +443,6 @@ function makeChart(id, plan, fact, color, yFmt){
 const fmtPct = v => v==null?null:v.toFixed(2)+'%';
 const fmtEur = v => v==null?null:'€'+Math.round(v).toLocaleString('en-US');
 const fmtRatio = v => v==null?null:v.toFixed(2);
-
 /* ══════════════════════════════════════════════════════
    KPI (shared)
    ══════════════════════════════════════════════════════ */
@@ -475,7 +480,6 @@ function renderKpi(prefix, factVal, planVal, fmt, higherIsBetter){
     if(ringVal) ringVal.textContent = ringPct+'%';
   }
 }
-
 /* ══════════════════════════════════════════════════════
    WEEKLY PROGRESS builder
    rows: [{label, data:{plan:[4], fact:[4]}, fmt}]  fmt: 'num'|'pct'
@@ -517,7 +521,6 @@ function buildWeekly(rows, currentMonth, currentWeek){
   });
   document.getElementById('weekly-table').innerHTML = head + '<tbody>'+body+'</tbody>';
 }
-
 /* ══════════════════════════════════════════════════════
    CHART grid builders
    ══════════════════════════════════════════════════════ */
@@ -528,7 +531,6 @@ function buildChartGrid(containerId, specs, cols){
     `<div class="chart-card"><div class="chart-card-title">${s.title}</div><div class="chart-card-sub">${s.sub}</div>${s.note?`<div class="chart-card-note">${s.note}</div>`:''}<div class="chart-wrap"><canvas id="${s.id}"></canvas></div></div>`
   ).join('');
 }
-
 /* ══════════════════════════════════════════════════════
    TABLE builder
    ══════════════════════════════════════════════════════ */
@@ -575,7 +577,6 @@ function buildTable(rows, n){
   });
   document.getElementById('table-body').innerHTML = html;
 }
-
 /* ══════════════════════════════════════════════════════
    GAUGE (спидометр Доход / Break-Even / План) — только Consolidated
    ══════════════════════════════════════════════════════ */
@@ -600,7 +601,6 @@ function gzLerpColor(c1,c2,t){
   return `rgb(${Math.round(gzLerp(r1,r2,t))},${Math.round(gzLerp(g1,g2,t))},${Math.round(gzLerp(b1,b2,t))})`;
 }
 function gzPct(v,p){ return p ? Math.round(v/p*100)+'%' : '—'; }
-
 function renderGaugeCard(d){
   const card = document.getElementById('gauge-card');
   const grid = card.closest('.kpi-grid');
@@ -611,50 +611,40 @@ function renderGaugeCard(d){
   }
   card.style.display='block';
   if(grid) grid.classList.add('has-gauge');
-
   const g = d.gauge;
   const workdayDates = getMonthWorkdayDates();
   const today = new Date().getDate();
   const dt = workdayDates.length;
   const dp = workdayDates.filter(x=>x<=today).length;
-
   document.getElementById('gz-date').textContent = new Date().toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
   document.getElementById('gz-fact').textContent = gzPct(g.fact, g.plan);
   document.getElementById('gz-time').textContent = gzPct(dp, dt);
   document.getElementById('gz-time-sub').textContent = dp+' из '+dt+' рабочих дней';
-
   const diff = Math.round((g.fact/g.plan - dp/dt)*100);
   const statusCard = document.getElementById('gz-status-card');
   const statusVal  = document.getElementById('gz-status-val');
   if(diff>=4){ statusCard.className='gauge-status gauge-status-ahead'; statusVal.textContent='↑ Опережаем на '+diff+'%'; }
   else if(diff<=-4){ statusCard.className='gauge-status gauge-status-behind'; statusVal.textContent='↓ Отстаём на '+Math.abs(diff)+'%'; }
   else { statusCard.className='gauge-status gauge-status-ok'; statusVal.textContent='≈ В графике'; }
-
   drawGaugeCanvas(g, dt, dp, workdayDates);
 }
-
 function drawGaugeCanvas(g, dt, dp, workdayDates){
   const cv=document.getElementById('gz-canvas');
   const ctx=cv.getContext('2d');
   const W=cv.width, H=cv.height;
   ctx.clearRect(0,0,W,H);
-
   const bg='#ffffff', mu='rgba(0,0,0,.36)', tk='rgba(0,0,0,.13)';
   const ckM='rgba(0,0,0,.22)', ckF='rgba(250,249,246,.99)', ckR='rgba(0,0,0,.26)';
   const sN='#1a1a1a', bM='rgba(0,0,0,.8)';
-
   const ox=W/2, oy=H-36;
   const Ro=Math.min(W*.43,H-50);
   const Ri=Ro*.56;
   const SA=Math.PI, EA=2*Math.PI;
-
   const br=g.bepBaseline/g.plan;
   const ber=g.bepGrowth/g.plan;
   const sr=g.fact/g.plan;
-
   function vA(r){ return SA+(Math.min(r,GZ_OV)/GZ_OV)*Math.PI; }
   const aBr=vA(br), aBer=vA(ber), aPl=vA(1);
-
   function drawArcGrad(ri,ro,a1,a2,cfn,steps){
     const dA=(a2-a1)/steps;
     for(let i=0;i<steps;i++){
@@ -674,17 +664,14 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
   }
   solidArc(aBer,aPl,GZ_ZY);
   solidArc(aPl,EA,GZ_ZG);
-
   ctx.beginPath();ctx.moveTo(ox,oy);ctx.arc(ox,oy,Ri,SA,EA);ctx.closePath();
   ctx.fillStyle=bg;ctx.fill();
-
   [SA,aBer,aPl,EA].forEach(a=>{
     ctx.beginPath();
     ctx.moveTo(ox+Math.cos(a)*Ri,oy+Math.sin(a)*Ri);
     ctx.lineTo(ox+Math.cos(a)*Ro,oy+Math.sin(a)*Ro);
     ctx.strokeStyle=bg;ctx.lineWidth=3;ctx.stroke();
   });
-
   for(let i=0;i<=26;i++){
     const v=i*5, a=vA(v/100), mj=(i%5===0);
     ctx.beginPath();
@@ -697,7 +684,6 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
       ctx.fillText(v+'%', ox+Math.cos(a)*(Ro+22), oy+Math.sin(a)*(Ro+22));
     }
   }
-
   (function(){
     const a=aBer;
     ctx.beginPath();
@@ -712,7 +698,6 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
     ctx.font='bold 9px sans-serif';ctx.fillStyle=bM;
     ctx.fillText('БЕЗУБЫТОК',ox+Math.cos(a)*(Ro+30),oy+Math.sin(a)*(Ro+30));
   })();
-
   (function(){
     const a=aBr;
     const tipR=Ro-2, baseR=Ro+9;
@@ -731,14 +716,12 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
     ctx.lineWidth=1;
     ctx.stroke();
   })();
-
   const cR=Ri*.87;
   ctx.beginPath();ctx.arc(ox,oy,cR,SA,EA);ctx.lineTo(ox,oy);ctx.closePath();
   ctx.fillStyle=ckF;ctx.fill();
   ctx.beginPath();ctx.arc(ox,oy,cR,SA,EA);ctx.strokeStyle=ckR;ctx.lineWidth=2;ctx.stroke();
   ctx.beginPath();ctx.moveTo(ox-cR+2,oy);ctx.lineTo(ox+cR-2,oy);
   ctx.strokeStyle=ckM;ctx.lineWidth=.5;ctx.stroke();
-
   for(let i=0;i<=dt;i++){
     const a=SA+i/dt*Math.PI;
     const tL=8, tW=1;
@@ -755,12 +738,10 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
       ctx.fillText(String(realDate), ox+Math.cos(a)*numR, oy+Math.sin(a)*numR);
     }
   }
-
   ctx.font='bold 12px sans-serif';
   ctx.fillStyle='rgba(0,0,0,.5)';
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText('РАБОЧИЕ ДНИ', ox, oy-cR*0.58);
-
   const tr=Math.min(dp/dt,1);
   const tA=SA+tr*Math.PI;
   const nL=cR*.80, nB=cR*.22;
@@ -770,18 +751,15 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
   ctx.restore();
   ctx.beginPath();ctx.arc(ox,oy,7,0,2*Math.PI);ctx.fillStyle=GZ_RN;ctx.fill();
   ctx.beginPath();ctx.arc(ox,oy,3,0,2*Math.PI);ctx.fillStyle=ckF;ctx.fill();
-
   const sA=vA(Math.min(sr,GZ_OV));
   ctx.save();ctx.translate(ox,oy);ctx.rotate(sA);
   ctx.beginPath();ctx.moveTo(-Ri*.26,-6);ctx.lineTo(Ro*.84,0);ctx.lineTo(-Ri*.26,6);ctx.closePath();
   ctx.fillStyle=sN;ctx.globalAlpha=.93;ctx.fill();
   ctx.restore();ctx.globalAlpha=1;
-
   ctx.beginPath();ctx.arc(ox,oy,10,0,2*Math.PI);ctx.fillStyle=sN;ctx.fill();
   ctx.beginPath();ctx.arc(ox,oy,4.5,0,2*Math.PI);ctx.fillStyle=bg;ctx.fill();
   ctx.beginPath();ctx.arc(ox,oy,2,0,2*Math.PI);ctx.fillStyle=GZ_RN;ctx.fill();
 }
-
 /* ══════════════════════════════════════════════════════
    RENDER — router
    ══════════════════════════════════════════════════════ */
@@ -790,22 +768,18 @@ function render(d){
   if(d.type === 'partnership') renderPartnership(d);
   else renderStandard(d);
 }
-
 /* ---------- STANDARD (upwork / csr / behance / consolidated) ---------- */
 function renderStandard(d){
   const n = d.filledMonths, lastM = Math.max(0, n-1);
   const isBids = d.layout === 'bids';   // upwork has the bids funnel + weekly
   const periodLabel = n<=1 ? M_NAMES[0] : `${M_NAMES[0]} — ${M_NAMES[lastM]} ${CURRENT_YEAR}`;
   document.getElementById('kpi-period').textContent = `Key metrics · YTD ${periodLabel}`;
-
   const sumFact = k => (d.fact[k]||[]).reduce((a,b)=>a+(b||0),0);
   const sumPlan = k => d.plan[k].slice(0,n).reduce((a,b)=>a+(b||0),0);
   renderKpi('sales', sumFact('sales'), sumPlan('sales'), 'num', true);
   renderKpi('ltvcac', d.fact.ltvcac[lastM], d.plan.ltvcac[lastM], 'ratio', true);
-
   /* round ratios */
   d.plan.ltvcac=d.plan.ltvcac.map(r2); d.fact.ltvcac=d.fact.ltvcac.map(r2);
-
   /* ── WEEKLY block (only upwork/bids) ── */
   const wkSection = document.getElementById('weekly-section');
   if(isBids && d.weekly){
@@ -822,7 +796,6 @@ function renderStandard(d){
   } else {
     wkSection.style.display='none';
   }
-
   /* ── COUNT CHARTS ── */
   if(isBids){
     buildChartGrid('count-charts',[
@@ -851,7 +824,6 @@ function renderStandard(d){
     makeChart('c-calls', d.plan.callsCum, nullPad(d.fact.callsCum), '#b45309');
     makeChart('c-sales', d.plan.salesCum, nullPad(d.fact.salesCum), '#dc2626');
   }
-
   /* ── CONVERSION CHARTS ── */
   if(isBids){
     buildChartGrid('conv-charts',[
@@ -876,7 +848,6 @@ function renderStandard(d){
     makeChart('c-conv2', d.plan.conv2Cum, nullPad(d.fact.conv2Cum||d.fact.conv2), '#dc2626', fmtPct);
     makeChart('c-conv3', d.plan.conv3Cum, nullPad(d.fact.conv3Cum||d.fact.conv3), '#059669', fmtPct);
   }
-
   /* ── ECON CHARTS ── */
   const chLabel = (CHANNELS.find(x=>x.key===currentChannel)||{label:currentChannel}).label;
   buildChartGrid('econ-charts',[
@@ -885,7 +856,6 @@ function renderStandard(d){
   ],2);
   makeChart('c-ltv', d.plan.ltv, nullPad(d.fact.ltv), '#059669', fmtEur);
   makeChart('c-ltvcac', d.plan.ltvcac, nullPad(d.fact.ltvcac), '#b45309', fmtRatio);
-
   /* ── TABLE ── */
   let tableRows;
   if(isBids){
@@ -930,20 +900,16 @@ function renderStandard(d){
   }
   buildTable(tableRows, n);
 }
-
 /* ---------- PARTNERSHIP ---------- */
 function renderPartnership(d){
   const n = d.filledMonths, lastM = Math.max(0, n-1);
   const periodLabel = n<=1 ? M_NAMES[0] : `${M_NAMES[0]} — ${M_NAMES[lastM]} ${CURRENT_YEAR}`;
   document.getElementById('kpi-period').textContent = `Key metrics · YTD ${periodLabel}`;
-
   const sumFact = k => (d.fact[k]||[]).reduce((a,b)=>a+(b||0),0);
   const sumPlan = k => d.plan[k].slice(0,n).reduce((a,b)=>a+(b||0),0);
   renderKpi('sales', sumFact('sales'), sumPlan('sales'), 'num', true);
   renderKpi('ltvcac', d.fact.ltvcac[lastM], d.plan.ltvcac[lastM], 'ratio', true);
-
   d.plan.ltvcac=d.plan.ltvcac.map(r2); d.fact.ltvcac=d.fact.ltvcac.map(r2);
-
   /* ── WEEKLY block — requests funnel with conversions ── */
   const wkSection = document.getElementById('weekly-section');
   if(d.weekly){
@@ -962,7 +928,6 @@ function renderPartnership(d){
   } else {
     wkSection.style.display='none';
   }
-
   /* count charts (5): Meetings / Partner / Leads / Calls / Sales */
   buildChartGrid('count-charts',[
     {id:'c-meet', title:'Meetings cumulative', sub:'plan vs actual · units'},
@@ -976,7 +941,6 @@ function renderPartnership(d){
   makeChart('c-leads', d.plan.leadsCum, nullPad(d.fact.leadsCum), '#b45309');
   makeChart('c-calls', d.plan.callsCum, nullPad(d.fact.callsCum), '#059669');
   makeChart('c-sales', d.plan.salesCum, nullPad(d.fact.salesCum), '#dc2626');
-
   /* conversion charts (4): Meeting→Partner, Lead→Call, Call→Sale, Lead→Sale */
   buildChartGrid('conv-charts',[
     {id:'c-cmp', title:'Meeting → Partner', sub:'plan vs actual · %'},
@@ -988,7 +952,6 @@ function renderPartnership(d){
   makeChart('c-conv1', d.plan.conv1Cum, nullPad(d.fact.conv1Cum), '#1d4ed8', fmtPct);
   makeChart('c-conv2', d.plan.conv2Cum, nullPad(d.fact.conv2Cum), '#dc2626', fmtPct);
   makeChart('c-conv3', d.plan.conv3Cum, nullPad(d.fact.conv3Cum), '#059669', fmtPct);
-
   /* econ charts */
   buildChartGrid('econ-charts',[
     {id:'c-ltv',    title:'LTV · 18 months', sub:'plan vs actual · €',     note:'Partnership · CM 18 mo / Clients 18 mo'},
@@ -996,7 +959,6 @@ function renderPartnership(d){
   ],2);
   makeChart('c-ltv', d.plan.ltv, nullPad(d.fact.ltv), '#059669', fmtEur);
   makeChart('c-ltvcac', d.plan.ltvcac, nullPad(d.fact.ltvcac), '#b45309', fmtRatio);
-
   /* table — pre-meeting + funnel + econ */
   buildTable([
     {group:'Pre-meeting'},
@@ -1024,9 +986,7 @@ function renderPartnership(d){
     {label:'LTV / CAC', plan:d.plan.ltvcac, fact:d.fact.ltvcac, fmt:'ratio'},
   ], n);
 }
-
 function r2(v){ return v==null ? null : Math.round(v*100)/100; }
-
 /* ══════════════════════════════════════════════════════
    TABS
    ══════════════════════════════════════════════════════ */
@@ -1046,16 +1006,16 @@ function switchChannel(key){
   document.getElementById('tb-logo').textContent = ch.logo;
   document.getElementById('tb-title').innerHTML = `${ch.label} <span>/ Sales Dashboard</span>`;
   document.querySelectorAll('.tab').forEach(b=> b.classList.toggle('active', b.dataset.key===key));
+  document.getElementById('standard-tab-view').style.display = (key==='weekly') ? 'none' : '';
+  document.getElementById('weekly-tab-view').style.display = (key==='weekly') ? 'block' : 'none';
   pill.className='live-pill loading'; pillText.textContent='Loading...';
   loadData();
 }
-
 /* ══════════════════════════════════════════════════════
    DATA LOADING — Worker / fetch / JSONP (parallel)
    ══════════════════════════════════════════════════════ */
 const pill = document.getElementById('live-pill');
 const pillText = document.getElementById('live-text');
-
 function fetchViaWorker(url){
   return new Promise(function(resolve,reject){
     const code = ['self.onmessage=async function(e){try{const r=await fetch(e.data,{credentials:"omit",redirect:"follow"});const t=await r.text();self.postMessage({ok:true,text:t});}catch(err){self.postMessage({ok:false,error:err.message});}};'].join('');
@@ -1078,7 +1038,6 @@ function jsonpLoad(url, timeout){
     document.head.appendChild(s);
   });
 }
-
 function fetchAny(url){
   return Promise.any([
     fetchViaWorker(url),
@@ -1086,10 +1045,26 @@ function fetchAny(url){
     jsonpLoad(url, 8000),
   ]);
 }
-
 async function loadData(){
-  const url = SCRIPT_URL + '?channel=' + currentChannel;
   const cmpSection = document.getElementById('cmp-section');
+
+  /* ── WEEKLY tab: separate script/URL, separate render path ── */
+  if(currentChannel === 'weekly'){
+    cmpSection.style.display = 'none';
+    try {
+      const data = await fetchAny(WEEKLY_SCRIPT_URL);
+      if(data.error) throw new Error(data.error);
+      renderWeekly(data);
+      pill.className='live-pill'; pillText.textContent='Live · Google Sheets';
+    } catch(e){
+      renderWeekly(DEMO_WEEKLY);
+      pill.className='live-pill error'; pillText.textContent='Demo (offline)';
+      console.warn('Weekly live load failed, showing demo:', e.message);
+    }
+    return;
+  }
+
+  const url = SCRIPT_URL + '?channel=' + currentChannel;
   try {
     const data = await fetchAny(url);
     if(data.error) throw new Error(data.error);
@@ -1100,7 +1075,6 @@ async function loadData(){
     pill.className='live-pill error'; pillText.textContent='Demo (offline)';
     console.warn('Live load failed, showing demo:', e.message);
   }
-
   /* Channel comparison — only on consolidated tab */
   if(currentChannel === 'consolidated'){
     cmpSection.style.display = 'block';
@@ -1116,7 +1090,6 @@ async function loadData(){
     cmpSection.style.display = 'none';
   }
 }
-
 function renderComparison(rows){
   const maxSales = Math.max(1, ...rows.map(r=>r.salesPlan||0, ));
   document.getElementById('cmp-body').innerHTML = rows.map(r=>{
@@ -1135,14 +1108,219 @@ function renderComparison(rows){
     </tr>`;
   }).join('');
 }
-
 const DEMO_SUMMARY = [
   {label:'Upwork', salesFact:2, salesPlan:4, cac:3349, ltvcac:1.65, lead2sale:1.85},
   {label:'CSR', salesFact:0, salesPlan:0, cac:2346, ltvcac:null, lead2sale:0},
   {label:'Behance&Fiverr', salesFact:0, salesPlan:0, cac:null, ltvcac:null, lead2sale:0},
   {label:'Partnership', salesFact:0, salesPlan:0, cac:2263, ltvcac:null, lead2sale:0},
 ];
+/* ══════════════════════════════════════════════════════
+   WEEKLY TAB — render + demo fallback (separate document/script)
+   ══════════════════════════════════════════════════════ */
+const WEEKLY_KEY_METRIC = {
+  'Instagram':'Охоплення', 'LinkedIn Бориса':'Охоплення', 'LinkedIn Наталії':'Охоплення', 'Threads':'Охоплення',
+  'Behance':'Угоди', 'Upwork':'Угоди', 'Fiverr':'Угоди', 'Партнерська мережа':'Угоди', 'Партнерська мережа Solve':'Угоди',
+};
+const WEEKLY_PALETTE = ['#6d28d9','#1d4ed8','#0d9488','#b45309','#059669','#dc2626','#7c3aed','#0891b2','#ca8a04'];
+const weeklyCharts = {}; // canvas id -> Chart instance
 
+function wkCumulate(weekly, field){
+  const out = []; let sum = 0, broken = false;
+  weekly.forEach(w=>{
+    const v = w[field];
+    if(v == null) broken = true;
+    if(broken){ out.push(null); return; }
+    sum += v; out.push(+sum.toFixed(4));
+  });
+  return out;
+}
+function wkTagFor(plan, fact){
+  if(fact==null) return '<span class="cell-tag zero">—</span>';
+  if(plan==null) return `<span class="cell-tag zero">${fact}</span>`;
+  const good = fact >= plan;
+  return `<span class="cell-tag ${good?'good':'bad'}">${fact}</span>`;
+}
+function wkGapText(planCum, factCum){
+  const p = planCum[planCum.length-1];
+  const filled = factCum.filter(v=>v!=null);
+  if(!filled.length || !p) return { cls:'gap-none', text:'немає даних' };
+  const f = filled[filled.length-1];
+  const diff = Math.round((f/p-1)*100);
+  return diff>=0 ? { cls:'gap-good', text:`+${diff}% від плану` } : { cls:'gap-bad', text:`${diff}% від плану` };
+}
+function wkSelectMetric(canvasId, spec, idx){
+  const m = spec.metrics[idx];
+  const chart = weeklyCharts[canvasId];
+  chart.data.datasets[0].data = m.planCum;
+  chart.data.datasets[1].data = m.factCum;
+  chart.data.datasets[1].borderColor = spec.color;
+  chart.data.datasets[1].backgroundColor = spec.color+'18';
+  chart.data.datasets[1].pointBackgroundColor = spec.color;
+  chart.update();
+  const card = document.getElementById(canvasId+'-card');
+  card.querySelectorAll('.mrow').forEach(r=> r.classList.toggle('sel', +r.dataset.idx===idx));
+  document.getElementById(canvasId+'-title').innerHTML = `<span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}`;
+  const gap = wkGapText(m.planCum, m.factCum);
+  document.getElementById(canvasId+'-foot').innerHTML = `<span>з початку періоду</span><span class="${gap.cls}">${gap.text}</span>`;
+}
+function wkBuildCard(container, spec){
+  const canvasId = 'wk-' + spec.id;
+  const rowsHtml = spec.metrics.map((m,i)=>`
+    <tr class="mrow${i===spec.defaultIdx?' sel':''}" data-idx="${i}" style="--dot-color:${spec.color}">
+      <td><span class="mrow-dot"></span>${m.label}</td>
+      <td>${m.lastPlan==null?'—':m.lastPlan}</td>
+      <td>${wkTagFor(m.lastPlan,m.lastFact)}</td>
+    </tr>`).join('');
+  const card = document.createElement('div');
+  card.className = 'wk-card';
+  card.id = canvasId+'-card';
+  card.innerHTML = `
+    <div class="wk-card-header">
+      <span class="wk-card-title">${spec.title}</span>
+      <span class="wk-card-hint">клік по рядку → графік</span>
+    </div>
+    <table class="mini"><thead><tr><th>Метрика</th><th>План</th><th>Факт</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+    <div class="wk-chart-title" id="${canvasId}-title"></div>
+    <div class="wk-chart-wrap"><canvas id="${canvasId}"></canvas></div>
+    <div class="wk-chart-foot" id="${canvasId}-foot"></div>
+  `;
+  container.appendChild(card);
+  if(weeklyCharts[canvasId]) weeklyCharts[canvasId].destroy();
+  weeklyCharts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type:'line',
+    data:{ labels: spec.weekLabels, datasets:[planDS([]), factDS([], spec.color)] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10, font:{size:9.5} } }, tooltip:TOOLTIP },
+      scales:{
+        x:{ grid:GRID, ticks:{color:'#9ca3af', font:{size:8}, maxRotation:0, autoSkip:true}, border:{display:false} },
+        y:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} }
+      }
+    }
+  });
+  card.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkSelectMetric(canvasId, spec, +r.dataset.idx)));
+  wkSelectMetric(canvasId, spec, spec.defaultIdx);
+}
+function renderWeekly(data){
+  const container = document.getElementById('weekly-groups-container');
+  container.innerHTML = '';
+  Object.keys(weeklyCharts).forEach(id=>{ weeklyCharts[id].destroy(); delete weeklyCharts[id]; });
+
+  const weekLabels = data.weekLabels || [];
+  const lastIdx = data.lastCompletedIndex!=null ? data.lastCompletedIndex : -1;
+  const lastLabel = lastIdx>=0 ? weekLabels[lastIdx] : 'ще немає завершених тижнів';
+  let colorCursor = 0;
+
+  (data.groups||[]).forEach(group=>{
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.innerHTML = `${group.key} <span class="section-note">&nbsp;·&nbsp; тиждень ${lastLabel} · клікніть по метриці, щоб побачити графік</span>`;
+    container.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'wk-grid';
+    container.appendChild(grid);
+
+    group.channels.forEach(channel=>{
+      const color = WEEKLY_PALETTE[colorCursor++ % WEEKLY_PALETTE.length];
+      const keyMetricName = WEEKLY_KEY_METRIC[channel.key];
+      const metrics = channel.metrics.map(m=>{
+        const planCum = wkCumulate(m.weekly,'plan');
+        const factCum = wkCumulate(m.weekly,'fact');
+        const last = lastIdx>=0 ? m.weekly[lastIdx] : {plan:null,fact:null};
+        return { label:m.label, planCum, factCum, lastPlan:last?last.plan:null, lastFact:last?last.fact:null };
+      });
+      let defaultIdx = metrics.findIndex(m=>m.label===keyMetricName);
+      if(defaultIdx<0) defaultIdx = 0;
+      wkBuildCard(grid, { id:(group.key+'-'+channel.key).replace(/[^a-zA-Z0-9]+/g,'_'), title:channel.key, color, weekLabels, metrics, defaultIdx });
+    });
+  });
+}
+
+/* demo fallback for the Weekly tab (used only if WEEKLY_SCRIPT_URL is unreachable) */
+function wkDemoWeek(planPerWeek, fact1, weeksFilled, totalWeeks, seed){
+  const weekly = [];
+  for(let i=0;i<totalWeeks;i++){
+    const plan = planPerWeek==null ? null : +planPerWeek.toFixed(4);
+    let fact = null;
+    if(fact1!=null && i<weeksFilled){
+      const wobble = i===0 ? 1 : (1 + 0.22*Math.sin(seed + i*1.7));
+      fact = +Math.max(0, fact1*wobble).toFixed(4);
+    }
+    weekly.push({plan, fact});
+  }
+  return weekly;
+}
+const DEMO_WEEKS = ['16.08.26-23.08.26','24.08.26-30.08.26','31.08.26-06.09.26','07.09.26-13.09.26','14.09.26-20.09.26','21.09.26-27.09.26','28.09.26-04.10.26','05.10.26-11.10.26'];
+const DEMO_WEEKLY = {
+  weekLabels: DEMO_WEEKS,
+  lastCompletedIndex: 0,
+  groups:[
+    { key:'SMM', channels:[
+      { key:'Instagram', metrics:[
+        {label:'Пости', weekly: wkDemoWeek(2,1,4,8,0.4)},
+        {label:'Нові підписники', weekly: wkDemoWeek(20,1,4,8,1.1)},
+        {label:'Охоплення', weekly: wkDemoWeek(400,140,4,8,2.0)},
+      ]},
+      { key:'LinkedIn Бориса', metrics:[
+        {label:'Пости', weekly: wkDemoWeek(1,2,4,8,0.6)},
+        {label:'Охоплення', weekly: wkDemoWeek(1000,379,4,8,1.8)},
+        {label:'Перегляди профілю', weekly: wkDemoWeek(50,44,4,8,0.9)},
+        {label:'Нові підписники', weekly: wkDemoWeek(20,36,4,8,1.3)},
+        {label:'Коментарі', weekly: wkDemoWeek(5,5,4,8,2.4)},
+      ]},
+      { key:'LinkedIn Наталії', metrics:[
+        {label:'Пости', weekly: wkDemoWeek(1,1,4,8,0.5)},
+        {label:'Охоплення', weekly: wkDemoWeek(191,191,4,8,1.6)},
+        {label:'Перегляди профілю', weekly: wkDemoWeek(12,12,4,8,1.0)},
+        {label:'Нові підписники', weekly: wkDemoWeek(1,1,4,8,2.1)},
+      ]},
+      { key:'Threads', metrics:[
+        {label:'Пости', weekly: wkDemoWeek(10,11,4,8,0.7)},
+        {label:'Нові підписники', weekly: wkDemoWeek(10,4,4,8,1.4)},
+        {label:'Коментарі', weekly: wkDemoWeek(5,12,4,8,2.2)},
+        {label:'Охоплення', weekly: wkDemoWeek(10000,3866,4,8,1.9)},
+        {label:'Глядачі', weekly: wkDemoWeek(2984,2984,4,8,0.3)},
+        {label:'Взаємодії', weekly: wkDemoWeek(161,161,4,8,2.6)},
+      ]},
+    ]},
+    { key:'SALES', channels:[
+      { key:'Behance', metrics:[
+        {label:'Всі заявки/контакти', weekly: wkDemoWeek(null,null,0,8,0.2)},
+        {label:'Цільові', weekly: wkDemoWeek(null,null,0,8,0.8)},
+        {label:'Дзвінки', weekly: wkDemoWeek(null,null,0,8,1.5)},
+        {label:'Угоди', weekly: wkDemoWeek(null,null,0,8,2.3)},
+        {label:'Біди відправлено', weekly: wkDemoWeek(20,20,4,8,1.0)},
+        {label:'Біди відкрито', weekly: wkDemoWeek(null,8,4,8,1.9)},
+      ]},
+      { key:'Upwork', metrics:[
+        {label:'Біди відправлено', weekly: wkDemoWeek(20,20,4,8,0.4)},
+        {label:'Біди відповіді', weekly: wkDemoWeek(5,1,4,8,1.1)},
+        {label:'Зустрічі заплановано', weekly: wkDemoWeek(3,0,4,8,1.7)},
+        {label:'Зустрічі проведено', weekly: wkDemoWeek(2,0,4,8,2.2)},
+        {label:'Угоди', weekly: wkDemoWeek(0.4,0,4,8,2.9)},
+      ]},
+      { key:'Fiverr', metrics:[
+        {label:'Всі заявки/контакти', weekly: wkDemoWeek(5,0,4,8,0.5)},
+        {label:'Цільові', weekly: wkDemoWeek(2,0,4,8,1.2)},
+        {label:'Дзвінки', weekly: wkDemoWeek(1,0,4,8,1.8)},
+        {label:'Угоди', weekly: wkDemoWeek(0.25,0,4,8,2.5)},
+      ]},
+      { key:'Партнерська мережа', metrics:[
+        {label:'Написали', weekly: wkDemoWeek(170,null,0,8,0.3)},
+        {label:'Прийняли запит', weekly: wkDemoWeek(50,null,0,8,0.9)},
+        {label:'Проведено зустрічей з лідами', weekly: wkDemoWeek(1,null,0,8,1.6)},
+        {label:'Угоди', weekly: wkDemoWeek(0.5,null,0,8,2.4)},
+      ]},
+      { key:'Партнерська мережа Solve', metrics:[
+        {label:'Отримано лідів', weekly: wkDemoWeek(1,null,0,8,0.6)},
+        {label:'Проведено зустрічей з лідами', weekly: wkDemoWeek(1,null,0,8,1.3)},
+        {label:'Угоди', weekly: wkDemoWeek(0.25,null,0,8,2.1)},
+      ]},
+    ]},
+  ],
+};
 /* INIT */
 document.getElementById('js-date').textContent = new Date().toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'});
 document.getElementById('footer').textContent = 'Sales Dashboard · ' + CURRENT_YEAR + ' · Data updates automatically from Google Sheets';
