@@ -189,6 +189,18 @@ table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
 .wk-chart-title .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .wk-chart-title .badge { font-size:11px; padding:3px 9px; }
 .wk-chart-wrap { position:relative; height:140px; }
+.wk-card-actions { display:flex; align-items:center; gap:8px; }
+.wk-expand-btn { background:none; border:1px solid var(--border2); border-radius:6px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); flex-shrink:0; padding:0; }
+.wk-expand-btn:hover { background:var(--surface2); color:var(--text); }
+.wk-expand-btn svg { display:block; }
+/* Expand modal — same card content, larger */
+.wk-modal-backdrop { position:fixed; inset:0; background:rgba(15,17,23,0.55); display:flex; align-items:center; justify-content:center; z-index:200; padding:24px; }
+.wk-modal-panel { background:var(--surface); border-radius:var(--radius); width:min(1100px, 100%); max-height:92vh; overflow-y:auto; padding:22px 26px 20px; box-shadow:0 20px 60px rgba(0,0,0,0.35); }
+.wk-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.wk-modal-title { font-size:18px; font-weight:800; color:var(--text); }
+.wk-modal-close { background:none; border:1px solid var(--border2); border-radius:8px; width:30px; height:30px; cursor:pointer; font-size:15px; color:var(--text-muted); line-height:1; }
+.wk-modal-close:hover { background:var(--surface2); color:var(--text); }
+.wk-modal-chart-wrap { position:relative; height:min(52vh, 440px); margin-top:8px; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 </style>
@@ -328,6 +340,18 @@ table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
 <div id="weekly-tab-view" style="display:none">
   <div id="weekly-groups-container"></div>
 </div>
+</div>
+<!-- Weekly tab: expand-to-fullscreen modal (shared by all cards) -->
+<div class="wk-modal-backdrop" id="wk-modal-backdrop" style="display:none">
+  <div class="wk-modal-panel" id="wk-modal-panel">
+    <div class="wk-modal-header">
+      <span class="wk-modal-title" id="wk-modal-title"></span>
+      <button class="wk-modal-close" id="wk-modal-close" type="button" aria-label="Закрити">✕</button>
+    </div>
+    <table class="mini"><thead><tr><th>Метрика</th><th>План</th><th>Факт</th></tr></thead><tbody id="wk-modal-tbody"></tbody></table>
+    <div class="wk-chart-title" id="wk-modal-chart-title"></div>
+    <div class="wk-modal-chart-wrap"><canvas id="wk-modal-canvas"></canvas></div>
+  </div>
 </div>
 <div class="footer" id="footer">Sales Dashboard · 2025 · Data updates automatically from Google Sheets</div>
 <script>
@@ -1169,6 +1193,7 @@ function wkGapText(planCum, factCum){
   return diff>=0 ? { cls:'badge-good', text:`+${diff}% від плану` } : { cls:'badge-bad', text:`${diff}% від плану` };
 }
 function wkSelectMetric(canvasId, spec, idx){
+  spec.currentIdx = idx;
   const m = spec.metrics[idx];
   const chart = weeklyCharts[canvasId];
   chart.data.datasets[0].data = m.planCum;
@@ -1184,8 +1209,11 @@ function wkSelectMetric(canvasId, spec, idx){
     `<span class="wk-chart-name"><span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}</span>` +
     `<span class="badge ${gap.cls}">${gap.text}</span>`;
 }
+const EXPAND_ICON = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2H2v4M2 2l4.5 4.5M10 14h4v-4M14 14L9.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 function wkBuildCard(container, spec){
   const canvasId = 'wk-' + spec.id;
+  weeklySpecs[canvasId] = spec;
   const rowsHtml = spec.metrics.map((m,i)=>`
     <tr class="mrow${i===spec.defaultIdx?' sel':''}" data-idx="${i}" style="--dot-color:${spec.color}">
       <td><span class="mrow-dot"></span>${m.label}</td>
@@ -1198,7 +1226,10 @@ function wkBuildCard(container, spec){
   card.innerHTML = `
     <div class="wk-card-header">
       <span class="wk-card-title">${spec.title}</span>
-      <span class="wk-card-hint">клік по рядку → графік</span>
+      <span class="wk-card-actions">
+        <span class="wk-card-hint">клік по рядку → графік</span>
+        <button class="wk-expand-btn" type="button" title="Розгорнути" aria-label="Розгорнути ${spec.title}">${EXPAND_ICON}</button>
+      </span>
     </div>
     <table class="mini"><thead><tr><th>Метрика</th><th>План</th><th>Факт</th></tr></thead><tbody>${rowsHtml}</tbody></table>
     <div class="wk-card-bottom">
@@ -1222,12 +1253,81 @@ function wkBuildCard(container, spec){
     }
   });
   card.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkSelectMetric(canvasId, spec, +r.dataset.idx)));
+  card.querySelector('.wk-expand-btn').addEventListener('click', ()=> wkOpenModal(canvasId));
   wkSelectMetric(canvasId, spec, spec.defaultIdx);
 }
+
+/* ── Expand-to-fullscreen modal (shared across all Weekly-tab cards) ── */
+const weeklySpecs = {}; // canvasId -> spec, so the modal can rebuild a card's content
+let wkModalChart = null;
+let wkModalCanvasId = null;
+
+function wkOpenModal(canvasId){
+  const spec = weeklySpecs[canvasId];
+  if(!spec) return;
+  wkModalCanvasId = canvasId;
+  document.getElementById('wk-modal-title').textContent = spec.title;
+
+  const rowsHtml = spec.metrics.map((m,i)=>`
+    <tr class="mrow" data-idx="${i}" style="--dot-color:${spec.color}">
+      <td><span class="mrow-dot"></span>${m.label}</td>
+      <td>${m.lastPlan==null?'—':m.lastPlan}</td>
+      <td>${wkTagFor(m.lastPlan,m.lastFact)}</td>
+    </tr>`).join('');
+  const tbody = document.getElementById('wk-modal-tbody');
+  tbody.innerHTML = rowsHtml;
+  tbody.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkModalSelect(+r.dataset.idx)));
+
+  if(wkModalChart) wkModalChart.destroy();
+  wkModalChart = new Chart(document.getElementById('wk-modal-canvas'), {
+    type:'line',
+    data:{ labels: spec.weekLabels, datasets:[planDS([]), factDS([], spec.color)] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:11, padding:12, font:{size:11} } }, tooltip:TOOLTIP },
+      scales:{
+        x:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
+        y:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} }
+      }
+    }
+  });
+
+  wkModalSelect(spec.currentIdx!=null ? spec.currentIdx : spec.defaultIdx);
+  document.getElementById('wk-modal-backdrop').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function wkModalSelect(idx){
+  const spec = weeklySpecs[wkModalCanvasId];
+  wkSelectMetric(wkModalCanvasId, spec, idx); // keeps the small card + spec.currentIdx in sync
+  const m = spec.metrics[idx];
+  wkModalChart.data.datasets[0].data = m.planCum;
+  wkModalChart.data.datasets[1].data = m.factCum;
+  wkModalChart.data.datasets[1].borderColor = spec.color;
+  wkModalChart.data.datasets[1].backgroundColor = spec.color+'18';
+  wkModalChart.data.datasets[1].pointBackgroundColor = spec.color;
+  wkModalChart.update();
+  document.querySelectorAll('#wk-modal-tbody .mrow').forEach(r=> r.classList.toggle('sel', +r.dataset.idx===idx));
+  const gap = wkGapText(m.planCum, m.factCum);
+  document.getElementById('wk-modal-chart-title').innerHTML =
+    `<span class="wk-chart-name"><span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}</span>` +
+    `<span class="badge ${gap.cls}">${gap.text}</span>`;
+}
+function wkCloseModal(){
+  document.getElementById('wk-modal-backdrop').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('wk-modal-close').addEventListener('click', wkCloseModal);
+document.getElementById('wk-modal-backdrop').addEventListener('click', (e)=>{
+  if(e.target.id === 'wk-modal-backdrop') wkCloseModal();
+});
+document.getElementById('wk-modal-panel').addEventListener('click', (e)=> e.stopPropagation());
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') wkCloseModal(); });
 function renderWeekly(data){
   const container = document.getElementById('weekly-groups-container');
   container.innerHTML = '';
   Object.keys(weeklyCharts).forEach(id=>{ weeklyCharts[id].destroy(); delete weeklyCharts[id]; });
+  Object.keys(weeklySpecs).forEach(id=>{ delete weeklySpecs[id]; });
 
   const weekLabels = data.weekLabels || [];
   const lastIdx = data.lastCompletedIndex!=null ? data.lastCompletedIndex : -1;
