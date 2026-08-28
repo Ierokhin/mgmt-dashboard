@@ -164,10 +164,13 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .section-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); text-transform:none; letter-spacing:0; font-weight:500; }
 .wk-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:32px; }
 @media (max-width:900px){ .wk-grid{ grid-template-columns:1fr; } }
-.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px 14px; }
+.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px 14px; display:flex; flex-direction:column; height:100%; }
 .wk-card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
 .wk-card-title { font-size:13px; font-weight:700; color:var(--text); }
 .wk-card-hint { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-faint); }
+/* pins the chart to the bottom of the card so charts line up across a row
+   even when cards have a different number of metric rows in the table */
+.wk-card-bottom { margin-top:auto; }
 table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; margin-bottom:12px; }
 table.mini th { text-align:left; color:var(--text-faint); font-weight:500; font-size:9.5px; letter-spacing:.5px; text-transform:uppercase; padding:0 0 6px; border-bottom:1px solid var(--border); }
 table.mini th:not(:first-child), table.mini td:not(:first-child) { text-align:right; }
@@ -181,13 +184,11 @@ table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
 .mrow-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
 .mrow.sel .mrow-dot { background: var(--dot-color, var(--text)); }
 .cell-tag.zero { background:var(--surface2); color:var(--text-faint); }
-.wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
-.wk-chart-title .dot { width:8px; height:8px; border-radius:50%; }
+.wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.wk-chart-title .wk-chart-name { display:flex; align-items:center; gap:6px; }
+.wk-chart-title .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.wk-chart-title .badge { font-size:11px; padding:3px 9px; }
 .wk-chart-wrap { position:relative; height:140px; }
-.wk-chart-foot { display:flex; justify-content:space-between; font-family:'DM Mono',monospace; font-size:9.5px; color:var(--text-faint); margin-top:6px; }
-.wk-chart-foot .gap-bad { color:var(--red); font-weight:600; }
-.wk-chart-foot .gap-good { color:var(--green); font-weight:600; }
-.wk-chart-foot .gap-none { color:var(--text-faint); font-weight:500; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 </style>
@@ -347,6 +348,9 @@ const CHANNELS = [
   { key:'weekly',       label:'Weekly',         logo:'W' },
 ];
 let currentChannel = 'consolidated';
+/* The old "Weekly progress · current month" block (Upwork/Partnership tabs) now
+   duplicates the new Weekly tab — hidden for now. Flip back to true to restore it. */
+const SHOW_MONTHLY_WEEKLY_PROGRESS = false;
 /* ══════════════════════════════════════════════════════
    DEMO data (preview fallback when Script unreachable)
    ══════════════════════════════════════════════════════ */
@@ -782,7 +786,7 @@ function renderStandard(d){
   d.plan.ltvcac=d.plan.ltvcac.map(r2); d.fact.ltvcac=d.fact.ltvcac.map(r2);
   /* ── WEEKLY block (only upwork/bids) ── */
   const wkSection = document.getElementById('weekly-section');
-  if(isBids && d.weekly){
+  if(SHOW_MONTHLY_WEEKLY_PROGRESS && isBids && d.weekly){
     wkSection.style.display='block';
     buildWeekly([
       {label:'Bids sent',     data:d.weekly.bidsSent,   fmt:'num'},
@@ -912,7 +916,7 @@ function renderPartnership(d){
   d.plan.ltvcac=d.plan.ltvcac.map(r2); d.fact.ltvcac=d.fact.ltvcac.map(r2);
   /* ── WEEKLY block — requests funnel with conversions ── */
   const wkSection = document.getElementById('weekly-section');
-  if(d.weekly){
+  if(SHOW_MONTHLY_WEEKLY_PROGRESS && d.weekly){
     wkSection.style.display='block';
     buildWeekly([
       {label:'Requests sent',            data:d.weekly.requests,    fmt:'num'},
@@ -1065,8 +1069,16 @@ async function loadData(){
   }
 
   const url = SCRIPT_URL + '?channel=' + currentChannel;
+  const isConsolidated = currentChannel === 'consolidated';
+  /* Fire both requests immediately so they run in parallel instead of
+     back-to-back — on the Consolidated tab this roughly halves the wait,
+     since it used to await the channel data, then only start the summary
+     request afterwards. */
+  const mainPromise = fetchAny(url);
+  const summaryPromise = isConsolidated ? fetchAny(SCRIPT_URL + '?channel=all') : null;
+
   try {
-    const data = await fetchAny(url);
+    const data = await mainPromise;
     if(data.error) throw new Error(data.error);
     render(data);
     pill.className='live-pill'; pillText.textContent='Live · Google Sheets';
@@ -1076,10 +1088,10 @@ async function loadData(){
     console.warn('Live load failed, showing demo:', e.message);
   }
   /* Channel comparison — only on consolidated tab */
-  if(currentChannel === 'consolidated'){
+  if(isConsolidated){
     cmpSection.style.display = 'block';
     try {
-      const sum = await fetchAny(SCRIPT_URL + '?channel=all');
+      const sum = await summaryPromise;
       if(sum.error) throw new Error(sum.error);
       renderComparison(sum.channels);
     } catch(e){
@@ -1151,10 +1163,10 @@ function wkTagFor(plan, fact){
 function wkGapText(planCum, factCum){
   const p = planCum[planCum.length-1];
   const filled = factCum.filter(v=>v!=null);
-  if(!filled.length || !p) return { cls:'gap-none', text:'немає даних' };
+  if(!filled.length || !p) return { cls:'badge-neu', text:'немає даних' };
   const f = filled[filled.length-1];
   const diff = Math.round((f/p-1)*100);
-  return diff>=0 ? { cls:'gap-good', text:`+${diff}% від плану` } : { cls:'gap-bad', text:`${diff}% від плану` };
+  return diff>=0 ? { cls:'badge-good', text:`+${diff}% від плану` } : { cls:'badge-bad', text:`${diff}% від плану` };
 }
 function wkSelectMetric(canvasId, spec, idx){
   const m = spec.metrics[idx];
@@ -1167,9 +1179,10 @@ function wkSelectMetric(canvasId, spec, idx){
   chart.update();
   const card = document.getElementById(canvasId+'-card');
   card.querySelectorAll('.mrow').forEach(r=> r.classList.toggle('sel', +r.dataset.idx===idx));
-  document.getElementById(canvasId+'-title').innerHTML = `<span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}`;
   const gap = wkGapText(m.planCum, m.factCum);
-  document.getElementById(canvasId+'-foot').innerHTML = `<span>з початку періоду</span><span class="${gap.cls}">${gap.text}</span>`;
+  document.getElementById(canvasId+'-title').innerHTML =
+    `<span class="wk-chart-name"><span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}</span>` +
+    `<span class="badge ${gap.cls}">${gap.text}</span>`;
 }
 function wkBuildCard(container, spec){
   const canvasId = 'wk-' + spec.id;
@@ -1188,9 +1201,10 @@ function wkBuildCard(container, spec){
       <span class="wk-card-hint">клік по рядку → графік</span>
     </div>
     <table class="mini"><thead><tr><th>Метрика</th><th>План</th><th>Факт</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-    <div class="wk-chart-title" id="${canvasId}-title"></div>
-    <div class="wk-chart-wrap"><canvas id="${canvasId}"></canvas></div>
-    <div class="wk-chart-foot" id="${canvasId}-foot"></div>
+    <div class="wk-card-bottom">
+      <div class="wk-chart-title" id="${canvasId}-title"></div>
+      <div class="wk-chart-wrap"><canvas id="${canvasId}"></canvas></div>
+    </div>
   `;
   container.appendChild(card);
   if(weeklyCharts[canvasId]) weeklyCharts[canvasId].destroy();
