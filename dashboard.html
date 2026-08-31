@@ -1249,14 +1249,21 @@ function wkChartConfig(spec){
     const color = WEEKLY_PALETTE[idx % WEEKLY_PALETTE.length];
     return { mode:'single', idx, color, datasets:[planDS(m.planCum), factDS(m.factCum, color)], metric:m };
   }
+  // Trend/comparison mode: STILL cumulative (same cumPlan/cumFact as single mode) —
+  // plotted as cumulative-fact-as-%-of-cumulative-plan per week. A ratio is scale-free,
+  // so a metric with values in the tens (e.g. "Пости") and one in the thousands (e.g.
+  // "Охоплення") both land on the same 0-100%+ axis and their attainment curves ("waves")
+  // stay comparable — instead of switching to a different, non-cumulative calculation.
   const datasets = idxs.map(idx=>{
     const m = spec.metrics[idx];
-    const raw = m.weeklyFact;
-    const max = Math.max(0, ...raw.filter(v=>v!=null));
-    const norm = raw.map(v=> v==null ? null : (max>0 ? +(v/max*100).toFixed(1) : 0));
+    const pct = m.factCum.map((f,i)=>{
+      const p = m.planCum[i];
+      if(f==null || !p) return null;
+      return +(f/p*100).toFixed(1);
+    });
     const color = WEEKLY_PALETTE[idx % WEEKLY_PALETTE.length];
     return {
-      label:m.label, data:norm, rawValues:raw,
+      label:m.label, data:pct, cumFact:m.factCum, cumPlan:m.planCum,
       borderColor:color, backgroundColor:color+'18', borderWidth:2,
       pointRadius:3, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:1.5,
       fill:false, tension:0.3, spanGaps:false,
@@ -1284,11 +1291,13 @@ function wkApplyChart(chart, titleEl, spec){
   chart.data.datasets = cfg.datasets;
   const y = chart.options.scales.y;
   if(cfg.mode==='trend'){
-    y.suggestedMin = 0; y.suggestedMax = 100;
+    y.suggestedMin = 0; y.suggestedMax = 100; // floor only — Chart.js still auto-extends above 100% for over-plan weeks
     y.ticks.callback = v => v+'%';
     chart.options.plugins.tooltip.callbacks.label = ctx=>{
-      const raw = ctx.dataset.rawValues ? ctx.dataset.rawValues[ctx.dataIndex] : null;
-      return `${ctx.dataset.label}: ${raw==null?'—':raw}  (${ctx.formattedValue}% від максимуму)`;
+      const i = ctx.dataIndex;
+      const f = ctx.dataset.cumFact ? ctx.dataset.cumFact[i] : null;
+      const p = ctx.dataset.cumPlan ? ctx.dataset.cumPlan[i] : null;
+      return `${ctx.dataset.label}: ${f==null?'—':f} з ${p==null?'—':p} накопичувально  (${ctx.formattedValue}% від плану)`;
     };
   } else {
     delete y.suggestedMin; delete y.suggestedMax;
@@ -1303,7 +1312,7 @@ function wkApplyChart(chart, titleEl, spec){
       `<span class="badge ${gap.cls}">${gap.text}</span>`;
   } else {
     titleEl.innerHTML =
-      `<span class="wk-chart-name">Порівняння трендів · % від максимуму (${cfg.idxs.length} показники)</span>` +
+      `<span class="wk-chart-name">Порівняння трендів · накопичувально, % від плану (${cfg.idxs.length} показники)</span>` +
       `<span class="wk-card-hint">клікніть ще раз, щоб прибрати показник</span>`;
   }
 }
