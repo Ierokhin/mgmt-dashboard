@@ -160,18 +160,24 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .wk-cell-good { color:var(--green)!important; }
 .wk-cell-bad { color:var(--red)!important; }
 .wk-tot { background:rgba(0,0,0,0.02); font-weight:700; }
-/* WEEKLY TAB (SMM / SALES blocks, separate Google doc) */
+/* WEEKLY TAB (SMM / SALES / Партнерка blocks, separate Google doc, 4-week window) */
 .section-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); text-transform:none; letter-spacing:0; font-weight:500; }
-.wk-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:32px; }
-@media (max-width:900px){ .wk-grid{ grid-template-columns:1fr; } }
-.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px 14px; display:flex; flex-direction:column; height:100%; }
+/* prominent, color-coded section header — one per block (SMM / SALES / Партнерка) */
+.wk-section-label { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px 14px; padding:13px 20px; margin:30px 0 14px; border-radius:12px; border-left:6px solid var(--wk-accent,#6d28d9); background:var(--wk-bg,#f5f3ff); }
+.wk-section-label:first-child { margin-top:0; }
+.wk-section-label .wk-section-name { font-size:16px; font-weight:800; letter-spacing:.4px; color:var(--wk-accent,#6d28d9); text-transform:uppercase; }
+.wk-section-label .section-note { font-size:10.5px; color:var(--text-muted); }
+/* channel cards stack full-width, one per row */
+.wk-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px; }
+.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px 16px; display:flex; flex-direction:column; }
 .wk-card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
 .wk-card-title { font-size:13px; font-weight:700; color:var(--text); }
 .wk-card-hint { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-faint); }
-/* pins the chart to the bottom of the card so charts line up across a row
-   even when cards have a different number of metric rows in the table */
-.wk-card-bottom { margin-top:auto; }
-table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; margin-bottom:12px; }
+.wk-card-bottom { margin-top:6px; }
+/* wider cards give room for a two-column layout: metric table left, chart right */
+.wk-card-body { display:grid; grid-template-columns:minmax(220px,320px) 1fr; gap:22px; align-items:start; }
+@media (max-width:820px){ .wk-card-body{ grid-template-columns:1fr; } }
+table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; margin-bottom:0; }
 table.mini th { text-align:left; color:var(--text-faint); font-weight:500; font-size:9.5px; letter-spacing:.5px; text-transform:uppercase; padding:0 0 6px; border-bottom:1px solid var(--border); }
 table.mini th:not(:first-child), table.mini td:not(:first-child) { text-align:right; }
 table.mini td { padding:6px 4px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--text-dim); }
@@ -184,11 +190,11 @@ table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
 .mrow-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
 .mrow.sel .mrow-dot { background: var(--dot-color, var(--text)); }
 .cell-tag.zero { background:var(--surface2); color:var(--text-faint); }
-.wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
 .wk-chart-title .wk-chart-name { display:flex; align-items:center; gap:6px; }
 .wk-chart-title .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .wk-chart-title .badge { font-size:11px; padding:3px 9px; }
-.wk-chart-wrap { position:relative; height:140px; }
+.wk-chart-wrap { position:relative; height:220px; }
 .wk-card-actions { display:flex; align-items:center; gap:8px; }
 .wk-expand-btn { background:none; border:1px solid var(--border2); border-radius:6px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); flex-shrink:0; padding:0; }
 .wk-expand-btn:hover { background:var(--surface2); color:var(--text); }
@@ -264,8 +270,8 @@ table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
         <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
-        <span class="gauge-leg-item"><svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 6 L4 4.2 L17 6 L4 7.8 Z" fill="#c0392b"/></svg>Время</span>
-        <span class="gauge-leg-item"><svg width="20" height="14" viewBox="0 0 20 14"><path d="M0 7 L5 2 L19 7 L5 12 Z" fill="#1a1a1a"/></svg>Доход</span>
+        <span class="gauge-leg-item"><svg width="14" height="10"><line x1="1" y1="8" x2="10" y2="2" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="2" cy="9" r="2" fill="#c0392b"/></svg>Время</span>
+        <span class="gauge-leg-item"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/><polygon points="20,5 13,2 13,8" fill="#1a1a1a"/></svg>Доход</span>
       </div>
     </div>
   </div>
@@ -369,7 +375,7 @@ const CHANNELS = [
   { key:'partnership',  label:'Partnership',    logo:'P' },
   { key:'csr',          label:'CSR',            logo:'C' },
   { key:'behance',      label:'Behance&Fiverr', logo:'B' },
-  { key:'weekly',       label:'Weekly',         logo:'W' },
+  { key:'weekly',       label:'4 Weeks',        logo:'W' },
 ];
 let currentChannel = 'consolidated';
 /* The old "Weekly progress · current month" block (Upwork/Partnership tabs) now
@@ -1158,7 +1164,17 @@ const WEEKLY_KEY_METRIC = {
   'Behance':'Угоди', 'Upwork':'Угоди', 'Fiverr':'Угоди', 'Партнерська мережа':'Угоди', 'Партнерська мережа Solve':'Угоди',
 };
 const WEEKLY_PALETTE = ['#6d28d9','#1d4ed8','#0d9488','#b45309','#059669','#dc2626','#7c3aed','#0891b2','#ca8a04'];
+/* visual identity per top-level section (now 3: SMM / SALES / Партнерка) */
+const WK_SECTION_STYLE = {
+  'SMM':       { accent:'#6d28d9', bg:'#f5f3ff' },
+  'SALES':     { accent:'#047857', bg:'#ecfdf5' },
+  'Партнерка': { accent:'#b45309', bg:'#fffbeb' },
+};
+const WK_WINDOW_SIZE = 4; // last completed week + up to 3 previous
 const weeklyCharts = {}; // canvas id -> Chart instance
+const weeklySpecs = {};  // canvas id -> spec (so the modal can rebuild a card's content)
+let wkModalChart = null;
+let wkModalCanvasId = null;
 
 /* Fact: stop accumulating at the first week with no actual yet (line ends where real data ends). */
 function wkCumulateFact(weekly){
@@ -1171,8 +1187,8 @@ function wkCumulateFact(weekly){
   });
   return out;
 }
-/* Plan: keep accumulating across the whole period — a blank plan cell contributes 0,
-   it never breaks the target line (plan is a full-year trajectory, not "no data"). */
+/* Plan: keep accumulating across the whole (now 4-week) window — a blank plan cell
+   contributes 0, it never breaks the target line. */
 function wkCumulatePlan(weekly){
   const out = []; let sum = 0;
   weekly.forEach(w=>{ sum += (w.plan || 0); out.push(+sum.toFixed(4)); });
@@ -1192,34 +1208,135 @@ function wkGapText(planCum, factCum){
   const diff = Math.round((f/p-1)*100);
   return diff>=0 ? { cls:'badge-good', text:`+${diff}% від плану` } : { cls:'badge-bad', text:`${diff}% від плану` };
 }
-function wkSelectMetric(canvasId, spec, idx){
-  spec.currentIdx = idx;
-  const m = spec.metrics[idx];
-  const chart = weeklyCharts[canvasId];
-  chart.data.datasets[0].data = m.planCum;
-  chart.data.datasets[1].data = m.factCum;
-  chart.data.datasets[1].borderColor = spec.color;
-  chart.data.datasets[1].backgroundColor = spec.color+'18';
-  chart.data.datasets[1].pointBackgroundColor = spec.color;
-  chart.update();
-  const card = document.getElementById(canvasId+'-card');
-  card.querySelectorAll('.mrow').forEach(r=> r.classList.toggle('sel', +r.dataset.idx===idx));
-  const gap = wkGapText(m.planCum, m.factCum);
-  document.getElementById(canvasId+'-title').innerHTML =
-    `<span class="wk-chart-name"><span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}</span>` +
-    `<span class="badge ${gap.cls}">${gap.text}</span>`;
-}
-const EXPAND_ICON = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2H2v4M2 2l4.5 4.5M10 14h4v-4M14 14L9.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-function wkBuildCard(container, spec){
-  const canvasId = 'wk-' + spec.id;
-  weeklySpecs[canvasId] = spec;
-  const rowsHtml = spec.metrics.map((m,i)=>`
-    <tr class="mrow${i===spec.defaultIdx?' sel':''}" data-idx="${i}" style="--dot-color:${spec.color}">
+/* Pull "Партнерська мережа" / "Партнерська мережа Solve" (anything with "партнер" in
+   the name) out of whichever group they arrived in, into their own section — the user
+   wants Партнерка visually separated from SALES, not buried inside it. */
+function wkSplitPartnerGroup(groups){
+  const partnerChannels = [];
+  const rest = [];
+  groups.forEach(g=>{
+    const keep = [];
+    g.channels.forEach(ch=>{
+      if(/партнер/i.test(ch.key)) partnerChannels.push(ch);
+      else keep.push(ch);
+    });
+    if(keep.length) rest.push({ key:g.key, channels:keep });
+  });
+  if(partnerChannels.length) rest.push({ key:'Партнерка', channels:partnerChannels });
+  return rest;
+}
+
+/* ── chart config, shared by the small card and the expand modal ──
+   spec.selectedIdxs is a Set of metric indexes (never empty):
+     - exactly 1 selected → "single" mode: familiar real-units cumulative Plan-vs-Fact line
+     - 2+ selected        → "trend" mode: per-week ACTUAL values, each metric normalized to
+                             % of its OWN max within the 4-week window, so a small-value
+                             metric (e.g. "Дзвінки": 0-3) and a large one (e.g. "Охоплення":
+                             thousands) land on the same 0-100% axis and their waves stay
+                             visually comparable instead of one being squashed flat. */
+function wkChartConfig(spec){
+  const idxs = Array.from(spec.selectedIdxs);
+  if(idxs.length <= 1){
+    const idx = idxs[0] != null ? idxs[0] : spec.defaultIdx;
+    const m = spec.metrics[idx];
+    const color = WEEKLY_PALETTE[idx % WEEKLY_PALETTE.length];
+    return { mode:'single', idx, color, datasets:[planDS(m.planCum), factDS(m.factCum, color)], metric:m };
+  }
+  const datasets = idxs.map(idx=>{
+    const m = spec.metrics[idx];
+    const raw = m.weeklyFact;
+    const max = Math.max(0, ...raw.filter(v=>v!=null));
+    const norm = raw.map(v=> v==null ? null : (max>0 ? +(v/max*100).toFixed(1) : 0));
+    const color = WEEKLY_PALETTE[idx % WEEKLY_PALETTE.length];
+    return {
+      label:m.label, data:norm, rawValues:raw,
+      borderColor:color, backgroundColor:color+'18', borderWidth:2,
+      pointRadius:3, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:1.5,
+      fill:false, tension:0.3, spanGaps:false,
+    };
+  });
+  return { mode:'trend', idxs, datasets };
+}
+function wkBaseChartOptions(big){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth: big?11:10, padding: big?12:10, font:{size: big?11:9.5} } },
+      tooltip: Object.assign({}, TOOLTIP, { callbacks:{} }),
+    },
+    scales:{
+      x:{ grid:GRID, ticks:{color:'#9ca3af', font:{size: big?11:8.5}, maxRotation:0, autoSkip:true}, border:{display:false} },
+      y:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
+    },
+  };
+}
+function wkApplyChart(chart, titleEl, spec){
+  const cfg = wkChartConfig(spec);
+  chart.data.labels = spec.weekLabels;
+  chart.data.datasets = cfg.datasets;
+  const y = chart.options.scales.y;
+  if(cfg.mode==='trend'){
+    y.suggestedMin = 0; y.suggestedMax = 100;
+    y.ticks.callback = v => v+'%';
+    chart.options.plugins.tooltip.callbacks.label = ctx=>{
+      const raw = ctx.dataset.rawValues ? ctx.dataset.rawValues[ctx.dataIndex] : null;
+      return `${ctx.dataset.label}: ${raw==null?'—':raw}  (${ctx.formattedValue}% від максимуму)`;
+    };
+  } else {
+    delete y.suggestedMin; delete y.suggestedMax;
+    y.ticks.callback = undefined;
+    chart.options.plugins.tooltip.callbacks.label = undefined;
+  }
+  chart.update();
+  if(cfg.mode==='single'){
+    const gap = wkGapText(cfg.metric.planCum, cfg.metric.factCum);
+    titleEl.innerHTML =
+      `<span class="wk-chart-name"><span class="dot" style="background:${cfg.color}"></span>Графік: ${cfg.metric.label}</span>` +
+      `<span class="badge ${gap.cls}">${gap.text}</span>`;
+  } else {
+    titleEl.innerHTML =
+      `<span class="wk-chart-name">Порівняння трендів · % від максимуму (${cfg.idxs.length} показники)</span>` +
+      `<span class="wk-card-hint">клікніть ще раз, щоб прибрати показник</span>`;
+  }
+}
+function wkRowsHtml(spec){
+  return spec.metrics.map((m,i)=>`
+    <tr class="mrow${spec.selectedIdxs.has(i)?' sel':''}" data-idx="${i}" style="--dot-color:${WEEKLY_PALETTE[i % WEEKLY_PALETTE.length]}">
       <td><span class="mrow-dot"></span>${m.label}</td>
       <td>${m.lastPlan==null?'—':m.lastPlan}</td>
       <td>${wkTagFor(m.lastPlan,m.lastFact)}</td>
     </tr>`).join('');
+}
+/* toggles one metric on/off (at least 1 always stays selected) and keeps the
+   small card and an open modal for the same card in sync. */
+function wkOnRowClick(canvasId, spec, idx){
+  if(spec.selectedIdxs.has(idx)){
+    if(spec.selectedIdxs.size>1) spec.selectedIdxs.delete(idx);
+  } else {
+    spec.selectedIdxs.add(idx);
+  }
+  wkSyncCard(canvasId, spec);
+  if(wkModalCanvasId === canvasId) wkSyncModal(spec);
+}
+function wkSyncCard(canvasId, spec){
+  wkApplyChart(weeklyCharts[canvasId], document.getElementById(canvasId+'-title'), spec);
+  const card = document.getElementById(canvasId+'-card');
+  card.querySelectorAll('.mrow').forEach(r=> r.classList.toggle('sel', spec.selectedIdxs.has(+r.dataset.idx)));
+}
+function wkSyncModal(spec){
+  if(!wkModalChart) return;
+  wkApplyChart(wkModalChart, document.getElementById('wk-modal-chart-title'), spec);
+  document.querySelectorAll('#wk-modal-tbody .mrow').forEach(r=> r.classList.toggle('sel', spec.selectedIdxs.has(+r.dataset.idx)));
+}
+
+const EXPAND_ICON = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2H2v4M2 2l4.5 4.5M10 14h4v-4M14 14L9.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function wkBuildCard(container, spec){
+  const canvasId = 'wk-' + spec.id;
+  spec.selectedIdxs = new Set([spec.defaultIdx]);
+  weeklySpecs[canvasId] = spec;
   const card = document.createElement('div');
   card.className = 'wk-card';
   card.id = canvasId+'-card';
@@ -1227,95 +1344,52 @@ function wkBuildCard(container, spec){
     <div class="wk-card-header">
       <span class="wk-card-title">${spec.title}</span>
       <span class="wk-card-actions">
-        <span class="wk-card-hint">клік по рядку → графік</span>
+        <span class="wk-card-hint">клік по рядку → графік, можна вибрати кілька</span>
         <button class="wk-expand-btn" type="button" title="Розгорнути" aria-label="Розгорнути ${spec.title}">${EXPAND_ICON}</button>
       </span>
     </div>
-    <table class="mini"><thead><tr><th>Метрика</th><th>План</th><th>Факт</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-    <div class="wk-card-bottom">
-      <div class="wk-chart-title" id="${canvasId}-title"></div>
-      <div class="wk-chart-wrap"><canvas id="${canvasId}"></canvas></div>
+    <div class="wk-card-body">
+      <table class="mini"><thead><tr><th>Метрика</th><th>План</th><th>Факт</th></tr></thead><tbody>${wkRowsHtml(spec)}</tbody></table>
+      <div class="wk-card-bottom">
+        <div class="wk-chart-title" id="${canvasId}-title"></div>
+        <div class="wk-chart-wrap"><canvas id="${canvasId}"></canvas></div>
+      </div>
     </div>
   `;
   container.appendChild(card);
   if(weeklyCharts[canvasId]) weeklyCharts[canvasId].destroy();
   weeklyCharts[canvasId] = new Chart(document.getElementById(canvasId), {
-    type:'line',
-    data:{ labels: spec.weekLabels, datasets:[planDS([]), factDS([], spec.color)] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      interaction:{ mode:'index', intersect:false },
-      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10, font:{size:9.5} } }, tooltip:TOOLTIP },
-      scales:{
-        x:{ grid:GRID, ticks:{color:'#9ca3af', font:{size:8}, maxRotation:0, autoSkip:true}, border:{display:false} },
-        y:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} }
-      }
-    }
+    type:'line', data:{ labels: spec.weekLabels, datasets:[] }, options: wkBaseChartOptions(false),
   });
-  card.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkSelectMetric(canvasId, spec, +r.dataset.idx)));
+  card.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkOnRowClick(canvasId, spec, +r.dataset.idx)));
   card.querySelector('.wk-expand-btn').addEventListener('click', ()=> wkOpenModal(canvasId));
-  wkSelectMetric(canvasId, spec, spec.defaultIdx);
+  wkSyncCard(canvasId, spec);
 }
 
 /* ── Expand-to-fullscreen modal (shared across all Weekly-tab cards) ── */
-const weeklySpecs = {}; // canvasId -> spec, so the modal can rebuild a card's content
-let wkModalChart = null;
-let wkModalCanvasId = null;
-
 function wkOpenModal(canvasId){
   const spec = weeklySpecs[canvasId];
   if(!spec) return;
   wkModalCanvasId = canvasId;
   document.getElementById('wk-modal-title').textContent = spec.title;
 
-  const rowsHtml = spec.metrics.map((m,i)=>`
-    <tr class="mrow" data-idx="${i}" style="--dot-color:${spec.color}">
-      <td><span class="mrow-dot"></span>${m.label}</td>
-      <td>${m.lastPlan==null?'—':m.lastPlan}</td>
-      <td>${wkTagFor(m.lastPlan,m.lastFact)}</td>
-    </tr>`).join('');
   const tbody = document.getElementById('wk-modal-tbody');
-  tbody.innerHTML = rowsHtml;
-  tbody.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkModalSelect(+r.dataset.idx)));
+  tbody.innerHTML = wkRowsHtml(spec);
+  tbody.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkOnRowClick(canvasId, spec, +r.dataset.idx)));
 
   if(wkModalChart) wkModalChart.destroy();
   wkModalChart = new Chart(document.getElementById('wk-modal-canvas'), {
-    type:'line',
-    data:{ labels: spec.weekLabels, datasets:[planDS([]), factDS([], spec.color)] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      interaction:{ mode:'index', intersect:false },
-      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:11, padding:12, font:{size:11} } }, tooltip:TOOLTIP },
-      scales:{
-        x:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
-        y:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} }
-      }
-    }
+    type:'line', data:{ labels: spec.weekLabels, datasets:[] }, options: wkBaseChartOptions(true),
   });
 
-  wkModalSelect(spec.currentIdx!=null ? spec.currentIdx : spec.defaultIdx);
+  wkSyncModal(spec);
   document.getElementById('wk-modal-backdrop').style.display = 'flex';
   document.body.style.overflow = 'hidden';
-}
-function wkModalSelect(idx){
-  const spec = weeklySpecs[wkModalCanvasId];
-  wkSelectMetric(wkModalCanvasId, spec, idx); // keeps the small card + spec.currentIdx in sync
-  const m = spec.metrics[idx];
-  wkModalChart.data.datasets[0].data = m.planCum;
-  wkModalChart.data.datasets[1].data = m.factCum;
-  wkModalChart.data.datasets[1].borderColor = spec.color;
-  wkModalChart.data.datasets[1].backgroundColor = spec.color+'18';
-  wkModalChart.data.datasets[1].pointBackgroundColor = spec.color;
-  wkModalChart.update();
-  document.querySelectorAll('#wk-modal-tbody .mrow').forEach(r=> r.classList.toggle('sel', +r.dataset.idx===idx));
-  const gap = wkGapText(m.planCum, m.factCum);
-  document.getElementById('wk-modal-chart-title').innerHTML =
-    `<span class="wk-chart-name"><span class="dot" style="background:${spec.color}"></span>Графік: ${m.label}</span>` +
-    `<span class="badge ${gap.cls}">${gap.text}</span>`;
 }
 function wkCloseModal(){
   document.getElementById('wk-modal-backdrop').style.display = 'none';
   document.body.style.overflow = '';
+  wkModalCanvasId = null;
 }
 document.getElementById('wk-modal-close').addEventListener('click', wkCloseModal);
 document.getElementById('wk-modal-backdrop').addEventListener('click', (e)=>{
@@ -1323,21 +1397,33 @@ document.getElementById('wk-modal-backdrop').addEventListener('click', (e)=>{
 });
 document.getElementById('wk-modal-panel').addEventListener('click', (e)=> e.stopPropagation());
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') wkCloseModal(); });
+
 function renderWeekly(data){
   const container = document.getElementById('weekly-groups-container');
   container.innerHTML = '';
   Object.keys(weeklyCharts).forEach(id=>{ weeklyCharts[id].destroy(); delete weeklyCharts[id]; });
   Object.keys(weeklySpecs).forEach(id=>{ delete weeklySpecs[id]; });
+  wkCloseModal();
 
-  const weekLabels = data.weekLabels || [];
+  const allWeekLabels = data.weekLabels || [];
   const lastIdx = data.lastCompletedIndex!=null ? data.lastCompletedIndex : -1;
-  const lastLabel = lastIdx>=0 ? weekLabels[lastIdx] : 'ще немає завершених тижнів';
-  let colorCursor = 0;
+  const lastLabel = lastIdx>=0 ? allWeekLabels[lastIdx] : 'ще немає завершених тижнів';
 
-  (data.groups||[]).forEach((group, gi)=>{
+  // window: last completed week + up to 3 previous (fewer if not yet available)
+  const winEnd = Math.max(lastIdx, 0);
+  const winStart = allWeekLabels.length ? Math.max(0, winEnd - (WK_WINDOW_SIZE-1)) : 0;
+  const weekLabels = allWeekLabels.slice(winStart, winEnd+1);
+  const windowLabel = weekLabels.length ? `${weekLabels[0]} … ${weekLabels[weekLabels.length-1]}` : lastLabel;
+
+  const groups = wkSplitPartnerGroup(data.groups||[]);
+
+  groups.forEach((group, gi)=>{
+    const style = WK_SECTION_STYLE[group.key] || { accent:'#374151', bg:'#f3f4f6' };
     const label = document.createElement('div');
-    label.className = 'section-label';
-    label.innerHTML = `${group.key} <span class="section-note">&nbsp;·&nbsp; тиждень ${lastLabel} · клікніть по метриці, щоб побачити графік</span>`;
+    label.className = 'wk-section-label';
+    label.style.setProperty('--wk-accent', style.accent);
+    label.style.setProperty('--wk-bg', style.bg);
+    label.innerHTML = `<span class="wk-section-name">${group.key}</span><span class="section-note">останні ${weekLabels.length} тижні: ${windowLabel} · клікніть по метриках — можна вибрати кілька для порівняння трендів</span>`;
     container.appendChild(label);
 
     const grid = document.createElement('div');
@@ -1345,20 +1431,21 @@ function renderWeekly(data){
     container.appendChild(grid);
 
     group.channels.forEach((channel, ci)=>{
-      const color = WEEKLY_PALETTE[colorCursor++ % WEEKLY_PALETTE.length];
       const keyMetricName = WEEKLY_KEY_METRIC[channel.key];
       const metrics = channel.metrics.map(m=>{
-        const planCum = wkCumulatePlan(m.weekly);
-        const factCum = wkCumulateFact(m.weekly);
-        const last = lastIdx>=0 ? m.weekly[lastIdx] : {plan:null,fact:null};
-        return { label:m.label, planCum, factCum, lastPlan:last?last.plan:null, lastFact:last?last.fact:null };
+        const windowed = m.weekly.slice(winStart, winEnd+1);
+        const planCum = wkCumulatePlan(windowed);
+        const factCum = wkCumulateFact(windowed);
+        const weeklyFact = windowed.map(w=>w.fact);
+        const last = windowed.length ? windowed[windowed.length-1] : {plan:null,fact:null};
+        return { label:m.label, planCum, factCum, weeklyFact, lastPlan:last.plan, lastFact:last.fact };
       });
       let defaultIdx = metrics.findIndex(m=>m.label===keyMetricName);
       if(defaultIdx<0) defaultIdx = 0;
       /* positional id — guaranteed unique regardless of channel name / language,
-         unlike the previous name-based id which stripped Cyrillic and collided
+         unlike a name-based id which stripped Cyrillic and collided
          (e.g. "LinkedIn Бориса" and "LinkedIn Наталії" both reduced to the same id). */
-      wkBuildCard(grid, { id:'g'+gi+'_c'+ci, title:channel.key, color, weekLabels, metrics, defaultIdx });
+      wkBuildCard(grid, { id:'g'+gi+'_c'+ci, title:channel.key, weekLabels, metrics, defaultIdx });
     });
   });
 }
@@ -1380,7 +1467,7 @@ function wkDemoWeek(planPerWeek, fact1, weeksFilled, totalWeeks, seed){
 const DEMO_WEEKS = ['16.08.26-23.08.26','24.08.26-30.08.26','31.08.26-06.09.26','07.09.26-13.09.26','14.09.26-20.09.26','21.09.26-27.09.26','28.09.26-04.10.26','05.10.26-11.10.26'];
 const DEMO_WEEKLY = {
   weekLabels: DEMO_WEEKS,
-  lastCompletedIndex: 0,
+  lastCompletedIndex: 3, // demo: pretend 4 weeks are already completed, so the fallback preview shows the full 4-week window
   groups:[
     { key:'SMM', channels:[
       { key:'Instagram', metrics:[
