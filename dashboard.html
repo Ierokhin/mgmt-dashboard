@@ -1369,7 +1369,7 @@ const EXPAND_ICON = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none"
 
 function wkBuildCard(container, spec){
   const canvasId = 'wk-' + spec.id;
-  spec.selectedIdxs = new Set([spec.defaultIdx]);
+  spec.selectedIdxs = new Set(spec.metrics.map((_,i)=>i)); // all metrics on by default — click a row to drop it
   weeklySpecs[canvasId] = spec;
   const card = document.createElement('div');
   card.className = 'wk-card';
@@ -1378,7 +1378,7 @@ function wkBuildCard(container, spec){
     <div class="wk-card-header">
       <span class="wk-card-title">${spec.title}</span>
       <span class="wk-card-actions">
-        <span class="wk-card-hint">клік по рядку → графік, можна вибрати кілька</span>
+        <span class="wk-card-hint">усі показники увімкнені — клік по рядку прибирає/додає</span>
         <button class="wk-expand-btn" type="button" title="Розгорнути" aria-label="Розгорнути ${spec.title}">${EXPAND_ICON}</button>
       </span>
     </div>
