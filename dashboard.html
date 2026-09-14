@@ -196,6 +196,11 @@ table.mini th.wk-week-first, table.mini td.wk-week-first { border-left:1px solid
 table.mini th.wk-now, table.mini td.wk-now { background:#E6F1FB; }
 table.mini th.wk-now { color:var(--blue); }
 table.mini td.wk-sub:nth-of-type(even) { color:var(--text-faint); }
+/* "Накопичувально" total column — visually set apart from the weekly columns */
+table.mini th.wk-cum, table.mini td.wk-cum { background:rgba(0,0,0,0.035); font-weight:700; }
+table.mini th.wk-cum-first, table.mini td.wk-cum-first { border-left:2px solid var(--border2); }
+table.mini td.wk-cum-pct { padding:4px 6px; }
+table.mini td.wk-cum-pct .badge { font-size:9.5px; padding:2px 6px; white-space:nowrap; }
 .wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
 .wk-chart-title .wk-chart-name { display:flex; align-items:center; gap:6px; }
 .wk-chart-title .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
@@ -1324,12 +1329,28 @@ function wkShortWeek(label){
 /* Full metric table for a card/modal: one row per metric, plan+fact columns for
    EVERY week in the current window (not just the last one), so the whole 4-week
    trajectory is visible at a glance, with the current week highlighted. */
+/* "Накопичувально" column at the end of the table: cumulative plan, cumulative fact
+   (colored like the weekly fact cells) and the gap %, so the same number shown in the
+   chart badge / tooltip is readable straight from the table without hovering. */
+function wkCumCellsHtml(m){
+  const planLast = m.planCum.length ? m.planCum[m.planCum.length-1] : null;
+  const filled = m.factCum.filter(v=>v!=null);
+  const factLast = filled.length ? filled[filled.length-1] : null;
+  const gap = wkGapText(m.planCum, m.factCum);
+  const factCell = factLast==null ? '<span class="cell-tag zero">—</span>' : wkTagFor(planLast, factLast);
+  const pctText = gap.text.replace(' від плану', '');
+  return `<td class="wk-sub wk-cum wk-cum-first">${planLast==null?'—':planLast}</td>` +
+         `<td class="wk-sub wk-cum">${factCell}</td>` +
+         `<td class="wk-sub wk-cum wk-cum-pct"><span class="badge ${gap.cls}">${pctText}</span></td>`;
+}
 function wkTableHtml(spec){
   const n = spec.weekLabels.length;
   const headWeeks = spec.weekLabels.map((wl,i)=>
     `<th colspan="2" class="wk-week${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">${wkShortWeek(wl)}</th>`).join('');
   const headSub = spec.weekLabels.map((wl,i)=>
     `<th class="wk-sub${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">План</th><th class="wk-sub${i===n-1?' wk-now':''}">Факт</th>`).join('');
+  const cumHead = `<th colspan="3" class="wk-week wk-cum wk-cum-first">Накопичувально</th>`;
+  const cumSub = `<th class="wk-sub wk-cum wk-cum-first">План</th><th class="wk-sub wk-cum">Факт</th><th class="wk-sub wk-cum">±%</th>`;
   const rows = spec.metrics.map((m,mi)=>{
     const cells = m.weekly.map((w,i)=>{
       const now = i===n-1 ? ' wk-now' : '';
@@ -1338,10 +1359,10 @@ function wkTableHtml(spec){
       return `<td class="wk-sub${now}${first}">${plan}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact)}</td>`;
     }).join('');
     return `<tr class="mrow${spec.selectedIdxs.has(mi)?' sel':''}" data-idx="${mi}" style="--dot-color:${WEEKLY_PALETTE[mi % WEEKLY_PALETTE.length]}">
-      <td><span class="mrow-dot"></span>${m.label}</td>${cells}
+      <td><span class="mrow-dot"></span>${m.label}</td>${cells}${wkCumCellsHtml(m)}
     </tr>`;
   }).join('');
-  return `<table class="mini"><thead><tr><th rowspan="2">Метрика</th>${headWeeks}</tr><tr>${headSub}</tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="mini"><thead><tr><th rowspan="2">Метрика</th>${headWeeks}${cumHead}</tr><tr>${headSub}${cumSub}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 /* toggles one metric on/off (at least 1 always stays selected) and keeps the
    small card and an open modal for the same card in sync. */
