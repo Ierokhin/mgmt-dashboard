@@ -1200,7 +1200,7 @@
             tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
           },
           scales: {
-            x: { grid: { display: false }, border: { color: '#e3dfd6' },
+            x: { type: 'category', offset: true, grid: { display: false, offset: true }, border: { color: '#e3dfd6' },
                  ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
             y: { grid: { color: '#ece8df' }, border: { display: false },
                  ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: fmt } }
