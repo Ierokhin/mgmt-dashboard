@@ -246,6 +246,7 @@
 
     table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1150px; }
     table.wide { min-width: 2200px; }
+    table.metrics-table { table-layout: fixed; min-width: 1400px; }
     thead { background: var(--card-border-light); }
     th {
       padding: 14px; text-align: right;
@@ -295,12 +296,13 @@
     .cell-future { color: var(--text-faint) !important; }
 
     tr.chart-row td {
-      position: static !important;
       background: var(--card) !important;
-      padding: 10px 14px 22px;
+      padding: 10px 0 22px;
       border-bottom: 1px solid var(--card-border);
     }
-    .table-chart-wrap { height: 130px; width: 100%; min-width: 900px; position: relative; }
+    tr.chart-row td:first-child { padding: 0; }
+    tr.chart-row td.total-col { padding: 0; background: var(--card-border-light) !important; }
+    .table-chart-wrap { height: 130px; width: 100%; position: relative; }
 
     /* ===== STATES ===== */
     .loading {
@@ -1053,7 +1055,7 @@
         `<tr class="group-header"><td colspan="${months.length + 2}"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
 
       const chartRow = (chartId) =>
-        `<tr class="chart-row"><td colspan="${months.length + 2}"><div class="table-chart-wrap"><canvas id="${chartId}"></canvas></div></td></tr>`;
+        `<tr class="chart-row"><td></td><td colspan="${months.length}"><div class="table-chart-wrap"><canvas id="${chartId}"></canvas></div></td><td class="total-col"></td></tr>`;
 
       const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '', chartId = '') =>
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, false, accent) +
@@ -1084,7 +1086,10 @@
           </tr>` + chartRow('bar-cashRunway'));
       }
 
-      return `<table>
+      const colgroup = `<colgroup><col style="width:210px">${months.map(() => '<col style="width:90px">').join('')}<col style="width:110px"></colgroup>`;
+
+      return `<table class="metrics-table">
+        ${colgroup}
         <thead><tr><th>Metric</th>${monthHead}<th class="total-col">Total</th></tr></thead>
         <tbody>
           ${group('EBITDA Margin %', '#7c3aed',
@@ -1199,11 +1204,11 @@
               labels: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 9, weight: '500' }, usePointStyle: true, pointStyle: 'rect', boxWidth: 9, boxHeight: 9, padding: 10 } },
             tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
           },
+          layout: { padding: { top: 4, right: 0, bottom: 0, left: 0 } },
           scales: {
-            x: { type: 'category', offset: true, grid: { display: false, offset: true }, border: { color: '#e3dfd6' },
+            x: { type: 'category', offset: true, bounds: 'data', grid: { display: false, offset: true }, border: { display: false },
                  ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
-            y: { grid: { color: '#ece8df' }, border: { display: false },
-                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: fmt } }
+            y: { display: false }
           }
         }
       });
@@ -1234,11 +1239,11 @@
               : { display: false },
             tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
           },
+          layout: { padding: { top: 4, right: 0, bottom: 0, left: 0 } },
           scales: {
-            x: { grid: { display: false }, border: { color: '#e3dfd6' },
+            x: { offset: true, bounds: 'data', grid: { display: false, offset: true }, border: { display: false },
                  ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
-            y: { grid: { color: '#ece8df' }, border: { display: false },
-                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: fmt } }
+            y: { display: false }
           }
         }
       });
