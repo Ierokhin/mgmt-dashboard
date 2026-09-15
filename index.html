@@ -294,6 +294,14 @@
     .cell-neg { color: var(--c-neg) !important; font-weight: 700; }
     .cell-future { color: var(--text-faint) !important; }
 
+    tr.chart-row td {
+      position: static !important;
+      background: var(--card) !important;
+      padding: 10px 14px 22px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .table-chart-wrap { height: 130px; width: 100%; min-width: 900px; position: relative; }
+
     /* ===== STATES ===== */
     .loading {
       padding: 120px 32px; text-align: center;
@@ -676,21 +684,7 @@
           ${chartCard('chart-gp',      'Gross Profit',     'Cumulative · €',               '#0d9488')}
           ${chartCard('chart-sales',   'Sales',            'Cumulative · units',           '#2563eb')}
         </div>
-        <div class="section-label">Cross-metric performance · how the three actuals move together</div>
-        <div class="charts-grid">
-          <div class="chart-card full-width">
-            <div class="chart-header">
-              <div>
-                <div class="chart-title">Performance Index</div>
-                <div class="chart-subtitle">Cumulative actual as % of annual plan · linear pace = perfect pacing</div>
-              </div>
-              <span class="chart-tag" style="background: #f0ebe1; color: #6e6b66;">Same scale</span>
-            </div>
-            <div class="chart-wrap"><canvas id="chart-cross"></canvas></div>
-            <div class="legend-chips" id="legend-cross"></div>
-          </div>
-        </div>
-        <div class="section-label">Monthly breakdown · plan vs actual by month</div>
+        <div class="section-label">Monthly breakdown · plan vs actual by month, with visual bars per metric</div>
         <div class="table-card"><div class="table-wrap">${buildPLTable(scenario, lastIdx, isGrowth)}</div></div>`;
     }
 
@@ -731,19 +725,7 @@
 
       return `
         <div class="section-label">Cash position · liquidity &amp; runway</div>
-        <div class="cash-grid">${cashCard}${runwayCard}</div>
-        <div class="charts-grid">
-          <div class="chart-card full-width">
-            <div class="chart-header">
-              <div>
-                <div class="chart-title">Cash trajectory</div>
-                <div class="chart-subtitle">Cash on hand by month · dashed = projection at recent burn rate</div>
-              </div>
-              <span class="chart-tag" style="background: #cffafe; color: #0891b2;">Burn rate</span>
-            </div>
-            <div class="chart-wrap"><canvas id="chart-cash"></canvas></div>
-          </div>
-        </div>`;
+        <div class="cash-grid">${cashCard}${runwayCard}</div>`;
     }
 
     // ============================================================
@@ -1070,9 +1052,13 @@
       const group = (title, accentColor, rowsHtml) =>
         `<tr class="group-header"><td colspan="${months.length + 2}"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
 
-      const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '') =>
+      const chartRow = (chartId) =>
+        `<tr class="chart-row"><td colspan="${months.length + 2}"><div class="table-chart-wrap"><canvas id="${chartId}"></canvas></div></td></tr>`;
+
+      const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '', chartId = '') =>
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, false, accent) +
-        renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent);
+        renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent) +
+        (chartId ? chartRow(chartId) : '');
 
       const sPT = t.salesPlan || sum(s.salesPlan);
       const sFT = tf(t.salesFact, s.salesFact);
@@ -1092,27 +1078,27 @@
         cashSection = group('Cash position', 'var(--c-cash)',
           `<tr class="fact" style="--accent: var(--c-cash)">
             <td>Cash on hand</td>${cashCells}<td class="total-col">—</td>
-          </tr>
-          <tr class="fact" style="--accent: var(--c-cash)">
+          </tr>` + chartRow('bar-cashOnHand') +
+          `<tr class="fact" style="--accent: var(--c-cash)">
             <td>Runway · months</td>${runwayCells}<td class="total-col">—</td>
-          </tr>`);
+          </tr>` + chartRow('bar-cashRunway'));
       }
 
       return `<table>
         <thead><tr><th>Metric</th>${monthHead}<th class="total-col">Total</th></tr></thead>
         <tbody>
           ${group('EBITDA Margin %', '#7c3aed',
-            pair('Margin', s.ebitdaMarginPlan, s.ebitdaMarginFact, t.ebitdaMarginPlan, t.ebitdaMarginFact, fmtPct, false, '#7c3aed'))}
+            pair('Margin', s.ebitdaMarginPlan, s.ebitdaMarginFact, t.ebitdaMarginPlan, t.ebitdaMarginFact, fmtPct, false, '#7c3aed', 'bar-ebitdaMargin'))}
           ${group('EBITDA', '#ea580c',
-            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, tf(t.ebitdaFact, s.ebitdaFact), fmtEur, false, '#ea580c'))}
+            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, tf(t.ebitdaFact, s.ebitdaFact), fmtEur, false, '#ea580c', 'bar-ebitda'))}
           ${group('Operating costs', '#a8a59f',
-            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, tf(t.clientServiceFact, s.clientServiceFact), fmtEur, true) +
-            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            tf(t.bdFact, s.bdFact),                       fmtEur, true) +
-            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    tf(t.backOfficeFact, s.backOfficeFact),       fmtEur, true))}
+            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, tf(t.clientServiceFact, s.clientServiceFact), fmtEur, true, '', 'bar-clientService') +
+            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            tf(t.bdFact, s.bdFact),                       fmtEur, true, '', 'bar-bd') +
+            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    tf(t.backOfficeFact, s.backOfficeFact),       fmtEur, true, '', 'bar-backOffice'))}
           ${group('Gross Profit', '#0d9488',
-            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, tf(t.grossProfitFact, s.grossProfitFact), fmtEur, false, '#0d9488'))}
+            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, tf(t.grossProfitFact, s.grossProfitFact), fmtEur, false, '#0d9488', 'bar-grossProfit'))}
           ${group('Sales (units)', '#2563eb',
-            pair('Sales', s.salesPlan, s.salesFact, sPT, sFT, fmtInt, false, '#2563eb'))}
+            pair('Sales', s.salesPlan, s.salesFact, sPT, sFT, fmtInt, false, '#2563eb', 'bar-sales'))}
           ${cashSection}
         </tbody>
       </table>`;
@@ -1141,135 +1127,122 @@
       drawPair('chart-sales', cumulative(s.salesPlan), cumulative(s.salesFact),
                '#2563eb', v => Math.round(v) + ' u');
 
-      drawCrossMetric(d, scenario, lastIdx, labels);
-      if (isGrowth) drawCashChart(d, scenario);
+      drawTableBarCharts(scenario, lastIdx, isGrowth);
     }
 
-    function drawCrossMetric(d, scenario, lastIdx, labels) {
-      const annualSales  = sum(scenario.series.salesPlan);
-      const annualGP     = sum(scenario.series.grossProfitPlan);
-      const annualEbitda = sum(scenario.series.ebitdaPlan);
-      const cumSales = cumulative(scenario.series.salesFact);
-      const cumGP    = cumulative(scenario.series.grossProfitFact);
-      const cumE     = cumulative(scenario.series.ebitdaFact);
-      const pctOf = (arr, total) => arr.map((v, i) =>
-        (i <= lastIdx && total) ? (v / total) * 100 : null);
-      const salesPct  = pctOf(cumSales,  annualSales);
-      const gpPct     = pctOf(cumGP,     annualGP);
-      const ebitdaPct = pctOf(cumE,      annualEbitda);
-      const linearPace = labels.map((_, i) => Math.round(((i + 1) / labels.length) * 100 * 10) / 10);
+    function drawTableBarCharts(scenario, lastIdx, isGrowth) {
+      const labels = (scenario.months || dashboardData.months).map(shortMonth);
+      const s = scenario.series;
 
-      const ctx = document.getElementById('chart-cross');
-      if (!ctx) return;
-      const datasets = [
-        { label: 'Sales',        data: salesPct,   color: '#2563eb' },
-        { label: 'Gross Profit', data: gpPct,      color: '#0d9488' },
-        { label: 'EBITDA',       data: ebitdaPct,  color: '#ea580c' },
-        { label: 'Linear pace',  data: linearPace, color: '#a8a59f', dashed: true, isRef: true },
-      ];
-      const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: datasets.map(ds => ({
-            label: ds.label, data: ds.data,
-            borderColor: ds.color, backgroundColor: ds.color + '14',
-            borderWidth: ds.isRef ? 1.5 : 2.5,
-            borderDash: ds.dashed ? [4, 4] : [],
-            tension: 0.32,
-            pointRadius: ds.isRef ? 0 : 3, pointHoverRadius: ds.isRef ? 0 : 6,
-            pointBackgroundColor: ds.color, pointBorderColor: '#fff', pointBorderWidth: 2,
-            fill: false, spanGaps: false,
-          }))
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          animation: { duration: 900, easing: 'easeOutQuart' },
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : c.parsed.y.toFixed(1) + '%'}`),
-          },
-          scales: chartScales((v) => v + '%')
-        }
-      });
-      charts.set('chart-cross', chart);
+      const barPair = (canvasId, planArr, factArr, color, fmt) => {
+        const factWithGap = factArr.map((v, i) => i <= lastIdx ? v : null);
+        drawPlanActualChart(canvasId, labels, planArr, factWithGap, color, fmt);
+      };
 
-      const curIdx = lastIdx >= 0 ? lastIdx : 0;
-      const legend = document.getElementById('legend-cross');
-      const items = [
-        { label: 'Sales',        color: '#2563eb', value: salesPct[curIdx] },
-        { label: 'Gross Profit', color: '#0d9488', value: gpPct[curIdx] },
-        { label: 'EBITDA',       color: '#ea580c', value: ebitdaPct[curIdx] },
-        { label: 'Linear pace',  color: '#a8a59f', value: linearPace[curIdx], ref: true },
-      ];
-      legend.innerHTML = items.map(it => `
-        <div class="chip">
-          <div class="chip-dot" style="background:${it.color}${it.ref ? '; border: 1px dashed #6e6b66' : ''}"></div>
-          <span class="chip-label">${it.label}</span>
-          <span class="chip-value" style="color:${it.color}">${it.value === null || isNaN(it.value) ? '—' : it.value.toFixed(1) + '%'}</span>
-        </div>
-      `).join('');
-    }
+      barPair('bar-ebitdaMargin', s.ebitdaMarginPlan.map(v => v * 100), s.ebitdaMarginFact.map(v => v * 100), '#7c3aed', v => v.toFixed(1) + '%');
+      barPair('bar-ebitda',       s.ebitdaPlan,        s.ebitdaFact,        '#ea580c', v => fmtEur(v));
+      barPair('bar-clientService',s.clientServicePlan, s.clientServiceFact, '#8a8781', v => fmtEur(v));
+      barPair('bar-bd',           s.bdPlan,            s.bdFact,            '#8a8781', v => fmtEur(v));
+      barPair('bar-backOffice',   s.backOfficePlan,    s.backOfficeFact,    '#8a8781', v => fmtEur(v));
+      barPair('bar-grossProfit',  s.grossProfitPlan,   s.grossProfitFact,   '#0d9488', v => fmtEur(v));
+      barPair('bar-sales',        s.salesPlan,         s.salesFact,         '#2563eb', v => Math.round(v) + ' u');
 
-    function drawCashChart(d, scenario) {
-      const cash = scenario.series.cashOnHand;
-      const lastCashIdx = findLastCashMonth(cash);
-      if (lastCashIdx < 0) return;
-      const labels = (scenario.months || d.months).map(shortMonth);
-      const actualLine = cash.map((v, i) => i <= lastCashIdx ? v : null);
-
-      let recentBurn = 0;
-      const window = Math.min(3, lastCashIdx);
-      if (window >= 1) {
-        let total = 0;
-        for (let i = lastCashIdx - window + 1; i <= lastCashIdx; i++) {
-          total += cash[i] - cash[i - 1];
-        }
-        recentBurn = total / window;
+      if (isGrowth && s.cashOnHand) {
+        const cashLastIdx = findLastCashMonth(s.cashOnHand);
+        drawBarChart('bar-cashOnHand', labels, [
+          { label: 'Cash', data: s.cashOnHand.map((v, i) => i <= cashLastIdx ? v : null), color: '#0891b2', alpha: 1.0 }
+        ], v => fmtEur(v));
+        drawBarChart('bar-cashRunway', labels, [
+          { label: 'Runway', data: s.cashRunway.map((v, i) => i <= cashLastIdx ? v : null), color: '#0891b2', alpha: 1.0 }
+        ], v => fmtMonths(v) + ' mo');
       }
-      const projectionLine = labels.map((_, i) => {
-        if (i < lastCashIdx) return null;
-        if (i === lastCashIdx) return cash[lastCashIdx];
-        return cash[lastCashIdx] + recentBurn * (i - lastCashIdx);
-      });
-      const zeroLine = labels.map(() => 0);
+    }
 
-      const ctx = document.getElementById('chart-cash');
+    function drawPlanActualChart(canvasId, labels, planArr, factArr, color, fmt) {
+      const ctx = document.getElementById(canvasId);
       if (!ctx) return;
       const chart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: labels,
           datasets: [
-            { label: 'Actual', data: actualLine, borderColor: '#0891b2',
-              backgroundColor: '#0891b220', borderWidth: 2.5, tension: 0.3,
-              pointRadius: 4, pointHoverRadius: 7,
-              pointBackgroundColor: '#0891b2', pointBorderColor: '#fff', pointBorderWidth: 2,
-              fill: true, spanGaps: false },
-            { label: 'Projection', data: projectionLine, borderColor: '#0891b2',
-              backgroundColor: 'transparent', borderWidth: 1.8, borderDash: [5, 4],
-              tension: 0.3, pointRadius: 0, fill: false, spanGaps: false },
-            { label: 'Zero', data: zeroLine, borderColor: '#dc262640',
-              backgroundColor: 'transparent', borderWidth: 1, borderDash: [2, 4],
-              tension: 0, pointRadius: 0, fill: false },
+            {
+              type: 'line',
+              label: 'Plan',
+              data: planArr,
+              borderColor: color + '99',
+              backgroundColor: 'transparent',
+              borderWidth: 1.8,
+              borderDash: [5, 4],
+              tension: 0.3,
+              pointRadius: 0, pointHoverRadius: 4,
+              pointBackgroundColor: color, pointBorderColor: '#fff', pointBorderWidth: 1.5,
+              fill: false, spanGaps: false,
+              order: 0,
+            },
+            {
+              type: 'bar',
+              label: 'Actual',
+              data: factArr,
+              backgroundColor: color,
+              borderRadius: 3, borderSkipped: false, maxBarThickness: 20,
+              order: 1,
+            }
           ]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          animation: { duration: 800, easing: 'easeOutQuart' },
+          animation: { duration: 600, easing: 'easeOutQuart' },
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: false },
-            tooltip: {
-              ...tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmtEur(c.parsed.y)}`),
-              filter: (item) => item.dataset.label !== 'Zero',
-            }
+            legend: { display: true, position: 'top', align: 'end',
+              labels: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 9, weight: '500' }, usePointStyle: true, pointStyle: 'rect', boxWidth: 9, boxHeight: 9, padding: 10 } },
+            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
           },
-          scales: chartScales((v) => fmtEur(v))
+          scales: {
+            x: { grid: { display: false }, border: { color: '#e3dfd6' },
+                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
+            y: { grid: { color: '#ece8df' }, border: { display: false },
+                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: fmt } }
+          }
         }
       });
-      charts.set('chart-cash', chart);
+      charts.set(canvasId, chart);
+    }
+
+    function drawBarChart(canvasId, labels, datasets, fmt) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: datasets.map(ds => ({
+            label: ds.label, data: ds.data,
+            backgroundColor: ds.color + Math.round(ds.alpha * 255).toString(16).padStart(2, '0'),
+            borderRadius: 3, borderSkipped: false, maxBarThickness: 20,
+          }))
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 600, easing: 'easeOutQuart' },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: datasets.length > 1
+              ? { display: true, position: 'top', align: 'end',
+                  labels: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 9, weight: '500' }, usePointStyle: true, pointStyle: 'rect', boxWidth: 9, boxHeight: 9, padding: 10 } }
+              : { display: false },
+            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
+          },
+          scales: {
+            x: { grid: { display: false }, border: { color: '#e3dfd6' },
+                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
+            y: { grid: { color: '#ece8df' }, border: { display: false },
+                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: fmt } }
+          }
+        }
+      });
+      charts.set(canvasId, chart);
     }
 
     function drawLineChart(canvasId, labels, datasets, fmt) {
