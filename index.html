@@ -246,7 +246,6 @@
 
     table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1150px; }
     table.wide { min-width: 2200px; }
-    table.metrics-table { table-layout: fixed; min-width: 1400px; }
     thead { background: var(--card-border-light); }
     th {
       padding: 14px; text-align: right;
@@ -294,15 +293,6 @@
     .cell-pos { color: var(--c-pos) !important; font-weight: 700; }
     .cell-neg { color: var(--c-neg) !important; font-weight: 700; }
     .cell-future { color: var(--text-faint) !important; }
-
-    tr.chart-row td {
-      background: var(--card) !important;
-      padding: 10px 0 22px;
-      border-bottom: 1px solid var(--card-border);
-    }
-    tr.chart-row td:first-child { padding: 0; }
-    tr.chart-row td.total-col { padding: 0; background: var(--card-border-light) !important; }
-    .table-chart-wrap { height: 130px; width: 100%; position: relative; }
 
     /* ===== STATES ===== */
     .loading {
@@ -681,12 +671,12 @@
         ${isGrowth ? renderCashSection(scenario) : ''}
         <div class="section-label">Cumulative trends · plan vs actual</div>
         <div class="charts-grid">
-          ${chartCard('chart-margin',  'EBITDA Margin %',  'Monthly · plan vs actual',     '#7c3aed')}
-          ${chartCard('chart-ebitda',  'EBITDA',           'Cumulative · €',               '#ea580c')}
-          ${chartCard('chart-gp',      'Gross Profit',     'Cumulative · €',               '#0d9488')}
-          ${chartCard('chart-sales',   'Sales',            'Cumulative · units',           '#2563eb')}
+          ${chartCard('chart-margin',  'EBITDA Margin %',  'Plan vs actual line + month result bars', '#7c3aed')}
+          ${chartCard('chart-ebitda',  'EBITDA',           'Cumulative line + monthly bars', '#ea580c')}
+          ${chartCard('chart-gp',      'Gross Profit',     'Cumulative line + monthly bars', '#0d9488')}
+          ${chartCard('chart-sales',   'Sales',            'Cumulative line + monthly bars', '#2563eb')}
         </div>
-        <div class="section-label">Monthly breakdown · plan vs actual by month, with visual bars per metric</div>
+        <div class="section-label">Monthly breakdown · plan vs actual by month</div>
         <div class="table-card"><div class="table-wrap">${buildPLTable(scenario, lastIdx, isGrowth)}</div></div>`;
     }
 
@@ -1054,13 +1044,9 @@
       const group = (title, accentColor, rowsHtml) =>
         `<tr class="group-header"><td colspan="${months.length + 2}"><span class="accent-mark" style="background:${accentColor}"></span>${title}</td></tr>` + rowsHtml;
 
-      const chartRow = (chartId) =>
-        `<tr class="chart-row"><td></td><td colspan="${months.length}"><div class="table-chart-wrap"><canvas id="${chartId}"></canvas></div></td><td class="total-col"></td></tr>`;
-
-      const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '', chartId = '') =>
+      const pair = (label, pArr, fArr, pT, fT, fmt, isCost = false, accent = '') =>
         renderRow(label, pArr, fArr, pT, fT, fmt, isCost, false, accent) +
-        renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent) +
-        (chartId ? chartRow(chartId) : '');
+        renderRow(label, pArr, fArr, pT, fT, fmt, isCost, true, accent);
 
       const sPT = t.salesPlan || sum(s.salesPlan);
       const sFT = tf(t.salesFact, s.salesFact);
@@ -1080,30 +1066,27 @@
         cashSection = group('Cash position', 'var(--c-cash)',
           `<tr class="fact" style="--accent: var(--c-cash)">
             <td>Cash on hand</td>${cashCells}<td class="total-col">—</td>
-          </tr>` + chartRow('bar-cashOnHand') +
-          `<tr class="fact" style="--accent: var(--c-cash)">
+          </tr>
+          <tr class="fact" style="--accent: var(--c-cash)">
             <td>Runway · months</td>${runwayCells}<td class="total-col">—</td>
-          </tr>` + chartRow('bar-cashRunway'));
+          </tr>`);
       }
 
-      const colgroup = `<colgroup><col style="width:210px">${months.map(() => '<col style="width:90px">').join('')}<col style="width:110px"></colgroup>`;
-
-      return `<table class="metrics-table">
-        ${colgroup}
+      return `<table>
         <thead><tr><th>Metric</th>${monthHead}<th class="total-col">Total</th></tr></thead>
         <tbody>
           ${group('EBITDA Margin %', '#7c3aed',
-            pair('Margin', s.ebitdaMarginPlan, s.ebitdaMarginFact, t.ebitdaMarginPlan, t.ebitdaMarginFact, fmtPct, false, '#7c3aed', 'bar-ebitdaMargin'))}
+            pair('Margin', s.ebitdaMarginPlan, s.ebitdaMarginFact, t.ebitdaMarginPlan, t.ebitdaMarginFact, fmtPct, false, '#7c3aed'))}
           ${group('EBITDA', '#ea580c',
-            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, tf(t.ebitdaFact, s.ebitdaFact), fmtEur, false, '#ea580c', 'bar-ebitda'))}
+            pair('EBITDA', s.ebitdaPlan, s.ebitdaFact, t.ebitdaPlan, tf(t.ebitdaFact, s.ebitdaFact), fmtEur, false, '#ea580c'))}
           ${group('Operating costs', '#a8a59f',
-            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, tf(t.clientServiceFact, s.clientServiceFact), fmtEur, true, '', 'bar-clientService') +
-            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            tf(t.bdFact, s.bdFact),                       fmtEur, true, '', 'bar-bd') +
-            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    tf(t.backOfficeFact, s.backOfficeFact),       fmtEur, true, '', 'bar-backOffice'))}
+            pair('Client service', s.clientServicePlan, s.clientServiceFact, t.clientServicePlan, tf(t.clientServiceFact, s.clientServiceFact), fmtEur, true) +
+            pair('BD',             s.bdPlan,            s.bdFact,            t.bdPlan,            tf(t.bdFact, s.bdFact),                       fmtEur, true) +
+            pair('Back office',    s.backOfficePlan,    s.backOfficeFact,    t.backOfficePlan,    tf(t.backOfficeFact, s.backOfficeFact),       fmtEur, true))}
           ${group('Gross Profit', '#0d9488',
-            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, tf(t.grossProfitFact, s.grossProfitFact), fmtEur, false, '#0d9488', 'bar-grossProfit'))}
+            pair('Gross Profit', s.grossProfitPlan, s.grossProfitFact, t.grossProfitPlan, tf(t.grossProfitFact, s.grossProfitFact), fmtEur, false, '#0d9488'))}
           ${group('Sales (units)', '#2563eb',
-            pair('Sales', s.salesPlan, s.salesFact, sPT, sFT, fmtInt, false, '#2563eb', 'bar-sales'))}
+            pair('Sales', s.salesPlan, s.salesFact, sPT, sFT, fmtInt, false, '#2563eb'))}
           ${cashSection}
         </tbody>
       </table>`;
@@ -1113,57 +1096,27 @@
       const labels = (scenario.months || d.months).map(shortMonth);
       const s = scenario.series;
       const lastIdx = findLastFactMonth(scenario);
-
-      const drawPair = (canvasId, planArr, factArr, color, fmt) => {
-        const factWithGap = factArr.map((v, i) => i <= lastIdx ? v : null);
-        drawLineChart(canvasId, labels, [
-          { label: 'Plan',   data: planArr,     color: color, alpha: 0.32, dashed: true },
-          { label: 'Actual', data: factWithGap, color: color, alpha: 1.0,  dashed: false }
-        ], fmt);
-      };
+      const gap = (arr) => arr.map((v, i) => i <= lastIdx ? v : null);
 
       const planMargin = s.ebitdaMarginPlan.map(v => v * 100);
       const factMargin = s.ebitdaMarginFact.map(v => v * 100);
-      drawPair('chart-margin', planMargin, factMargin, '#7c3aed', v => v.toFixed(1) + '%');
-      drawPair('chart-ebitda', cumulative(s.ebitdaPlan), cumulative(s.ebitdaFact),
-               '#ea580c', v => fmtEur(v));
-      drawPair('chart-gp', cumulative(s.grossProfitPlan), cumulative(s.grossProfitFact),
-               '#0d9488', v => fmtEur(v));
-      drawPair('chart-sales', cumulative(s.salesPlan), cumulative(s.salesFact),
-               '#2563eb', v => Math.round(v) + ' u');
+      const factMarginGapped = gap(factMargin);
+      drawCumulativeWithBars('chart-margin', labels,
+        planMargin, factMarginGapped, factMarginGapped,
+        '#7c3aed', v => v.toFixed(1) + '%', v => v.toFixed(1) + '%');
 
-      drawTableBarCharts(scenario, lastIdx, isGrowth);
+      drawCumulativeWithBars('chart-ebitda', labels,
+        cumulative(s.ebitdaPlan), gap(cumulative(s.ebitdaFact)), gap(s.ebitdaFact),
+        '#ea580c', v => fmtEur(v), v => fmtEur(v));
+      drawCumulativeWithBars('chart-gp', labels,
+        cumulative(s.grossProfitPlan), gap(cumulative(s.grossProfitFact)), gap(s.grossProfitFact),
+        '#0d9488', v => fmtEur(v), v => fmtEur(v));
+      drawCumulativeWithBars('chart-sales', labels,
+        cumulative(s.salesPlan), gap(cumulative(s.salesFact)), gap(s.salesFact),
+        '#2563eb', v => Math.round(v) + ' u', v => Math.round(v) + ' u');
     }
 
-    function drawTableBarCharts(scenario, lastIdx, isGrowth) {
-      const labels = (scenario.months || dashboardData.months).map(shortMonth);
-      const s = scenario.series;
-
-      const barPair = (canvasId, planArr, factArr, color, fmt) => {
-        const factWithGap = factArr.map((v, i) => i <= lastIdx ? v : null);
-        drawPlanActualChart(canvasId, labels, planArr, factWithGap, color, fmt);
-      };
-
-      barPair('bar-ebitdaMargin', s.ebitdaMarginPlan.map(v => v * 100), s.ebitdaMarginFact.map(v => v * 100), '#7c3aed', v => v.toFixed(1) + '%');
-      barPair('bar-ebitda',       s.ebitdaPlan,        s.ebitdaFact,        '#ea580c', v => fmtEur(v));
-      barPair('bar-clientService',s.clientServicePlan, s.clientServiceFact, '#8a8781', v => fmtEur(v));
-      barPair('bar-bd',           s.bdPlan,            s.bdFact,            '#8a8781', v => fmtEur(v));
-      barPair('bar-backOffice',   s.backOfficePlan,    s.backOfficeFact,    '#8a8781', v => fmtEur(v));
-      barPair('bar-grossProfit',  s.grossProfitPlan,   s.grossProfitFact,   '#0d9488', v => fmtEur(v));
-      barPair('bar-sales',        s.salesPlan,         s.salesFact,         '#2563eb', v => Math.round(v) + ' u');
-
-      if (isGrowth && s.cashOnHand) {
-        const cashLastIdx = findLastCashMonth(s.cashOnHand);
-        drawBarChart('bar-cashOnHand', labels, [
-          { label: 'Cash', data: s.cashOnHand.map((v, i) => i <= cashLastIdx ? v : null), color: '#0891b2', alpha: 1.0 }
-        ], v => fmtEur(v));
-        drawBarChart('bar-cashRunway', labels, [
-          { label: 'Runway', data: s.cashRunway.map((v, i) => i <= cashLastIdx ? v : null), color: '#0891b2', alpha: 1.0 }
-        ], v => fmtMonths(v) + ' mo');
-      }
-    }
-
-    function drawPlanActualChart(canvasId, labels, planArr, factArr, color, fmt) {
+    function drawCumulativeWithBars(canvasId, labels, planCumArr, factCumGapped, monthlyGapped, color, fmtCum, fmtMonthly) {
       const ctx = document.getElementById(canvasId);
       if (!ctx) return;
       const chart = new Chart(ctx, {
@@ -1172,78 +1125,69 @@
           labels: labels,
           datasets: [
             {
+              type: 'bar',
+              label: 'Month result',
+              data: monthlyGapped,
+              backgroundColor: color + '2e',
+              borderRadius: 3, borderSkipped: false, maxBarThickness: 22,
+              yAxisID: 'y1',
+              order: 2,
+            },
+            {
               type: 'line',
-              label: 'Plan',
-              data: planArr,
-              borderColor: color + '99',
+              label: 'Plan (cum.)',
+              data: planCumArr,
+              borderColor: color + '52',
               backgroundColor: 'transparent',
-              borderWidth: 1.8,
-              borderDash: [5, 4],
-              tension: 0.3,
-              pointRadius: 0, pointHoverRadius: 4,
-              pointBackgroundColor: color, pointBorderColor: '#fff', pointBorderWidth: 1.5,
+              borderWidth: 1.8, borderDash: [5, 4], tension: 0.32,
+              pointRadius: 0, pointHoverRadius: 5,
+              pointBackgroundColor: color, pointBorderColor: '#fff', pointBorderWidth: 2,
               fill: false, spanGaps: false,
+              yAxisID: 'y',
               order: 0,
             },
             {
-              type: 'bar',
-              label: 'Actual',
-              data: factArr,
-              backgroundColor: color,
-              borderRadius: 3, borderSkipped: false, maxBarThickness: 20,
+              type: 'line',
+              label: 'Actual (cum.)',
+              data: factCumGapped,
+              borderColor: color,
+              backgroundColor: 'transparent',
+              borderWidth: 2.5, tension: 0.32,
+              pointRadius: 0, pointHoverRadius: 6,
+              pointBackgroundColor: color, pointBorderColor: '#fff', pointBorderWidth: 2,
+              fill: false, spanGaps: false,
+              yAxisID: 'y',
               order: 1,
             }
           ]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          animation: { duration: 600, easing: 'easeOutQuart' },
+          animation: { duration: 800, easing: 'easeOutQuart' },
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: true, position: 'top', align: 'end',
-              labels: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 9, weight: '500' }, usePointStyle: true, pointStyle: 'rect', boxWidth: 9, boxHeight: 9, padding: 10 } },
-            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
+            legend: {
+              display: true, position: 'top', align: 'end',
+              labels: {
+                color: '#6e6b66',
+                font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' },
+                usePointStyle: true, boxWidth: 14, boxHeight: 8, padding: 14,
+              }
+            },
+            tooltip: tooltipConfig((c) => {
+              const v = c.parsed.y;
+              if (v === null) return `  ${c.dataset.label}: —`;
+              const fmt = c.dataset.yAxisID === 'y1' ? fmtMonthly : fmtCum;
+              return `  ${c.dataset.label}: ${fmt(v)}`;
+            })
           },
-          layout: { padding: { top: 4, right: 0, bottom: 0, left: 0 } },
           scales: {
-            x: { type: 'category', offset: true, bounds: 'data', grid: { display: false, offset: true }, border: { display: false },
-                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
-            y: { display: false }
-          }
-        }
-      });
-      charts.set(canvasId, chart);
-    }
-
-    function drawBarChart(canvasId, labels, datasets, fmt) {
-      const ctx = document.getElementById(canvasId);
-      if (!ctx) return;
-      const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: datasets.map(ds => ({
-            label: ds.label, data: ds.data,
-            backgroundColor: ds.color + Math.round(ds.alpha * 255).toString(16).padStart(2, '0'),
-            borderRadius: 3, borderSkipped: false, maxBarThickness: 20,
-          }))
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          animation: { duration: 600, easing: 'easeOutQuart' },
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: datasets.length > 1
-              ? { display: true, position: 'top', align: 'end',
-                  labels: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 9, weight: '500' }, usePointStyle: true, pointStyle: 'rect', boxWidth: 9, boxHeight: 9, padding: 10 } }
-              : { display: false },
-            tooltip: tooltipConfig((c) => `  ${c.dataset.label}: ${c.parsed.y === null ? '—' : fmt(c.parsed.y)}`)
-          },
-          layout: { padding: { top: 4, right: 0, bottom: 0, left: 0 } },
-          scales: {
-            x: { offset: true, bounds: 'data', grid: { display: false, offset: true }, border: { display: false },
-                 ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, autoSkip: true } },
-            y: { display: false }
+            x: { offset: true, grid: { display: false, offset: true }, border: { color: '#e3dfd6' },
+                 ticks: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 10, weight: '500' }, maxRotation: 0, autoSkip: true } },
+            y: { position: 'left', grid: { color: '#ece8df' }, border: { display: false },
+                 ticks: { color: '#6e6b66', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: fmtCum } },
+            y1: { position: 'right', grid: { display: false }, border: { display: false },
+                  ticks: { color: '#a8a59f', font: { family: "'JetBrains Mono', monospace", size: 9 }, callback: fmtMonthly } }
           }
         }
       });
