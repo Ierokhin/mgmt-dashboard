@@ -671,10 +671,10 @@
         ${isGrowth ? renderCashSection(scenario) : ''}
         <div class="section-label">Cumulative trends · plan vs actual</div>
         <div class="charts-grid">
-          ${chartCard('chart-margin',  'EBITDA Margin %',  'Plan vs actual line + month result bars', '#7c3aed')}
-          ${chartCard('chart-ebitda',  'EBITDA',           'Cumulative line + monthly bars', '#ea580c')}
-          ${chartCard('chart-gp',      'Gross Profit',     'Cumulative line + monthly bars', '#0d9488')}
-          ${chartCard('chart-sales',   'Sales',            'Cumulative line + monthly bars', '#2563eb')}
+          ${chartCard('chart-margin',  'EBITDA Margin %',  'Monthly · plan vs actual',     '#7c3aed')}
+          ${chartCard('chart-ebitda',  'EBITDA',           'Cumulative line + monthly plan/actual', '#ea580c')}
+          ${chartCard('chart-gp',      'Gross Profit',     'Cumulative line + monthly plan/actual', '#0d9488')}
+          ${chartCard('chart-sales',   'Sales',            'Cumulative line + monthly plan/actual', '#2563eb')}
         </div>
         <div class="section-label">Monthly breakdown · plan vs actual by month</div>
         <div class="table-card"><div class="table-wrap">${buildPLTable(scenario, lastIdx, isGrowth)}</div></div>`;
@@ -1092,6 +1092,12 @@
       </table>`;
     }
 
+    // Neutral warm-gray used for "this month" bars + their plan line across all
+    // cumulative charts — deliberately NOT the chart's own hue (orange/teal/blue),
+    // so the monthly layer always reads as "secondary" and never gets confused
+    // with the cumulative Plan/Actual lines.
+    const MONTHLY_COLOR = '#6e6b66';
+
     function drawPLCharts(d, scenario, isGrowth) {
       const labels = (scenario.months || d.months).map(shortMonth);
       const s = scenario.series;
@@ -1100,23 +1106,23 @@
 
       const planMargin = s.ebitdaMarginPlan.map(v => v * 100);
       const factMargin = s.ebitdaMarginFact.map(v => v * 100);
-      const factMarginGapped = gap(factMargin);
-      drawCumulativeWithBars('chart-margin', labels,
-        planMargin, factMarginGapped, factMarginGapped,
-        '#7c3aed', v => v.toFixed(1) + '%', v => v.toFixed(1) + '%');
+      drawLineChart('chart-margin', labels, [
+        { label: 'Plan',   data: planMargin,        color: '#7c3aed', alpha: 0.32, dashed: true },
+        { label: 'Actual', data: gap(factMargin),   color: '#7c3aed', alpha: 1.0,  dashed: false }
+      ], v => v.toFixed(1) + '%');
 
       drawCumulativeWithBars('chart-ebitda', labels,
-        cumulative(s.ebitdaPlan), gap(cumulative(s.ebitdaFact)), gap(s.ebitdaFact),
+        cumulative(s.ebitdaPlan), gap(cumulative(s.ebitdaFact)), gap(s.ebitdaFact), s.ebitdaPlan,
         '#ea580c', v => fmtEur(v), v => fmtEur(v));
       drawCumulativeWithBars('chart-gp', labels,
-        cumulative(s.grossProfitPlan), gap(cumulative(s.grossProfitFact)), gap(s.grossProfitFact),
+        cumulative(s.grossProfitPlan), gap(cumulative(s.grossProfitFact)), gap(s.grossProfitFact), s.grossProfitPlan,
         '#0d9488', v => fmtEur(v), v => fmtEur(v));
       drawCumulativeWithBars('chart-sales', labels,
-        cumulative(s.salesPlan), gap(cumulative(s.salesFact)), gap(s.salesFact),
+        cumulative(s.salesPlan), gap(cumulative(s.salesFact)), gap(s.salesFact), s.salesPlan,
         '#2563eb', v => Math.round(v) + ' u', v => Math.round(v) + ' u');
     }
 
-    function drawCumulativeWithBars(canvasId, labels, planCumArr, factCumGapped, monthlyGapped, color, fmtCum, fmtMonthly) {
+    function drawCumulativeWithBars(canvasId, labels, planCumArr, factCumGapped, monthlyGapped, monthlyPlanArr, color, fmtCum, fmtMonthly) {
       const ctx = document.getElementById(canvasId);
       if (!ctx) return;
       const chart = new Chart(ctx, {
@@ -1126,10 +1132,23 @@
           datasets: [
             {
               type: 'bar',
-              label: 'Month result',
+              label: 'Month actual',
               data: monthlyGapped,
-              backgroundColor: color + '2e',
+              backgroundColor: MONTHLY_COLOR + '26',
               borderRadius: 3, borderSkipped: false, maxBarThickness: 22,
+              yAxisID: 'y1',
+              order: 3,
+            },
+            {
+              type: 'line',
+              label: 'Month plan',
+              data: monthlyPlanArr,
+              borderColor: MONTHLY_COLOR + '80',
+              backgroundColor: 'transparent',
+              borderWidth: 1.5, borderDash: [3, 3], tension: 0.32,
+              pointRadius: 0, pointHoverRadius: 4,
+              pointBackgroundColor: MONTHLY_COLOR, pointBorderColor: '#fff', pointBorderWidth: 1.5,
+              fill: false, spanGaps: false,
               yAxisID: 'y1',
               order: 2,
             },
