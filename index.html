@@ -654,13 +654,17 @@
       const ytd = {
         ebitdaPlan:       sum(s.ebitdaPlan.slice(0, monthsThrough)),
         ebitdaFact:       sum(s.ebitdaFact.slice(0, monthsThrough)),
+        revenuePlan:      sum(s.revenuePlan.slice(0, monthsThrough)),
+        revenueFact:      sum(s.revenueFact.slice(0, monthsThrough)),
         grossProfitPlan:  sum(s.grossProfitPlan.slice(0, monthsThrough)),
         grossProfitFact:  sum(s.grossProfitFact.slice(0, monthsThrough)),
         salesPlan:        sum(s.salesPlan.slice(0, monthsThrough)),
         salesFact:        sum(s.salesFact.slice(0, monthsThrough)),
       };
-      const marginPlan = lastIdx >= 0 ? s.ebitdaMarginPlan[lastIdx] : 0;
-      const marginFact = lastIdx >= 0 ? s.ebitdaMarginFact[lastIdx] : 0;
+      // Cumulative margin = YTD EBITDA ÷ YTD Revenue (not the last single month's %,
+      // and not a sum of monthly percentages — see the chart-margin logic below).
+      const marginPlan = ytd.revenuePlan ? ytd.ebitdaPlan / ytd.revenuePlan : 0;
+      const marginFact = ytd.revenueFact ? ytd.ebitdaFact / ytd.revenueFact : 0;
       const lastMonth  = lastIdx >= 0 ? shortMonth(months[lastIdx]) : '—';
       const firstMonth = shortMonth(months[0]);
 
@@ -668,7 +672,7 @@
         <div class="section-label">Key metrics · YTD ${firstMonth} — ${lastMonth} 2026 · ${scenario.label}</div>
         <div class="kpi-grid">
           ${kpiCard('EBITDA · YTD', fmtEur(ytd.ebitdaFact), fmtEur(ytd.ebitdaPlan), ytd.ebitdaFact, ytd.ebitdaPlan, fmtEurDelta, 'var(--c-ebitda)')}
-          ${kpiCard('EBITDA Margin · ' + lastMonth, fmtPct(marginFact), fmtPct(marginPlan), marginFact, marginPlan, fmtPctDelta, 'var(--c-margin)')}
+          ${kpiCard('EBITDA Margin · YTD', fmtPct(marginFact), fmtPct(marginPlan), marginFact, marginPlan, fmtPctDelta, 'var(--c-margin)')}
           ${kpiCard('Gross Profit · YTD', fmtEur(ytd.grossProfitFact), fmtEur(ytd.grossProfitPlan), ytd.grossProfitFact, ytd.grossProfitPlan, fmtEurDelta, 'var(--c-gp)')}
           ${kpiCard('Sales · YTD', fmtInt(ytd.salesFact), fmtInt(ytd.salesPlan), ytd.salesFact, ytd.salesPlan, fmtIntDelta, 'var(--c-sales)')}
         </div>
