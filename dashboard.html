@@ -1189,12 +1189,17 @@ let wkModalCanvasId = null;
 
 /* Fact: stop accumulating at the first week with no actual yet (line ends where real data ends). */
 function wkCumulateFact(weekly){
-  const out = []; let sum = 0, broken = false;
-  weekly.forEach(w=>{
-    const v = w.fact;
-    if(v == null) broken = true;
-    if(broken){ out.push(null); return; }
-    sum += v; out.push(+sum.toFixed(4));
+  // Only weeks AFTER the last week with any known actual are "not reported yet" and
+  // stay null. A null BEFORE that (a week with genuinely no activity/data, e.g. a
+  // channel that started reporting mid-window) contributes 0 instead of permanently
+  // breaking the running total for every later week that DOES have data.
+  let lastKnown = -1;
+  weekly.forEach((w,i)=>{ if(w.fact!=null) lastKnown = i; });
+  const out = []; let sum = 0;
+  weekly.forEach((w,i)=>{
+    if(i>lastKnown){ out.push(null); return; }
+    sum += (w.fact || 0);
+    out.push(+sum.toFixed(4));
   });
   return out;
 }
