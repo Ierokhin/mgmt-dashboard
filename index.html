@@ -375,6 +375,8 @@
             backOfficeFact:    [2280,3004,3880,3307,0,0,0,0,0,0,0,0],
             grossProfitPlan:   [6700,6700,7176,7176,7662,7662,7662,7662,7662,7662,8177,8177],
             grossProfitFact:   [9734,7132,4366,3891,0,0,0,0,0,0,0,0],
+            revenuePlan:       [10200,10200,16050,16050,15543,15543,15543,15543,15543,15543,15630,15630],
+            revenueFact:       [26335,20067,20308,17205,0,0,0,0,0,0,0,0],
             salesPlan:         [1,1,2,1,2,1,2,1,2,1,2,1],
             salesFact:         [0,1,1,1,0,0,0,0,0,0,0,0],
           },
@@ -399,6 +401,8 @@
             backOfficeFact:    [2280,3004,3880,3307,0,0,0,0,0,0,0,0],
             grossProfitPlan:   [6700,6700,7176,7176,7662,7662,8157,9658,11174,13216,15793,18396],
             grossProfitFact:   [9734,7132,4366,3891,0,0,0,0,0,0,0,0],
+            revenuePlan:       [13470,13470,14395,14395,15177,15177,16187,19306,23111,20200,30986,38033],
+            revenueFact:       [27778,21883,20381,17225,0,0,0,0,0,0,0,0],
             salesPlan:         [1,1,1,1,2,1,3,4,5,5,6,6],
             salesFact:         [0,1,0,1,0,0,0,0,0,0,0,0],
             cashOnHand:        [30122,28220,23323,18369,0,0,0,0,0,0,0,0],
@@ -671,7 +675,7 @@
         ${isGrowth ? renderCashSection(scenario) : ''}
         <div class="section-label">Cumulative trends · plan vs actual</div>
         <div class="charts-grid">
-          ${chartCard('chart-margin',  'EBITDA Margin %',  'Monthly · plan vs actual',     '#7c3aed')}
+          ${chartCard('chart-margin',  'EBITDA Margin %',  'Cumulative line + monthly plan/actual', '#7c3aed')}
           ${chartCard('chart-ebitda',  'EBITDA',           'Cumulative line + monthly plan/actual', '#ea580c')}
           ${chartCard('chart-gp',      'Gross Profit',     'Cumulative line + monthly plan/actual', '#0d9488')}
           ${chartCard('chart-sales',   'Sales',            'Cumulative line + monthly plan/actual', '#2563eb')}
@@ -1106,10 +1110,19 @@
 
       const planMargin = s.ebitdaMarginPlan.map(v => v * 100);
       const factMargin = s.ebitdaMarginFact.map(v => v * 100);
-      drawLineChart('chart-margin', labels, [
-        { label: 'Plan',   data: planMargin,        color: '#7c3aed', alpha: 0.32, dashed: true },
-        { label: 'Actual', data: gap(factMargin),   color: '#7c3aed', alpha: 1.0,  dashed: false }
-      ], v => v.toFixed(1) + '%');
+
+      // Margin % can't be validly cumulated by summing percentages — the correct
+      // running figure is cumulative EBITDA ÷ cumulative Revenue at each month.
+      const cumEbitdaPlan = cumulative(s.ebitdaPlan);
+      const cumRevenuePlan = cumulative(s.revenuePlan);
+      const cumEbitdaFact = cumulative(s.ebitdaFact);
+      const cumRevenueFact = cumulative(s.revenueFact);
+      const cumMarginPlan = cumEbitdaPlan.map((v, i) => cumRevenuePlan[i] ? v / cumRevenuePlan[i] * 100 : null);
+      const cumMarginFact = cumEbitdaFact.map((v, i) => cumRevenueFact[i] ? v / cumRevenueFact[i] * 100 : null);
+
+      drawCumulativeWithBars('chart-margin', labels,
+        cumMarginPlan, gap(cumMarginFact), gap(factMargin), planMargin,
+        '#7c3aed', v => v.toFixed(1) + '%', v => v.toFixed(1) + '%');
 
       drawCumulativeWithBars('chart-ebitda', labels,
         cumulative(s.ebitdaPlan), gap(cumulative(s.ebitdaFact)), gap(s.ebitdaFact), s.ebitdaPlan,
