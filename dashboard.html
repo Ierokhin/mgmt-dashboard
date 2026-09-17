@@ -180,25 +180,25 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 /* Партнери section: "Разом" total row set apart, like a table footer */
 table.mini tr.wk-total td { font-weight:700; border-top:1.5px solid var(--border2); }
 table.mini tr.wk-total td:first-child { color:var(--text); }
-table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; margin-bottom:0; }
-table.mini th { text-align:left; color:var(--text-faint); font-weight:500; font-size:9.5px; letter-spacing:.5px; text-transform:uppercase; padding:0 0 6px; border-bottom:1px solid var(--border); white-space:nowrap; }
+table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:12.5px; margin-bottom:0; }
+table.mini th { text-align:left; color:var(--text-muted); font-weight:600; font-size:10.5px; letter-spacing:.4px; text-transform:uppercase; padding:0 0 7px; border-bottom:1px solid var(--border); white-space:nowrap; }
 table.mini th:not(:first-child), table.mini td:not(:first-child) { text-align:right; }
-table.mini td { padding:5px 3px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--text-dim); }
+table.mini td { padding:7px 4px; border-bottom:1px solid rgba(0,0,0,0.06); color:var(--text-dim); }
 table.mini tr:last-child td { border-bottom:none; }
-table.mini td:first-child { color:var(--text-muted); text-align:left; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+table.mini td:first-child { color:var(--text); font-weight:500; text-align:left; display:flex; align-items:center; gap:6px; white-space:nowrap; }
 .mrow-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
-.cell-tag.zero { background:var(--surface2); color:var(--text-faint); }
+.cell-tag.zero { background:var(--surface2); color:var(--text-muted); }
 /* per-week plan/fact sub-columns in the metric table */
-table.mini th.wk-week, table.mini th.wk-sub, table.mini td.wk-sub { font-size:9px; letter-spacing:0; }
+table.mini th.wk-week, table.mini th.wk-sub, table.mini td.wk-sub { font-size:10.5px; letter-spacing:0; }
 table.mini th.wk-week-first, table.mini td.wk-week-first { border-left:1px solid var(--border); }
 table.mini th.wk-now, table.mini td.wk-now { background:#E6F1FB; }
 table.mini th.wk-now { color:var(--blue); }
-table.mini td.wk-sub:nth-of-type(even) { color:var(--text-faint); }
+table.mini td.wk-sub:nth-of-type(even) { color:var(--text-dim); }
 /* "Накопичувально" total column — visually set apart from the weekly columns */
-table.mini th.wk-cum, table.mini td.wk-cum { background:rgba(0,0,0,0.035); font-weight:700; }
+table.mini th.wk-cum, table.mini td.wk-cum { background:rgba(0,0,0,0.05); font-weight:700; }
 table.mini th.wk-cum-first, table.mini td.wk-cum-first { border-left:2px solid var(--border2); }
 table.mini td.wk-cum-pct { padding:4px 6px; }
-table.mini td.wk-cum-pct .badge { font-size:9.5px; padding:2px 6px; white-space:nowrap; }
+table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space:nowrap; font-weight:700; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 </style>
@@ -1144,7 +1144,7 @@ const WK_SECTION_STYLE = {
   'SMM':       { accent:'#6d28d9', bg:'#f5f3ff' },
   'SALES':     { accent:'#047857', bg:'#ecfdf5' },
   'Партнерка': { accent:'#b45309', bg:'#fffbeb' },
-  'Партнери':  { accent:'#1d4ed8', bg:'#eff6ff' },
+  'Зведена воронка':  { accent:'#1d4ed8', bg:'#eff6ff' },
 };
 const WK_WINDOW_SIZE = 4; // last completed week + up to 3 previous
 
@@ -1282,13 +1282,12 @@ function wkBuildSection(container, key, note){
 }
 
 /* ══════════════════════════════════════════════════════
-   "Партнери" — cross-channel funnel (separate block, not per-channel)
+   "Зведена воронка" — cross-channel funnel (separate block, not per-channel)
    ══════════════════════════════════════════════════════
    Different source channels track the same funnel stage under different metric
    names. This maps each canonical stage to where it lives per channel, so the
-   Партнери block can show one row per contributing channel + a "Разом" total —
+   Зведена воронка block can show one row per contributing channel + a "Разом" total —
    still over the same 4-week window, still with the same Накопичувально column. */
-const PARTNER_NETWORK_PLAN = 200; // "Глобальний план · Планова кількість партнерів в мережі" — a fixed target, not a weekly plan
 const PARTNER_FUNNEL_ORDER = ['Партнерів в мережі', 'Отримано лідів', 'Зустрічі проведено', 'Угоди'];
 const PARTNER_FUNNEL = {
   'Партнерів в мережі': [
@@ -1328,15 +1327,32 @@ function wkSumWeek(entries){ // entries: [{plan,fact}, ...] for one week, across
   });
   return { plan, fact };
 }
+/* Normalizes a metric label for matching only (display always uses the original text):
+   collapses different dash characters (-, –, —, ‑) to a plain hyphen, different
+   apostrophe characters (ʼ, ', ’) to a plain one, squashes extra whitespace, and
+   lowercases. This guards against the sheet's real cell text differing from the
+   hardcoded PARTNER_FUNNEL labels by just a dash/space/case variant — a mismatch that
+   would otherwise silently drop that row (render "—") instead of throwing. */
+function wkNormLabel(s){
+  return String(s==null?'':s)
+    .replace(/[‐‑‒–—―−]/g, '-')
+    .replace(/[‘’ʼʻ′]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
 /* Unwindowed weekly {plan,fact} array for one channel, summing every metric whose
    label is in `labels` (covers both "sum two differently-named rows" and "sum two
    rows that share the same name", e.g. Upwork's two "Зустрічі проведено"). Returns
    null if the channel isn't in this run's data at all, or none of the labels match —
-   so a mapping that doesn't (yet) apply just renders as "—" instead of throwing. */
+   so a mapping that doesn't (yet) apply just renders as "—" instead of throwing. Label
+   matching is done via wkNormLabel() so minor dash/whitespace/case differences in the
+   sheet's actual cell text don't cause a silent miss. */
 function wkChannelWeekly(channelsByName, channelName, labels, weekCount){
   const channel = channelsByName[channelName];
   if(!channel) return null;
-  const matches = channel.metrics.filter(m=> labels.includes(m.label));
+  const normLabels = labels.map(wkNormLabel);
+  const matches = channel.metrics.filter(m=> normLabels.includes(wkNormLabel(m.label)));
   if(!matches.length) return null;
   const out = [];
   for(let i=0;i<weekCount;i++){
@@ -1359,13 +1375,9 @@ function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, c
     rows.push({ label:c.channel, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed) });
   });
   const totalWindowed = totalWeekly.slice(winStart, winEnd+1);
+  // "Партнерів в мережі" is treated exactly like every other funnel row here — plan/fact
+  // summed over the 4-week window, накопичувально — no special-cased global 200 target.
   const totalRow = { label:'Разом', weekly:totalWindowed, planCum:wkCumulatePlan(totalWindowed), factCum:wkCumulateFact(totalWindowed), isTotal:true };
-  if(canonicalLabel==='Партнерів в мережі'){
-    // fixed global target (200), not the sum of the two channels' own tiny weekly plans —
-    // only the LAST value is ever displayed (the Накопичувально column), but fill the
-    // whole array for consistency.
-    totalRow.planCum = totalRow.planCum.map(()=> PARTNER_NETWORK_PLAN);
-  }
   rows.push(totalRow);
   return rows;
 }
@@ -1385,13 +1397,21 @@ function renderWeekly(data){
   const windowLabel = weekLabels.length ? `${weekLabels[0]} … ${weekLabels[weekLabels.length-1]}` : lastLabel;
   const note = `останні ${weekLabels.length} тижні: ${windowLabel}`;
 
-  // flat channel lookup by exact name, for the cross-channel Партнери funnel below
+  // flat channel lookup by exact name, for the cross-channel Зведена воронка block below
   const channelsByName = {};
   (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
 
+  // "Зведена воронка" goes first — it's the aggregate summary across all channels,
+  // so it belongs above the per-channel SMM/SALES/Партнерка breakdowns, not below them.
+  const funnelGrid = wkBuildSection(container, 'Зведена воронка', `воронка по каналах · ${note}`);
+  PARTNER_FUNNEL_ORDER.forEach(canonicalLabel=>{
+    const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
+    wkBuildCard(funnelGrid, { title:canonicalLabel, weekLabels, metrics:rows });
+  });
+
   // "Глобальний план · Планова кількість партнерів в мережі" arrives as its own
   // pseudo-channel with one static value (not a normal per-week metric) — drop it as
-  // a card here; its number (200) is used as the fixed target inside Партнери instead.
+  // a card here; its number (200) is used as the fixed target inside Зведена воронка instead.
   const groups = wkSplitPartnerGroup(data.groups||[])
     .map(g=>({ key:g.key, channels:g.channels.filter(ch=> !/глобальн/i.test(ch.key)) }))
     .filter(g=> g.channels.length);
@@ -1405,12 +1425,6 @@ function renderWeekly(data){
       });
       wkBuildCard(grid, { title:channel.key, weekLabels, metrics });
     });
-  });
-
-  const funnelGrid = wkBuildSection(container, 'Партнери', `воронка по каналах · ${note}`);
-  PARTNER_FUNNEL_ORDER.forEach(canonicalLabel=>{
-    const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
-    wkBuildCard(funnelGrid, { title:canonicalLabel, weekLabels, metrics:rows });
   });
 }
 
@@ -1519,7 +1533,9 @@ document.getElementById('footer').textContent = 'Sales Dashboard · ' + CURRENT_
 document.title = 'Sales Dashboard ' + CURRENT_YEAR;
 buildTabs();
 loadData();
-setInterval(loadData, 5*60*1000);
+/* Auto-refresh intentionally removed: it was rebuilding the whole page every 5 minutes,
+   which collapsed the scroll position and re-expanded any collapsed Weekly-tab sections.
+   Data now only reloads on a manual page refresh (F5 / reload button). */
 </script>
 </body>
 </html>
