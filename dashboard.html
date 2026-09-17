@@ -1171,13 +1171,12 @@ function wkCumulatePlan(weekly){
   weekly.forEach(w=>{ sum += (w.plan || 0); out.push(+sum.toFixed(4)); });
   return out;
 }
-/* Formats a raw plan/fact/cumulative number for display: rounds to at most 1 decimal
-   place (never more), and drops a trailing ".0" so whole numbers still read as whole
+/* Formats a raw plan/fact/cumulative number for display: rounds to at most 2 decimal
+   places (never more), and drops trailing zeros so whole numbers still read as whole
    numbers. Every Weekly-tab cell that shows a raw metric value goes through this. */
 function wkFmtNum(v){
   if(v==null) return '—';
-  const rounded = Math.round(v*10)/10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return String(Math.round(v*100)/100);
 }
 function wkTagFor(plan, fact){
   if(fact==null) return '<span class="cell-tag zero">—</span>';
