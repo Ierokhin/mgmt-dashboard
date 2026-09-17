@@ -162,33 +162,31 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .wk-tot { background:rgba(0,0,0,0.02); font-weight:700; }
 /* WEEKLY TAB (SMM / SALES / Партнерка blocks, separate Google doc, 4-week window) */
 .section-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); text-transform:none; letter-spacing:0; font-weight:500; }
-/* prominent, color-coded section header — one per block (SMM / SALES / Партнерка) */
-.wk-section-label { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px 14px; padding:13px 20px; margin:30px 0 14px; border-radius:12px; border-left:6px solid var(--wk-accent,#6d28d9); background:var(--wk-bg,#f5f3ff); }
+/* prominent, color-coded section header — one per block (SMM / SALES / Партнерка / Партнери) —
+   clickable to collapse/expand its content */
+.wk-section-label { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px 14px; padding:13px 20px; margin:30px 0 14px; border-radius:12px; border-left:6px solid var(--wk-accent,#6d28d9); background:var(--wk-bg,#f5f3ff); cursor:pointer; user-select:none; }
 .wk-section-label:first-child { margin-top:0; }
-.wk-section-label .wk-section-name { font-size:16px; font-weight:800; letter-spacing:.4px; color:var(--wk-accent,#6d28d9); text-transform:uppercase; }
+.wk-section-label .wk-section-name { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800; letter-spacing:.4px; color:var(--wk-accent,#6d28d9); text-transform:uppercase; }
 .wk-section-label .section-note { font-size:10.5px; color:var(--text-muted); }
+.wk-section-chevron { display:inline-block; transition:transform .15s; font-size:12px; color:var(--wk-accent,#6d28d9); }
+.wk-section-label.collapsed .wk-section-chevron { transform:rotate(-90deg); }
+.wk-section-body[hidden] { display:none; }
 /* channel cards stack full-width, one per row */
 .wk-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px; }
 .wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px 16px; display:flex; flex-direction:column; }
 .wk-card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
 .wk-card-title { font-size:13px; font-weight:700; color:var(--text); }
-.wk-card-hint { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-faint); }
-.wk-card-bottom { margin-top:2px; }
-/* table on top, chart below — full card width for both */
-.wk-card-body { display:flex; flex-direction:column; gap:16px; }
 .wk-mini-wrap { overflow-x:auto; }
+/* Партнери section: "Разом" total row set apart, like a table footer */
+table.mini tr.wk-total td { font-weight:700; border-top:1.5px solid var(--border2); }
+table.mini tr.wk-total td:first-child { color:var(--text); }
 table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:11px; margin-bottom:0; }
 table.mini th { text-align:left; color:var(--text-faint); font-weight:500; font-size:9.5px; letter-spacing:.5px; text-transform:uppercase; padding:0 0 6px; border-bottom:1px solid var(--border); white-space:nowrap; }
 table.mini th:not(:first-child), table.mini td:not(:first-child) { text-align:right; }
 table.mini td { padding:5px 3px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--text-dim); }
 table.mini tr:last-child td { border-bottom:none; }
 table.mini td:first-child { color:var(--text-muted); text-align:left; display:flex; align-items:center; gap:6px; white-space:nowrap; }
-table.mini tr.mrow { cursor:pointer; transition:background .12s; }
-table.mini tr.mrow:hover { background:var(--surface2); }
-table.mini tr.mrow.sel { background:var(--surface2); }
-table.mini tr.mrow.sel td:first-child { color:var(--text); font-weight:600; }
 .mrow-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
-.mrow.sel .mrow-dot { background: var(--dot-color, var(--text)); }
 .cell-tag.zero { background:var(--surface2); color:var(--text-faint); }
 /* per-week plan/fact sub-columns in the metric table */
 table.mini th.wk-week, table.mini th.wk-sub, table.mini td.wk-sub { font-size:9px; letter-spacing:0; }
@@ -201,23 +199,6 @@ table.mini th.wk-cum, table.mini td.wk-cum { background:rgba(0,0,0,0.035); font-
 table.mini th.wk-cum-first, table.mini td.wk-cum-first { border-left:2px solid var(--border2); }
 table.mini td.wk-cum-pct { padding:4px 6px; }
 table.mini td.wk-cum-pct .badge { font-size:9.5px; padding:2px 6px; white-space:nowrap; }
-.wk-chart-title { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-.wk-chart-title .wk-chart-name { display:flex; align-items:center; gap:6px; }
-.wk-chart-title .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.wk-chart-title .badge { font-size:11px; padding:3px 9px; }
-.wk-chart-wrap { position:relative; height:260px; }
-.wk-card-actions { display:flex; align-items:center; gap:8px; }
-.wk-expand-btn { background:none; border:1px solid var(--border2); border-radius:6px; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); flex-shrink:0; padding:0; }
-.wk-expand-btn:hover { background:var(--surface2); color:var(--text); }
-.wk-expand-btn svg { display:block; }
-/* Expand modal — same card content, larger */
-.wk-modal-backdrop { position:fixed; inset:0; background:rgba(15,17,23,0.55); display:flex; align-items:center; justify-content:center; z-index:200; padding:24px; }
-.wk-modal-panel { background:var(--surface); border-radius:var(--radius); width:min(1100px, 100%); max-height:92vh; overflow-y:auto; padding:22px 26px 20px; box-shadow:0 20px 60px rgba(0,0,0,0.35); }
-.wk-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-.wk-modal-title { font-size:18px; font-weight:800; color:var(--text); }
-.wk-modal-close { background:none; border:1px solid var(--border2); border-radius:8px; width:30px; height:30px; cursor:pointer; font-size:15px; color:var(--text-muted); line-height:1; }
-.wk-modal-close:hover { background:var(--surface2); color:var(--text); }
-.wk-modal-chart-wrap { position:relative; height:min(52vh, 440px); margin-top:8px; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 </style>
@@ -357,18 +338,6 @@ table.mini td.wk-cum-pct .badge { font-size:9.5px; padding:2px 6px; white-space:
 <div id="weekly-tab-view" style="display:none">
   <div id="weekly-groups-container"></div>
 </div>
-</div>
-<!-- Weekly tab: expand-to-fullscreen modal (shared by all cards) -->
-<div class="wk-modal-backdrop" id="wk-modal-backdrop" style="display:none">
-  <div class="wk-modal-panel" id="wk-modal-panel">
-    <div class="wk-modal-header">
-      <span class="wk-modal-title" id="wk-modal-title"></span>
-      <button class="wk-modal-close" id="wk-modal-close" type="button" aria-label="Закрити">✕</button>
-    </div>
-    <div class="wk-mini-wrap" id="wk-modal-table-wrap"></div>
-    <div class="wk-chart-title" id="wk-modal-chart-title"></div>
-    <div class="wk-modal-chart-wrap"><canvas id="wk-modal-canvas"></canvas></div>
-  </div>
 </div>
 <div class="footer" id="footer">Sales Dashboard · 2025 · Data updates automatically from Google Sheets</div>
 <script>
@@ -1170,22 +1139,14 @@ const DEMO_SUMMARY = [
 /* ══════════════════════════════════════════════════════
    WEEKLY TAB — render + demo fallback (separate document/script)
    ══════════════════════════════════════════════════════ */
-const WEEKLY_KEY_METRIC = {
-  'Instagram':'Охоплення', 'LinkedIn Бориса':'Охоплення', 'LinkedIn Наталії':'Охоплення', 'Threads':'Охоплення',
-  'Behance':'Угоди', 'Upwork':'Угоди', 'Fiverr':'Угоди', 'Партнерська мережа':'Угоди', 'Партнерська мережа Solve':'Угоди',
-};
-const WEEKLY_PALETTE = ['#6d28d9','#1d4ed8','#0d9488','#b45309','#059669','#dc2626','#7c3aed','#0891b2','#ca8a04'];
-/* visual identity per top-level section (now 3: SMM / SALES / Партнерка) */
+/* visual identity per top-level section (SMM / SALES / Партнерка / Партнери) */
 const WK_SECTION_STYLE = {
   'SMM':       { accent:'#6d28d9', bg:'#f5f3ff' },
   'SALES':     { accent:'#047857', bg:'#ecfdf5' },
   'Партнерка': { accent:'#b45309', bg:'#fffbeb' },
+  'Партнери':  { accent:'#1d4ed8', bg:'#eff6ff' },
 };
 const WK_WINDOW_SIZE = 4; // last completed week + up to 3 previous
-const weeklyCharts = {}; // canvas id -> Chart instance
-const weeklySpecs = {};  // canvas id -> spec (so the modal can rebuild a card's content)
-let wkModalChart = null;
-let wkModalCanvasId = null;
 
 /* Fact: stop accumulating at the first week with no actual yet (line ends where real data ends). */
 function wkCumulateFact(weekly){
@@ -1243,89 +1204,6 @@ function wkSplitPartnerGroup(groups){
   return rest;
 }
 
-/* ── chart config, shared by the small card and the expand modal ──
-   spec.selectedIdxs is a Set of metric indexes (never empty):
-     - exactly 1 selected → "single" mode: familiar real-units cumulative Plan-vs-Fact line
-     - 2+ selected        → "trend" mode: per-week ACTUAL values, each metric normalized to
-                             % of its OWN max within the 4-week window, so a small-value
-                             metric (e.g. "Дзвінки": 0-3) and a large one (e.g. "Охоплення":
-                             thousands) land on the same 0-100% axis and their waves stay
-                             visually comparable instead of one being squashed flat. */
-function wkChartConfig(spec){
-  const idxs = Array.from(spec.selectedIdxs);
-  if(idxs.length <= 1){
-    const idx = idxs[0] != null ? idxs[0] : spec.defaultIdx;
-    const m = spec.metrics[idx];
-    const color = WEEKLY_PALETTE[idx % WEEKLY_PALETTE.length];
-    return { mode:'single', idx, color, datasets:[planDS(m.planCum), factDS(m.factCum, color)], metric:m };
-  }
-  // Trend/comparison mode: STILL cumulative (same cumPlan/cumFact as single mode) —
-  // plotted as cumulative-fact-as-%-of-cumulative-plan per week. A ratio is scale-free,
-  // so a metric with values in the tens (e.g. "Пости") and one in the thousands (e.g.
-  // "Охоплення") both land on the same 0-100%+ axis and their attainment curves ("waves")
-  // stay comparable — instead of switching to a different, non-cumulative calculation.
-  const datasets = idxs.map(idx=>{
-    const m = spec.metrics[idx];
-    const pct = m.factCum.map((f,i)=>{
-      const p = m.planCum[i];
-      if(f==null || !p) return null;
-      return +(f/p*100).toFixed(1);
-    });
-    const color = WEEKLY_PALETTE[idx % WEEKLY_PALETTE.length];
-    return {
-      label:m.label, data:pct, cumFact:m.factCum, cumPlan:m.planCum,
-      borderColor:color, backgroundColor:color+'18', borderWidth:2,
-      pointRadius:3, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:1.5,
-      fill:false, tension:0.3, spanGaps:false,
-    };
-  });
-  return { mode:'trend', idxs, datasets };
-}
-function wkBaseChartOptions(big){
-  return {
-    responsive:true, maintainAspectRatio:false,
-    interaction:{ mode:'index', intersect:false },
-    plugins:{
-      legend:{ position:'bottom', labels:{ boxWidth: big?11:10, padding: big?12:10, font:{size: big?11:9.5} } },
-      tooltip: Object.assign({}, TOOLTIP, { callbacks:{} }),
-    },
-    scales:{
-      x:{ grid:GRID, ticks:{color:'#9ca3af', font:{size: big?11:8.5}, maxRotation:0, autoSkip:true}, border:{display:false} },
-      y:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
-    },
-  };
-}
-function wkApplyChart(chart, titleEl, spec){
-  const cfg = wkChartConfig(spec);
-  chart.data.labels = spec.weekLabels;
-  chart.data.datasets = cfg.datasets;
-  const y = chart.options.scales.y;
-  if(cfg.mode==='trend'){
-    y.suggestedMin = 0; y.suggestedMax = 100; // floor only — Chart.js still auto-extends above 100% for over-plan weeks
-    y.ticks.callback = v => v+'%';
-    chart.options.plugins.tooltip.callbacks.label = ctx=>{
-      const i = ctx.dataIndex;
-      const f = ctx.dataset.cumFact ? ctx.dataset.cumFact[i] : null;
-      const p = ctx.dataset.cumPlan ? ctx.dataset.cumPlan[i] : null;
-      return `${ctx.dataset.label}: ${f==null?'—':f} з ${p==null?'—':p} накопичувально  (${ctx.formattedValue}% від плану)`;
-    };
-  } else {
-    delete y.suggestedMin; delete y.suggestedMax;
-    y.ticks.callback = undefined;
-    chart.options.plugins.tooltip.callbacks.label = undefined;
-  }
-  chart.update();
-  if(cfg.mode==='single'){
-    const gap = wkGapText(cfg.metric.planCum, cfg.metric.factCum);
-    titleEl.innerHTML =
-      `<span class="wk-chart-name"><span class="dot" style="background:${cfg.color}"></span>Графік: ${cfg.metric.label}</span>` +
-      `<span class="badge ${gap.cls}">${gap.text}</span>`;
-  } else {
-    titleEl.innerHTML =
-      `<span class="wk-chart-name">Порівняння трендів · накопичувально, % від плану (${cfg.idxs.length} показники)</span>` +
-      `<span class="wk-card-hint">клікніть ще раз, щоб прибрати показник</span>`;
-  }
-}
 /* "16.08.26-23.08.26" -> "16.08–23.08" (drop the year, keep the table compact) */
 function wkShortWeek(label){
   const m = String(label).match(/(\d{2}\.\d{2})\.\d{2}\s*-\s*(\d{2}\.\d{2})\.\d{2}/);
@@ -1356,114 +1234,145 @@ function wkTableHtml(spec){
     `<th class="wk-sub${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">План</th><th class="wk-sub${i===n-1?' wk-now':''}">Факт</th>`).join('');
   const cumHead = `<th colspan="3" class="wk-week wk-cum wk-cum-first">Накопичувально</th>`;
   const cumSub = `<th class="wk-sub wk-cum wk-cum-first">План</th><th class="wk-sub wk-cum">Факт</th><th class="wk-sub wk-cum">±%</th>`;
-  const rows = spec.metrics.map((m,mi)=>{
+  const rows = spec.metrics.map(m=>{
     const cells = m.weekly.map((w,i)=>{
       const now = i===n-1 ? ' wk-now' : '';
       const first = i>0 ? ' wk-week-first' : '';
       const plan = w.plan==null ? '—' : w.plan;
       return `<td class="wk-sub${now}${first}">${plan}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact)}</td>`;
     }).join('');
-    return `<tr class="mrow${spec.selectedIdxs.has(mi)?' sel':''}" data-idx="${mi}" style="--dot-color:${WEEKLY_PALETTE[mi % WEEKLY_PALETTE.length]}">
+    return `<tr${m.isTotal?' class="wk-total"':''}>
       <td><span class="mrow-dot"></span>${m.label}</td>${cells}${wkCumCellsHtml(m)}
     </tr>`;
   }).join('');
   return `<table class="mini"><thead><tr><th rowspan="2">Метрика</th>${headWeeks}${cumHead}</tr><tr>${headSub}${cumSub}</tr></thead><tbody>${rows}</tbody></table>`;
 }
-/* toggles one metric on/off (at least 1 always stays selected) and keeps the
-   small card and an open modal for the same card in sync. */
-function wkOnRowClick(canvasId, spec, idx){
-  if(spec.selectedIdxs.has(idx)){
-    if(spec.selectedIdxs.size>1) spec.selectedIdxs.delete(idx);
-  } else {
-    spec.selectedIdxs.add(idx);
-  }
-  wkSyncCard(canvasId, spec);
-  if(wkModalCanvasId === canvasId) wkSyncModal(spec);
-}
-function wkSyncCard(canvasId, spec){
-  wkApplyChart(weeklyCharts[canvasId], document.getElementById(canvasId+'-title'), spec);
-  const card = document.getElementById(canvasId+'-card');
-  card.querySelectorAll('.mrow').forEach(r=> r.classList.toggle('sel', spec.selectedIdxs.has(+r.dataset.idx)));
-}
-function wkSyncModal(spec){
-  if(!wkModalChart) return;
-  wkApplyChart(wkModalChart, document.getElementById('wk-modal-chart-title'), spec);
-  document.querySelectorAll('#wk-modal-table-wrap .mrow').forEach(r=> r.classList.toggle('sel', spec.selectedIdxs.has(+r.dataset.idx)));
-}
-
-const EXPAND_ICON = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2H2v4M2 2l4.5 4.5M10 14h4v-4M14 14L9.5 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 function wkBuildCard(container, spec){
-  const canvasId = 'wk-' + spec.id;
-  spec.selectedIdxs = new Set(spec.metrics.map((_,i)=>i)); // all metrics on by default — click a row to drop it
-  weeklySpecs[canvasId] = spec;
   const card = document.createElement('div');
   card.className = 'wk-card';
-  card.id = canvasId+'-card';
   card.innerHTML = `
-    <div class="wk-card-header">
-      <span class="wk-card-title">${spec.title}</span>
-      <span class="wk-card-actions">
-        <span class="wk-card-hint">усі показники увімкнені — клік по рядку прибирає/додає</span>
-        <button class="wk-expand-btn" type="button" title="Розгорнути" aria-label="Розгорнути ${spec.title}">${EXPAND_ICON}</button>
-      </span>
-    </div>
-    <div class="wk-card-body">
-      <div class="wk-mini-wrap">${wkTableHtml(spec)}</div>
-      <div class="wk-card-bottom">
-        <div class="wk-chart-title" id="${canvasId}-title"></div>
-        <div class="wk-chart-wrap"><canvas id="${canvasId}"></canvas></div>
-      </div>
-    </div>
+    <div class="wk-card-header"><span class="wk-card-title">${spec.title}</span></div>
+    <div class="wk-mini-wrap">${wkTableHtml(spec)}</div>
   `;
   container.appendChild(card);
-  if(weeklyCharts[canvasId]) weeklyCharts[canvasId].destroy();
-  weeklyCharts[canvasId] = new Chart(document.getElementById(canvasId), {
-    type:'line', data:{ labels: spec.weekLabels, datasets:[] }, options: wkBaseChartOptions(false),
+}
+
+/* One collapsible section: a clickable colored header (chevron flips, body hides) plus
+   the grid its cards get appended to. Used for SMM / SALES / Партнерка and for Партнери. */
+function wkBuildSection(container, key, note){
+  const style = WK_SECTION_STYLE[key] || { accent:'#374151', bg:'#f3f4f6' };
+  const label = document.createElement('div');
+  label.className = 'wk-section-label';
+  label.style.setProperty('--wk-accent', style.accent);
+  label.style.setProperty('--wk-bg', style.bg);
+  label.innerHTML = `<span class="wk-section-name"><span class="wk-section-chevron">▾</span>${key}</span><span class="section-note">${note}</span>`;
+  container.appendChild(label);
+  const body = document.createElement('div');
+  body.className = 'wk-section-body';
+  container.appendChild(body);
+  label.addEventListener('click', ()=>{
+    const collapsed = label.classList.toggle('collapsed');
+    body.hidden = collapsed;
   });
-  card.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkOnRowClick(canvasId, spec, +r.dataset.idx)));
-  card.querySelector('.wk-expand-btn').addEventListener('click', ()=> wkOpenModal(canvasId));
-  wkSyncCard(canvasId, spec);
+  const grid = document.createElement('div');
+  grid.className = 'wk-grid';
+  body.appendChild(grid);
+  return grid;
 }
 
-/* ── Expand-to-fullscreen modal (shared across all Weekly-tab cards) ── */
-function wkOpenModal(canvasId){
-  const spec = weeklySpecs[canvasId];
-  if(!spec) return;
-  wkModalCanvasId = canvasId;
-  document.getElementById('wk-modal-title').textContent = spec.title;
-
-  const tableWrap = document.getElementById('wk-modal-table-wrap');
-  tableWrap.innerHTML = wkTableHtml(spec);
-  tableWrap.querySelectorAll('.mrow').forEach(r=> r.addEventListener('click', ()=> wkOnRowClick(canvasId, spec, +r.dataset.idx)));
-
-  if(wkModalChart) wkModalChart.destroy();
-  wkModalChart = new Chart(document.getElementById('wk-modal-canvas'), {
-    type:'line', data:{ labels: spec.weekLabels, datasets:[] }, options: wkBaseChartOptions(true),
+/* ══════════════════════════════════════════════════════
+   "Партнери" — cross-channel funnel (separate block, not per-channel)
+   ══════════════════════════════════════════════════════
+   Different source channels track the same funnel stage under different metric
+   names. This maps each canonical stage to where it lives per channel, so the
+   Партнери block can show one row per contributing channel + a "Разом" total —
+   still over the same 4-week window, still with the same Накопичувально column. */
+const PARTNER_NETWORK_PLAN = 200; // "Глобальний план · Планова кількість партнерів в мережі" — a fixed target, not a weekly plan
+const PARTNER_FUNNEL_ORDER = ['Партнерів в мережі', 'Отримано лідів', 'Зустрічі проведено', 'Угоди'];
+const PARTNER_FUNNEL = {
+  'Партнерів в мережі': [
+    { channel:'Партнерська мережа (комʼюніті)', labels:['Партнерів в мережі'] },
+    { channel:'Партнерська мережа',              labels:['Партнерів в мережі'] },
+  ],
+  'Отримано лідів': [
+    { channel:'Behance', labels:['Цільові'] },
+    { channel:'Upwork',  labels:['Біди - відповіді', 'Інвайти отримано'] },
+    { channel:'Fiverr',  labels:['Цільові'] },
+    { channel:'Партнерська мережа (комʼюніті)', labels:['Отримано лідів'] },
+    { channel:'Партнерська мережа',              labels:['Отримано лідів'] },
+    { channel:'Партнерська мережа Solve',        labels:['Отримано лідів'] },
+  ],
+  'Зустрічі проведено': [
+    { channel:'Behance', labels:['Дзвінки'] },
+    { channel:'Upwork',  labels:['Зустрічі проведено'] }, // Upwork has TWO rows with this exact label (bids flow + invites flow) — both get summed
+    { channel:'Fiverr',  labels:['Дзвінки'] },
+    { channel:'Партнерська мережа (комʼюніті)', labels:['Проведено зустрічей з лідами'] },
+    { channel:'Партнерська мережа',              labels:['Проведено зустрічей з лідами'] },
+    { channel:'Партнерська мережа Solve',        labels:['Проведено зустрічей з лідами'] },
+  ],
+  'Угоди': [
+    { channel:'Behance', labels:['Угоди'] },
+    { channel:'Upwork',  labels:['Угоди'] },
+    { channel:'Fiverr',  labels:['Угоди'] },
+    { channel:'Партнерська мережа (комʼюніті)', labels:['Угоди'] },
+    { channel:'Партнерська мережа',              labels:['Угоди'] },
+    { channel:'Партнерська мережа Solve',        labels:['Угоди'] },
+  ],
+};
+function wkSumWeek(entries){ // entries: [{plan,fact}, ...] for one week, across matched metrics — null only if ALL are null
+  let plan = null, fact = null;
+  entries.forEach(e=>{
+    if(e.plan!=null) plan = (plan||0) + e.plan;
+    if(e.fact!=null) fact = (fact||0) + e.fact;
   });
-
-  wkSyncModal(spec);
-  document.getElementById('wk-modal-backdrop').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  return { plan, fact };
 }
-function wkCloseModal(){
-  document.getElementById('wk-modal-backdrop').style.display = 'none';
-  document.body.style.overflow = '';
-  wkModalCanvasId = null;
+/* Unwindowed weekly {plan,fact} array for one channel, summing every metric whose
+   label is in `labels` (covers both "sum two differently-named rows" and "sum two
+   rows that share the same name", e.g. Upwork's two "Зустрічі проведено"). Returns
+   null if the channel isn't in this run's data at all, or none of the labels match —
+   so a mapping that doesn't (yet) apply just renders as "—" instead of throwing. */
+function wkChannelWeekly(channelsByName, channelName, labels, weekCount){
+  const channel = channelsByName[channelName];
+  if(!channel) return null;
+  const matches = channel.metrics.filter(m=> labels.includes(m.label));
+  if(!matches.length) return null;
+  const out = [];
+  for(let i=0;i<weekCount;i++){
+    out.push(wkSumWeek(matches.map(m=> m.weekly[i] || {plan:null, fact:null})));
+  }
+  return out;
 }
-document.getElementById('wk-modal-close').addEventListener('click', wkCloseModal);
-document.getElementById('wk-modal-backdrop').addEventListener('click', (e)=>{
-  if(e.target.id === 'wk-modal-backdrop') wkCloseModal();
-});
-document.getElementById('wk-modal-panel').addEventListener('click', (e)=> e.stopPropagation());
-document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') wkCloseModal(); });
+function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName){
+  const contributors = PARTNER_FUNNEL[canonicalLabel] || [];
+  const rows = [];
+  const totalWeekly = allWeekLabels.map(()=>({plan:null, fact:null}));
+  contributors.forEach(c=>{
+    const weekly = wkChannelWeekly(channelsByName, c.channel, c.labels, allWeekLabels.length);
+    if(!weekly) return; // that channel/metric isn't present in this run's data — skip, don't guess
+    weekly.forEach((w,i)=>{
+      if(w.plan!=null) totalWeekly[i].plan = (totalWeekly[i].plan||0) + w.plan;
+      if(w.fact!=null) totalWeekly[i].fact = (totalWeekly[i].fact||0) + w.fact;
+    });
+    const windowed = weekly.slice(winStart, winEnd+1);
+    rows.push({ label:c.channel, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed) });
+  });
+  const totalWindowed = totalWeekly.slice(winStart, winEnd+1);
+  const totalRow = { label:'Разом', weekly:totalWindowed, planCum:wkCumulatePlan(totalWindowed), factCum:wkCumulateFact(totalWindowed), isTotal:true };
+  if(canonicalLabel==='Партнерів в мережі'){
+    // fixed global target (200), not the sum of the two channels' own tiny weekly plans —
+    // only the LAST value is ever displayed (the Накопичувально column), but fill the
+    // whole array for consistency.
+    totalRow.planCum = totalRow.planCum.map(()=> PARTNER_NETWORK_PLAN);
+  }
+  rows.push(totalRow);
+  return rows;
+}
 
 function renderWeekly(data){
   const container = document.getElementById('weekly-groups-container');
   container.innerHTML = '';
-  Object.keys(weeklyCharts).forEach(id=>{ weeklyCharts[id].destroy(); delete weeklyCharts[id]; });
-  Object.keys(weeklySpecs).forEach(id=>{ delete weeklySpecs[id]; });
-  wkCloseModal();
 
   const allWeekLabels = data.weekLabels || [];
   const lastIdx = data.lastCompletedIndex!=null ? data.lastCompletedIndex : -1;
@@ -1474,39 +1383,34 @@ function renderWeekly(data){
   const winStart = allWeekLabels.length ? Math.max(0, winEnd - (WK_WINDOW_SIZE-1)) : 0;
   const weekLabels = allWeekLabels.slice(winStart, winEnd+1);
   const windowLabel = weekLabels.length ? `${weekLabels[0]} … ${weekLabels[weekLabels.length-1]}` : lastLabel;
+  const note = `останні ${weekLabels.length} тижні: ${windowLabel}`;
 
-  const groups = wkSplitPartnerGroup(data.groups||[]);
+  // flat channel lookup by exact name, for the cross-channel Партнери funnel below
+  const channelsByName = {};
+  (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
 
-  groups.forEach((group, gi)=>{
-    const style = WK_SECTION_STYLE[group.key] || { accent:'#374151', bg:'#f3f4f6' };
-    const label = document.createElement('div');
-    label.className = 'wk-section-label';
-    label.style.setProperty('--wk-accent', style.accent);
-    label.style.setProperty('--wk-bg', style.bg);
-    label.innerHTML = `<span class="wk-section-name">${group.key}</span><span class="section-note">останні ${weekLabels.length} тижні: ${windowLabel} · клікніть по метриках — можна вибрати кілька для порівняння трендів</span>`;
-    container.appendChild(label);
+  // "Глобальний план · Планова кількість партнерів в мережі" arrives as its own
+  // pseudo-channel with one static value (not a normal per-week metric) — drop it as
+  // a card here; its number (200) is used as the fixed target inside Партнери instead.
+  const groups = wkSplitPartnerGroup(data.groups||[])
+    .map(g=>({ key:g.key, channels:g.channels.filter(ch=> !/глобальн/i.test(ch.key)) }))
+    .filter(g=> g.channels.length);
 
-    const grid = document.createElement('div');
-    grid.className = 'wk-grid';
-    container.appendChild(grid);
-
-    group.channels.forEach((channel, ci)=>{
-      const keyMetricName = WEEKLY_KEY_METRIC[channel.key];
+  groups.forEach(group=>{
+    const grid = wkBuildSection(container, group.key, note);
+    group.channels.forEach(channel=>{
       const metrics = channel.metrics.map(m=>{
         const windowed = m.weekly.slice(winStart, winEnd+1);
-        const planCum = wkCumulatePlan(windowed);
-        const factCum = wkCumulateFact(windowed);
-        const weeklyFact = windowed.map(w=>w.fact);
-        const last = windowed.length ? windowed[windowed.length-1] : {plan:null,fact:null};
-        return { label:m.label, weekly:windowed, planCum, factCum, weeklyFact, lastPlan:last.plan, lastFact:last.fact };
+        return { label:m.label, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed) };
       });
-      let defaultIdx = metrics.findIndex(m=>m.label===keyMetricName);
-      if(defaultIdx<0) defaultIdx = 0;
-      /* positional id — guaranteed unique regardless of channel name / language,
-         unlike a name-based id which stripped Cyrillic and collided
-         (e.g. "LinkedIn Бориса" and "LinkedIn Наталії" both reduced to the same id). */
-      wkBuildCard(grid, { id:'g'+gi+'_c'+ci, title:channel.key, weekLabels, metrics, defaultIdx });
+      wkBuildCard(grid, { title:channel.key, weekLabels, metrics });
     });
+  });
+
+  const funnelGrid = wkBuildSection(container, 'Партнери', `воронка по каналах · ${note}`);
+  PARTNER_FUNNEL_ORDER.forEach(canonicalLabel=>{
+    const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
+    wkBuildCard(funnelGrid, { title:canonicalLabel, weekLabels, metrics:rows });
   });
 }
 
@@ -1568,9 +1472,12 @@ const DEMO_WEEKLY = {
       ]},
       { key:'Upwork', metrics:[
         {label:'Біди відправлено', weekly: wkDemoWeek(20,20,4,8,0.4)},
-        {label:'Біди відповіді', weekly: wkDemoWeek(5,1,4,8,1.1)},
+        {label:'Біди - відповіді', weekly: wkDemoWeek(5,1,4,8,1.1)},
         {label:'Зустрічі заплановано', weekly: wkDemoWeek(3,0,4,8,1.7)},
         {label:'Зустрічі проведено', weekly: wkDemoWeek(2,0,4,8,2.2)},
+        {label:'Інвайти отримано', weekly: wkDemoWeek(9,2,4,8,3.1)},
+        {label:'Зустрічі заплановано', weekly: wkDemoWeek(3,0,4,8,3.4)},
+        {label:'Зустрічі проведено', weekly: wkDemoWeek(2,1,4,8,3.7)},
         {label:'Угоди', weekly: wkDemoWeek(0.4,0,4,8,2.9)},
       ]},
       { key:'Fiverr', metrics:[
@@ -1579,9 +1486,22 @@ const DEMO_WEEKLY = {
         {label:'Дзвінки', weekly: wkDemoWeek(1,0,4,8,1.8)},
         {label:'Угоди', weekly: wkDemoWeek(0.25,0,4,8,2.5)},
       ]},
+      { key:'Глобальний план', metrics:[
+        {label:'Планова кількість партнерів в мережі', weekly: wkDemoWeek(200,6,4,8,9.9)},
+      ]},
+      { key:'Партнерська мережа (комʼюніті)', metrics:[
+        {label:'Всього контактів', weekly: wkDemoWeek(30,92,4,8,4.1)},
+        {label:'Написали', weekly: wkDemoWeek(10,25,4,8,4.4)},
+        {label:'Партнерів в мережі', weekly: wkDemoWeek(2,1,4,8,4.7)},
+        {label:'Отримано лідів', weekly: wkDemoWeek(1,0.5,4,8,5.0)},
+        {label:'Проведено зустрічей з лідами', weekly: wkDemoWeek(1,0.5,4,8,5.3)},
+        {label:'Угоди', weekly: wkDemoWeek(0.25,0.25,4,8,5.6)},
+      ]},
       { key:'Партнерська мережа', metrics:[
-        {label:'Написали', weekly: wkDemoWeek(170,null,0,8,0.3)},
-        {label:'Прийняли запит', weekly: wkDemoWeek(50,null,0,8,0.9)},
+        {label:'Написали', weekly: wkDemoWeek(40,30,4,8,0.3)},
+        {label:'Прийняли запит', weekly: wkDemoWeek(50,25,4,8,0.9)},
+        {label:'Партнерів в мережі', weekly: wkDemoWeek(2,1,4,8,5.9)},
+        {label:'Отримано лідів', weekly: wkDemoWeek(1,1,4,8,6.2)},
         {label:'Проведено зустрічей з лідами', weekly: wkDemoWeek(1,null,0,8,1.6)},
         {label:'Угоди', weekly: wkDemoWeek(0.5,null,0,8,2.4)},
       ]},
