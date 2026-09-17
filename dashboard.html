@@ -1171,11 +1171,19 @@ function wkCumulatePlan(weekly){
   weekly.forEach(w=>{ sum += (w.plan || 0); out.push(+sum.toFixed(4)); });
   return out;
 }
+/* Formats a raw plan/fact/cumulative number for display: rounds to at most 1 decimal
+   place (never more), and drops a trailing ".0" so whole numbers still read as whole
+   numbers. Every Weekly-tab cell that shows a raw metric value goes through this. */
+function wkFmtNum(v){
+  if(v==null) return '—';
+  const rounded = Math.round(v*10)/10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
 function wkTagFor(plan, fact){
   if(fact==null) return '<span class="cell-tag zero">—</span>';
-  if(plan==null) return `<span class="cell-tag zero">${fact}</span>`;
+  if(plan==null) return `<span class="cell-tag zero">${wkFmtNum(fact)}</span>`;
   const good = fact >= plan;
-  return `<span class="cell-tag ${good?'good':'bad'}">${fact}</span>`;
+  return `<span class="cell-tag ${good?'good':'bad'}">${wkFmtNum(fact)}</span>`;
 }
 function wkGapText(planCum, factCum){
   const p = planCum[planCum.length-1];
@@ -1222,7 +1230,7 @@ function wkCumCellsHtml(m){
   const gap = wkGapText(m.planCum, m.factCum);
   const factCell = factLast==null ? '<span class="cell-tag zero">—</span>' : wkTagFor(planLast, factLast);
   const pctText = gap.text.replace(' від плану', '');
-  return `<td class="wk-sub wk-cum wk-cum-first">${planLast==null?'—':planLast}</td>` +
+  return `<td class="wk-sub wk-cum wk-cum-first">${wkFmtNum(planLast)}</td>` +
          `<td class="wk-sub wk-cum">${factCell}</td>` +
          `<td class="wk-sub wk-cum wk-cum-pct"><span class="badge ${gap.cls}">${pctText}</span></td>`;
 }
@@ -1238,8 +1246,7 @@ function wkTableHtml(spec){
     const cells = m.weekly.map((w,i)=>{
       const now = i===n-1 ? ' wk-now' : '';
       const first = i>0 ? ' wk-week-first' : '';
-      const plan = w.plan==null ? '—' : w.plan;
-      return `<td class="wk-sub${now}${first}">${plan}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact)}</td>`;
+      return `<td class="wk-sub${now}${first}">${wkFmtNum(w.plan)}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact)}</td>`;
     }).join('');
     return `<tr${m.isTotal?' class="wk-total"':''}>
       <td><span class="mrow-dot"></span>${m.label}</td>${cells}${wkCumCellsHtml(m)}
