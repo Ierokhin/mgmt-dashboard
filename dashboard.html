@@ -239,8 +239,8 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-logo" id="tb-logo">Σ</div>
-    <div class="topbar-title" id="tb-title">Monthly <span>/ Sales Dashboard</span></div>
+    <div class="topbar-logo" id="tb-logo">W</div>
+    <div class="topbar-title" id="tb-title">Оперативний <span>/ Sales Dashboard</span></div>
   </div>
   <div class="topbar-right">
     <span class="topbar-date" id="js-date">—</span>
@@ -351,11 +351,12 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
 </div>
 <!-- CONSOLIDATED TAB (rebuilt Sept 2026: Маркетинг / Сейлс / Партнерка, sourced from the same
      weekly report as "4 Weeks" but aggregated into months over the full period to date). -->
-<div id="consolidated-tab-view">
+<div id="consolidated-tab-view" style="display:none">
   <div id="consolidated-groups-container"></div>
 </div>
-<!-- WEEKLY TAB (separate Google doc: SMM / SALES per-week blocks) -->
-<div id="weekly-tab-view" style="display:none">
+<!-- WEEKLY TAB (separate Google doc: SMM / SALES per-week blocks) — the default landing
+     tab ("Оперативний"), so no style="display:none" here. -->
+<div id="weekly-tab-view">
   <!-- Pinned, non-collapsible: revenue speedometer (moved here from the old Consolidated
        Key Metrics) + "Зведена воронка", built by renderWeekly() below. -->
   <div class="gauge-card-wrap">
@@ -401,15 +402,15 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR2qdwpXxtIOeD2jBgI
    the resulting /exec URL below. */
 const WEEKLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwve64_InvbnsMCtPadwQg5wz-qS0wnVN1QDs6CFGAllyNUPwtkh2TSOdXXm5kvhH_EDQ/exec';
 const CHANNELS = [
-  { key:'consolidated', label:'Monthly',        logo:'Σ' },
+  { key:'consolidated', label:'Стратегічний',   logo:'Σ' },
   { key:'upwork',       label:'Upwork',         logo:'U' },
   { key:'partnership',  label:'Partnership',    logo:'P' },
   { key:'csr',          label:'CSR',            logo:'C' },
   { key:'behance',      label:'Behance&Fiverr', logo:'B' },
-  { key:'weekly',       label:'Weekly',         logo:'W' },
+  { key:'weekly',       label:'Оперативний',    logo:'W' },
   { key:'unitecon',     label:'Unit Economics', logo:'E' },
 ];
-let currentChannel = 'consolidated';
+let currentChannel = 'weekly';
 /* The old "Weekly progress · current month" block (Upwork/Partnership tabs) now
    duplicates the new Weekly tab — hidden for now. Flip back to true to restore it. */
 const SHOW_MONTHLY_WEEKLY_PROGRESS = false;
@@ -1060,10 +1061,12 @@ function r2(v){ return v==null ? null : Math.round(v*100)/100; }
    (Upwork/Partnership/CSR/Behance&Fiverr) stay defined in CHANNELS and their render code
    stays intact — just not reachable from the tab bar — so they can be brought back later
    without rebuilding anything. */
-const VISIBLE_TAB_KEYS = ['consolidated', 'weekly', 'unitecon'];
+/* Tab bar order follows THIS array's order (not CHANNELS' declaration order) — map, not
+   filter, so reordering tabs is just reordering these keys. */
+const VISIBLE_TAB_KEYS = ['weekly', 'consolidated', 'unitecon'];
 function buildTabs(){
   const el = document.getElementById('tabs');
-  el.innerHTML = CHANNELS.filter(c=> VISIBLE_TAB_KEYS.includes(c.key)).map(c =>
+  el.innerHTML = VISIBLE_TAB_KEYS.map(key=> CHANNELS.find(c=>c.key===key)).filter(Boolean).map(c =>
     `<button class="tab${c.key===currentChannel?' active':''}" data-key="${c.key}">${c.label}</button>`
   ).join('');
   el.querySelectorAll('.tab').forEach(btn=>{
