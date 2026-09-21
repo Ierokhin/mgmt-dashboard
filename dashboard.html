@@ -240,7 +240,7 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
 <div class="topbar">
   <div class="topbar-left">
     <div class="topbar-logo" id="tb-logo">W</div>
-    <div class="topbar-title" id="tb-title">Оперативний <span>/ Sales Dashboard</span></div>
+    <div class="topbar-title" id="tb-title">Operational <span>/ Sales Dashboard</span></div>
   </div>
   <div class="topbar-right">
     <span class="topbar-date" id="js-date">—</span>
@@ -355,7 +355,7 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
   <div id="consolidated-groups-container"></div>
 </div>
 <!-- WEEKLY TAB (separate Google doc: SMM / SALES per-week blocks) — the default landing
-     tab ("Оперативний"), so no style="display:none" here. -->
+     tab ("Operational"), so no style="display:none" here. -->
 <div id="weekly-tab-view">
   <!-- Pinned, non-collapsible: revenue speedometer (moved here from the old Consolidated
        Key Metrics) + "Зведена воронка", built by renderWeekly() below. -->
@@ -402,12 +402,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR2qdwpXxtIOeD2jBgI
    the resulting /exec URL below. */
 const WEEKLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwve64_InvbnsMCtPadwQg5wz-qS0wnVN1QDs6CFGAllyNUPwtkh2TSOdXXm5kvhH_EDQ/exec';
 const CHANNELS = [
-  { key:'consolidated', label:'Стратегічний',   logo:'Σ' },
+  { key:'consolidated', label:'Strategic',      logo:'Σ' },
   { key:'upwork',       label:'Upwork',         logo:'U' },
   { key:'partnership',  label:'Partnership',    logo:'P' },
   { key:'csr',          label:'CSR',            logo:'C' },
   { key:'behance',      label:'Behance&Fiverr', logo:'B' },
-  { key:'weekly',       label:'Оперативний',    logo:'W' },
+  { key:'weekly',       label:'Operational',    logo:'W' },
   { key:'unitecon',     label:'Unit Economics', logo:'E' },
 ];
 let currentChannel = 'weekly';
