@@ -209,13 +209,14 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
    the Вартість ліда placeholder to explain why it's empty) under the card title. */
 .mn-card-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); font-style:italic; margin:-4px 0 10px; }
 /* Table (left) + chart (right), instead of a full-width chart stretched under the table. */
-/* flex-wrap (not a fixed viewport breakpoint) so each card adapts to its own table's
-   width: the chart shrinks down to its min-width first, and only wraps onto its own
-   full-width row below the table if there truly isn't room for it beside the table —
-   no horizontal scrollbar either way. */
+/* The chart gets a fixed width so every card's chart reads at the same size — the table
+   next to it just takes whatever's left (its own overflow-x:auto is the fallback if that
+   ever isn't enough). flex-wrap (not a fixed viewport breakpoint) means the chart only
+   drops onto its own full-width row below the table when there truly isn't room for it
+   beside the table at its fixed width — no horizontal scrollbar either way. */
 .mn-card-body { display:flex; flex-wrap:wrap; align-items:flex-start; gap:14px; min-width:0; }
-.mn-table-col { flex:0 0 auto; max-width:100%; }
-.mn-chart-col { flex:1 1 160px; min-width:140px; }
+.mn-table-col { flex:1 1 480px; min-width:0; }
+.mn-chart-col { flex:0 0 400px; width:400px; }
 .mn-chart-caption { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; text-align:center; }
 .mn-chart-wrap { height:230px; }
 /* Clicking a channel row swaps the chart to that channel instead of the "Разом" total. */
@@ -1157,18 +1158,32 @@ async function loadData(){
   }
 
   /* ── CONSOLIDATED tab: rebuilt on the same weekly report as "4 Weeks", aggregated
-     into months over the whole period to date instead of a 4-week window. ── */
+     into months over the whole period to date instead of a 4-week window. Jan–Jul
+     Upwork numbers (leads/calls/sales) additionally get backfilled from the legacy
+     per-channel script below — the weekly report itself only starts in August, so
+     without this Upwork's first 7 months would just read 0. ── */
   if(currentChannel === 'consolidated'){
+    const weeklyPromise = fetchAny(WEEKLY_SCRIPT_URL);
+    const upworkLegacyPromise = fetchAny(SCRIPT_URL + '?channel=upwork');
+    let weeklyData;
     try {
-      const data = await fetchAny(WEEKLY_SCRIPT_URL);
-      if(data.error) throw new Error(data.error);
-      mnRenderConsolidated(data);
+      weeklyData = await weeklyPromise;
+      if(weeklyData.error) throw new Error(weeklyData.error);
       pill.className='live-pill'; pillText.textContent='Live · Google Sheets';
     } catch(e){
-      mnRenderConsolidated(DEMO_WEEKLY);
+      weeklyData = DEMO_WEEKLY;
       pill.className='live-pill error'; pillText.textContent='Demo (offline)';
       console.warn('Consolidated live load failed, showing demo:', e.message);
     }
+    let upworkLegacy = null;
+    try {
+      const ud = await upworkLegacyPromise;
+      if(ud.error) throw new Error(ud.error);
+      upworkLegacy = ud;
+    } catch(e){
+      console.warn('Upwork Jan–Jul backfill unavailable, leaving those months as-is:', e.message);
+    }
+    mnRenderConsolidated(weeklyData, upworkLegacy);
     return;
   }
 
@@ -1348,17 +1363,18 @@ function wkCumCellsHtml(m){
    cumulative "Накопичувально" column): `periodLabels` are already display-ready strings,
    `cornerLabel` is the top-left header ("Метрика" for per-channel weekly cards, "Канал"
    for the Consolidated per-metric cards where rows are channels instead). */
-function wkPeriodTableHtml(periodLabels, metrics, cornerLabel){
+function wkPeriodTableHtml(periodLabels, metrics, cornerLabel, highlightNow){
+  if(highlightNow==null) highlightNow = true; // Weekly: highlight the current week. Monthly passes false — a full Січ–Гру row makes "last column" meaningless as "now".
   const n = periodLabels.length;
   const headPeriods = periodLabels.map((pl,i)=>
-    `<th colspan="2" class="wk-week${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">${pl}</th>`).join('');
+    `<th colspan="2" class="wk-week${highlightNow&&i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">${pl}</th>`).join('');
   const headSub = periodLabels.map((pl,i)=>
-    `<th class="wk-sub${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">План</th><th class="wk-sub${i===n-1?' wk-now':''}">Факт</th>`).join('');
+    `<th class="wk-sub${highlightNow&&i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">План</th><th class="wk-sub${highlightNow&&i===n-1?' wk-now':''}">Факт</th>`).join('');
   const cumHead = `<th colspan="3" class="wk-week wk-cum wk-cum-first">Накопичувально</th>`;
   const cumSub = `<th class="wk-sub wk-cum wk-cum-first">План</th><th class="wk-sub wk-cum">Факт</th><th class="wk-sub wk-cum">±%</th>`;
   const rows = metrics.map(m=>{
     const cells = m.weekly.map((w,i)=>{
-      const now = i===n-1 ? ' wk-now' : '';
+      const now = highlightNow&&i===n-1 ? ' wk-now' : '';
       const first = i>0 ? ' wk-week-first' : '';
       return `<td class="wk-sub${now}${first}">${wkFmtVal(w.plan, m.fmt)}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact,m.fmt)}</td>`;
     }).join('');
@@ -1692,6 +1708,38 @@ function mnBuildConvRows(fromRows, toRows){
   });
   return rows;
 }
+/* Backfills Upwork's Січ–Лип (Jan–Jul) monthly plan/fact into a canonical metric's rows
+   (leads/calls/sales) from the legacy per-channel script's `plan.<key>`/`fact.<key>`
+   year arrays — the weekly report only starts in August, so without this Upwork's first
+   7 months read 0 there. `fact` arrays from that script are only as long as filledMonths,
+   so a month with no legacy fact yet just keeps whatever the weekly-report side already
+   had (0, pre-August). After the Upwork row is overwritten, "Разом" is re-summed from
+   every contributor row so the total stays consistent. */
+function mnBackfillUpworkMonths(rows, legacyPlan, legacyFact){
+  if(!legacyPlan || !legacyFact) return;
+  const upRow = rows.find(r=> r.label==='Upwork');
+  const totalRow = rows.find(r=> r.isTotal);
+  if(!upRow || !totalRow) return;
+  for(let i=0;i<7;i++){ // Січ..Лип
+    const plan = legacyPlan[i]!=null ? legacyPlan[i] : null;
+    const fact = legacyFact[i]!=null ? legacyFact[i] : null;
+    if(plan==null && fact==null) continue;
+    upRow.weekly[i] = {
+      plan: plan!=null ? plan : upRow.weekly[i].plan,
+      fact: fact!=null ? fact : upRow.weekly[i].fact,
+    };
+  }
+  upRow.planCum = wkCumulatePlan(upRow.weekly);
+  upRow.factCum = wkCumulateFact(upRow.weekly);
+  const contributors = rows.filter(r=> !r.isTotal);
+  totalRow.weekly = totalRow.weekly.map((_,i)=>{
+    let plan=0, fact=0;
+    contributors.forEach(r=>{ plan += (r.weekly[i].plan||0); fact += (r.weekly[i].fact||0); });
+    return { plan, fact };
+  });
+  totalRow.planCum = wkCumulatePlan(totalRow.weekly);
+  totalRow.factCum = wkCumulateFact(totalRow.weekly);
+}
 /* Вартість ліда (CPL) — the weekly report has no budget/spend row yet, so this stays a
    "—" placeholder until one is added there. Keeps the same row set as the other
    Marketing metrics so the card layout stays consistent. */
@@ -1756,7 +1804,7 @@ function mnBuildCard(container, spec){ // spec: {title, note?, periodLabels, met
     ${spec.note?`<div class="mn-card-note">${spec.note}</div>`:''}
     ${mnTargetGaugeHtml(spec.targetGauge)}
     <div class="mn-card-body">
-      <div class="wk-mini-wrap mn-table-col">${wkPeriodTableHtml(spec.periodLabels, spec.metrics, 'Канал')}</div>
+      <div class="wk-mini-wrap mn-table-col">${wkPeriodTableHtml(spec.periodLabels, spec.metrics, 'Канал', false)}</div>
       <div class="mn-chart-col">
         <div class="mn-chart-caption" id="${chartId}-caption"></div>
         <div class="chart-wrap mn-chart-wrap"><canvas id="${chartId}"></canvas></div>
@@ -1787,7 +1835,7 @@ function mnBuildCard(container, spec){ // spec: {title, note?, periodLabels, met
   });
 }
 
-function mnRenderConsolidated(data){
+function mnRenderConsolidated(data, legacyUpwork){
   const container = document.getElementById('consolidated-groups-container');
   container.innerHTML = '';
 
@@ -1808,6 +1856,14 @@ function mnRenderConsolidated(data){
   const callsRows    = mnBuildMetricRows('Зустрічі проведено', months, perWeekSplit, allWeekLabels, channelsByName);
   const salesRows    = mnBuildMetricRows('Угоди',              months, perWeekSplit, allWeekLabels, channelsByName);
   const partnersRows = mnBuildMetricRows('Партнерів в мережі',  months, perWeekSplit, allWeekLabels, channelsByName);
+
+  // Upwork Січ–Лип backfill from the legacy per-channel script (before conversions are
+  // derived below, so lead→call / call→sale automatically pick up the real numbers too).
+  if(legacyUpwork && legacyUpwork.plan && legacyUpwork.fact){
+    mnBackfillUpworkMonths(leadsRows, legacyUpwork.plan.leads, legacyUpwork.fact.leads);
+    mnBackfillUpworkMonths(callsRows, legacyUpwork.plan.calls, legacyUpwork.fact.calls);
+    mnBackfillUpworkMonths(salesRows, legacyUpwork.plan.sales, legacyUpwork.fact.sales);
+  }
   // The 200-partner target is NOT written into the plan — "Разом" plan stays the real
   // sheet-derived sum, same as every other metric. The target instead gets its own
   // separate fill gauge (see mnTargetGaugeHtml), fed by the to-date cumulative fact.
