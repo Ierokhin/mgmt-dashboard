@@ -175,6 +175,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 .wk-section-body[hidden] { display:none; }
 /* channel cards stack full-width, one per row */
 .wk-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px; }
+.wk-grid-pinned { margin-top:4px; }
 .wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px 16px; display:flex; flex-direction:column; }
 .wk-card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
 .wk-card-title { font-size:13px; font-weight:700; color:var(--text); }
@@ -1515,10 +1516,12 @@ function renderWeekly(data){
   const channelsByName = {};
   (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
 
-  // "Зведена воронка" is pinned at the top, always open (not collapsible) — it's the
-  // aggregate summary across all channels, shown together with the revenue speedometer
-  // above it (rendered separately into #gauge-card, outside this container).
-  const funnelGrid = wkBuildSection(container, 'Зведена воронка', `воронка по каналах · ${note}`, true);
+  // The cross-channel funnel cards are pinned at the top, directly under the revenue
+  // speedometer (rendered separately into #gauge-card, outside this container) — no
+  // section header/label above them anymore, just the grid of cards.
+  const funnelGrid = document.createElement('div');
+  funnelGrid.className = 'wk-grid wk-grid-pinned';
+  container.appendChild(funnelGrid);
   PARTNER_FUNNEL_ORDER.forEach(canonicalLabel=>{
     const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
     wkBuildCard(funnelGrid, { title:canonicalLabel, weekLabels, metrics:rows });
@@ -1563,13 +1566,17 @@ function mnParseWeekRange(label){
     end:   new Date(yy(m[6]), parseInt(m[5],10)-1, parseInt(m[4],10)),
   };
 }
-/* For weeks [0..lastIdx] (only COMPLETED weeks contribute — same "to date" boundary the
-   4-week window uses): walks every day of every week and buckets it into its calendar
-   month, returning the ordered month list and, per week, how its days split across the
-   month(s) it touches. That per-week split is the basis for prorating every metric. */
+/* Always the full 12 months of the current year (not just the months completed weeks
+   happen to fall into) — months a week never touches simply get 0 later on, via
+   mnProrateToMonths' zero-initialized buckets, instead of being left out of the table.
+   perWeekSplit still only walks COMPLETED weeks [0..lastIdx] — same "to date" boundary
+   the 4-week window uses — bucketing each day into its calendar month; that per-week
+   split is the basis for prorating every metric. */
 function mnBuildMonthSplits(weekLabels, lastIdx){
-  const monthMeta = {};
-  const monthsOrder = [];
+  const months = [];
+  for(let mo=0; mo<12; mo++){
+    months.push({ key:mnMonthKey(CURRENT_YEAR,mo), label:MN_NAMES_UA[mo]+' '+CURRENT_YEAR, y:CURRENT_YEAR, m:mo });
+  }
   const perWeekSplit = [];
   for(let i=0;i<weekLabels.length;i++){
     const range = i<=lastIdx ? mnParseWeekRange(weekLabels[i]) : null;
@@ -1577,23 +1584,21 @@ function mnBuildMonthSplits(weekLabels, lastIdx){
     if(range){
       const day = new Date(range.start);
       while(day <= range.end){
-        const y = day.getFullYear(), mo = day.getMonth();
-        const key = mnMonthKey(y,mo);
+        const key = mnMonthKey(day.getFullYear(), day.getMonth());
         split[key] = (split[key]||0) + 1;
-        if(!monthMeta[key]){ monthMeta[key] = { key, label:MN_NAMES_UA[mo]+' '+y, y, m:mo }; monthsOrder.push(key); }
         day.setDate(day.getDate()+1);
       }
     }
     perWeekSplit.push(split);
   }
-  monthsOrder.sort((a,b)=> monthMeta[a].y-monthMeta[b].y || monthMeta[a].m-monthMeta[b].m);
-  return { months: monthsOrder.map(k=>monthMeta[k]), perWeekSplit };
+  return { months, perWeekSplit };
 }
 /* Prorates one channel-metric's full (unwindowed) weekly {plan,fact}[] array into a
    monthly array aligned to `months`, splitting each week across the months it touches
-   proportional to day count. */
+   proportional to day count. A month no week ever touches stays at its 0/0 default —
+   shown as "0" rather than "—", so the table always has all 12 months filled in. */
 function mnProrateToMonths(weekly, perWeekSplit, months){
-  const byKey = {}; months.forEach(mo=> byKey[mo.key] = { plan:null, fact:null });
+  const byKey = {}; months.forEach(mo=> byKey[mo.key] = { plan:0, fact:0 });
   weekly.forEach((w,i)=>{
     const split = perWeekSplit[i] || {};
     const totalDays = Object.values(split).reduce((a,b)=>a+b,0);
@@ -1602,8 +1607,8 @@ function mnProrateToMonths(weekly, perWeekSplit, months){
       const frac = split[key]/totalDays;
       const bucket = byKey[key];
       if(!bucket) return;
-      if(w.plan!=null) bucket.plan = (bucket.plan||0) + w.plan*frac;
-      if(w.fact!=null) bucket.fact = (bucket.fact||0) + w.fact*frac;
+      if(w.plan!=null) bucket.plan += w.plan*frac;
+      if(w.fact!=null) bucket.fact += w.fact*frac;
     });
   });
   return months.map(mo=> byKey[mo.key]);
@@ -1616,14 +1621,14 @@ function mnBuildMetricRows(canonicalLabel, months, perWeekSplit, allWeekLabels, 
   const contributors = PARTNER_FUNNEL[canonicalLabel] || [];
   const fmt = WK_INT_METRICS.has(canonicalLabel) ? 'int' : undefined;
   const rows = [];
-  const totalMonthly = months.map(()=>({plan:null, fact:null}));
+  const totalMonthly = months.map(()=>({plan:0, fact:0}));
   contributors.forEach(c=>{
     const weekly = wkChannelWeekly(channelsByName, c.channel, c.labels, allWeekLabels.length);
     if(!weekly) return; // channel/metric not present in this run's data — skip, don't guess
     const monthly = mnProrateToMonths(weekly, perWeekSplit, months);
     monthly.forEach((w,i)=>{
-      if(w.plan!=null) totalMonthly[i].plan = (totalMonthly[i].plan||0) + w.plan;
-      if(w.fact!=null) totalMonthly[i].fact = (totalMonthly[i].fact||0) + w.fact;
+      totalMonthly[i].plan += w.plan;
+      totalMonthly[i].fact += w.fact;
     });
     rows.push({ label:c.channel, weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
   });
