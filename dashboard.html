@@ -22,7 +22,7 @@
 html { font-size:14px; }
 body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 /* TOPBAR */
-.topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 40px; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 18px; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
 .topbar-left { display:flex; align-items:center; gap:12px; }
 .topbar-logo { width:32px; height:32px; background:var(--text); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; letter-spacing:-0.5px; }
 .topbar-title { font-size:15px; font-weight:700; letter-spacing:-0.3px; }
@@ -37,12 +37,12 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
 .topbar-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); }
 /* TABS */
-.tabs { background:var(--surface); border-bottom:1px solid var(--border); padding:0 40px; display:flex; gap:2px; position:sticky; top:58px; z-index:49; overflow-x:auto; }
+.tabs { background:var(--surface); border-bottom:1px solid var(--border); padding:0 18px; display:flex; gap:2px; position:sticky; top:58px; z-index:49; overflow-x:auto; }
 .tab { padding:13px 18px; border:none; background:transparent; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; font-weight:500; color:var(--text-muted); border-bottom:2px solid transparent; white-space:nowrap; transition:color .15s; }
 .tab:hover { color:var(--text-dim); }
 .tab.active { color:var(--text); border-bottom-color:var(--text); }
 /* LAYOUT */
-.main { padding:28px 40px 48px; max-width:1440px; margin:0 auto; }
+.main { padding:28px 18px 48px; max-width:1440px; margin:0 auto; }
 .section-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
 .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 /* KPI */
@@ -179,7 +179,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 /* channel cards stack full-width, one per row */
 .wk-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px; }
 .wk-grid-pinned { margin-top:4px; }
-.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px 16px; display:flex; flex-direction:column; }
+.wk-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px 16px; display:flex; flex-direction:column; min-width:0; }
 .wk-card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
 .wk-card-title { font-size:13px; font-weight:700; color:var(--text); }
 .wk-mini-wrap { overflow-x:auto; }
@@ -209,15 +209,15 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
    the Вартість ліда placeholder to explain why it's empty) under the card title. */
 .mn-card-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); font-style:italic; margin:-4px 0 10px; }
 /* Table (left) + chart (right), instead of a full-width chart stretched under the table. */
-.mn-card-body { display:flex; align-items:flex-start; gap:20px; }
-.mn-table-col { flex:1.5; min-width:0; }
-.mn-chart-col { flex:1; min-width:220px; }
+/* flex-wrap (not a fixed viewport breakpoint) so each card adapts to its own table's
+   width: the chart shrinks down to its min-width first, and only wraps onto its own
+   full-width row below the table if there truly isn't room for it beside the table —
+   no horizontal scrollbar either way. */
+.mn-card-body { display:flex; flex-wrap:wrap; align-items:flex-start; gap:14px; min-width:0; }
+.mn-table-col { flex:0 0 auto; max-width:100%; }
+.mn-chart-col { flex:1 1 160px; min-width:140px; }
 .mn-chart-caption { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; text-align:center; }
 .mn-chart-wrap { height:230px; }
-@media (max-width: 900px) {
-  .mn-card-body { flex-direction:column; }
-  .mn-chart-col { width:100%; }
-}
 /* Clicking a channel row swaps the chart to that channel instead of the "Разом" total. */
 .mn-table-col tr.mn-row-clickable { cursor:pointer; }
 .mn-table-col tr.mn-row-clickable:hover td { background:rgba(29,78,216,0.06); }
@@ -239,7 +239,7 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
 <div class="topbar">
   <div class="topbar-left">
     <div class="topbar-logo" id="tb-logo">Σ</div>
-    <div class="topbar-title" id="tb-title">Consolidated <span>/ Sales Dashboard</span></div>
+    <div class="topbar-title" id="tb-title">Monthly <span>/ Sales Dashboard</span></div>
   </div>
   <div class="topbar-right">
     <span class="topbar-date" id="js-date">—</span>
