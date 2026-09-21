@@ -90,7 +90,8 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi-track-row { display:none; }
 .kpi-grid.has-gauge .kpi-ring-wrap { display:flex; flex:1; align-items:center; justify-content:center; min-height:0; }
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
-/* GAUGE CARD (Revenue speedometer) */
+/* GAUGE CARD (Revenue speedometer) — now pinned at the top of the "4 Weeks" tab, standalone */
+.gauge-card-wrap { max-width:900px; margin:0 auto 20px; }
 .gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; }
 #gz-canvas { max-width:100%; height:auto; display:block; margin:0 auto; }
 .gauge-date { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:5px; text-align:center; }
@@ -166,6 +167,7 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
    clickable to collapse/expand its content */
 .wk-section-label { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:8px 14px; padding:13px 20px; margin:30px 0 14px; border-radius:12px; border-left:6px solid var(--wk-accent,#6d28d9); background:var(--wk-bg,#f5f3ff); cursor:pointer; user-select:none; }
 .wk-section-label:first-child { margin-top:0; }
+.wk-section-label.pinned { cursor:default; }
 .wk-section-label .wk-section-name { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:800; letter-spacing:.4px; color:var(--wk-accent,#6d28d9); text-transform:uppercase; }
 .wk-section-label .section-note { font-size:10.5px; color:var(--text-muted); }
 .wk-section-chevron { display:inline-block; transition:transform .15s; font-size:12px; color:var(--wk-accent,#6d28d9); }
@@ -199,6 +201,31 @@ table.mini th.wk-cum, table.mini td.wk-cum { background:rgba(0,0,0,0.05); font-w
 table.mini th.wk-cum-first, table.mini td.wk-cum-first { border-left:2px solid var(--border2); }
 table.mini td.wk-cum-pct { padding:4px 6px; }
 table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space:nowrap; font-weight:700; }
+/* Consolidated cards: cumulative chart below the table, and an optional note (used by
+   the Вартість ліда placeholder to explain why it's empty) under the card title. */
+.mn-card-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); font-style:italic; margin:-4px 0 10px; }
+/* Table (left) + chart (right), instead of a full-width chart stretched under the table. */
+.mn-card-body { display:flex; align-items:flex-start; gap:20px; }
+.mn-table-col { flex:1.5; min-width:0; }
+.mn-chart-col { flex:1; min-width:220px; }
+.mn-chart-caption { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; text-align:center; }
+.mn-chart-wrap { height:230px; }
+@media (max-width: 900px) {
+  .mn-card-body { flex-direction:column; }
+  .mn-chart-col { width:100%; }
+}
+/* Clicking a channel row swaps the chart to that channel instead of the "Разом" total. */
+.mn-table-col tr.mn-row-clickable { cursor:pointer; }
+.mn-table-col tr.mn-row-clickable:hover td { background:rgba(29,78,216,0.06); }
+.mn-table-col tr.mn-row-selected td { background:rgba(29,78,216,0.1); }
+.mn-table-col tr.mn-row-selected td:first-child { color:var(--blue); font-weight:700; }
+/* Партнерка target gauge — a fill bar kept separate from the plan/fact table & chart. */
+.mn-target-gauge { margin:0 0 16px; padding:12px 16px; background:var(--surface2); border-radius:var(--radius-sm); }
+.mn-target-label { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.mn-target-track { position:relative; height:10px; background:rgba(0,0,0,0.08); border-radius:6px; overflow:hidden; }
+.mn-target-fill { position:absolute; left:0; top:0; height:100%; border-radius:6px; background:linear-gradient(90deg,#8b5cf6,#6d28d9); transition:width .6s ease; }
+.mn-target-value { margin-top:8px; font-family:'DM Mono',monospace; font-size:12.5px; font-weight:700; color:var(--text); }
+.mn-target-value .mn-target-pct { color:var(--text-muted); font-weight:500; margin-left:4px; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 </style>
@@ -218,7 +245,10 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
 <!-- TABS -->
 <div class="tabs" id="tabs"></div>
 <div class="main">
-<div id="standard-tab-view">
+<!-- Legacy per-channel view (Upwork/Partnership/CSR/Behance&Fiverr + the old Consolidated layout).
+     Hidden by default: those tab buttons are hidden too, kept only so the tabs can be restored
+     later without rebuilding this view. -->
+<div id="standard-tab-view" style="display:none">
   <!-- KPI -->
   <div class="section-label" id="kpi-period">Key metrics</div>
   <div class="kpi-grid">
@@ -245,26 +275,6 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
       <div class="kpi-track"><div class="kpi-track-fill" id="kbar-ltvcac" style="width:0%"></div><div class="kpi-target-mark" id="kmark-ltvcac"></div></div>
       <div class="kpi-track-row"><span>actual</span><span>target</span></div>
       <div class="kpi-ring-wrap"><div class="kpi-ring" id="kring-ltvcac"><span id="kring-val-ltvcac">—</span></div></div>
-    </div>
-    <!-- GAUGE (Revenue speedometer) — Consolidated only -->
-    <div class="gauge-card" id="gauge-card" style="display:none;">
-      <div class="gauge-date" id="gz-date">—</div>
-      <div class="gauge-top-row">
-        <div class="gauge-metric"><div class="gauge-metric-label">Доход</div><div class="gauge-metric-value" id="gz-fact">—</div><div class="gauge-metric-sub">от плана</div></div>
-        <div class="gauge-status gauge-status-ok" id="gz-status-card">
-          <span class="gz-val" id="gz-status-val">—</span>
-          <span class="gz-sub">от графика</span>
-        </div>
-        <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
-      </div>
-      <div class="gauge-wrap"><canvas id="gz-canvas" width="740" height="325"></canvas></div>
-      <div class="gauge-legend">
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
-        <span class="gauge-leg-item"><svg width="14" height="10"><line x1="1" y1="8" x2="10" y2="2" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="2" cy="9" r="2" fill="#c0392b"/></svg>Время</span>
-        <span class="gauge-leg-item"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/><polygon points="20,5 13,2 13,8" fill="#1a1a1a"/></svg>Доход</span>
-      </div>
     </div>
   </div>
   <!-- WEEKLY PROGRESS (current month) -->
@@ -334,8 +344,36 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
     </div>
   </div>
 </div>
+<!-- CONSOLIDATED TAB (rebuilt Sept 2026: Маркетинг / Сейлс / Партнерка, sourced from the same
+     weekly report as "4 Weeks" but aggregated into months over the full period to date). -->
+<div id="consolidated-tab-view">
+  <div id="consolidated-groups-container"></div>
+</div>
 <!-- WEEKLY TAB (separate Google doc: SMM / SALES per-week blocks) -->
 <div id="weekly-tab-view" style="display:none">
+  <!-- Pinned, non-collapsible: revenue speedometer (moved here from the old Consolidated
+       Key Metrics) + "Зведена воронка", built by renderWeekly() below. -->
+  <div class="gauge-card-wrap">
+    <div class="gauge-card" id="gauge-card" style="display:none;">
+      <div class="gauge-date" id="gz-date">—</div>
+      <div class="gauge-top-row">
+        <div class="gauge-metric"><div class="gauge-metric-label">Доход</div><div class="gauge-metric-value" id="gz-fact">—</div><div class="gauge-metric-sub">от плана</div></div>
+        <div class="gauge-status gauge-status-ok" id="gz-status-card">
+          <span class="gz-val" id="gz-status-val">—</span>
+          <span class="gz-sub">от графика</span>
+        </div>
+        <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
+      </div>
+      <div class="gauge-wrap"><canvas id="gz-canvas" width="740" height="325"></canvas></div>
+      <div class="gauge-legend">
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
+        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
+        <span class="gauge-leg-item"><svg width="14" height="10"><line x1="1" y1="8" x2="10" y2="2" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="2" cy="9" r="2" fill="#c0392b"/></svg>Время</span>
+        <span class="gauge-leg-item"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/><polygon points="20,5 13,2 13,8" fill="#1a1a1a"/></svg>Доход</span>
+      </div>
+    </div>
+  </div>
   <div id="weekly-groups-container"></div>
 </div>
 </div>
@@ -1004,9 +1042,14 @@ function r2(v){ return v==null ? null : Math.round(v*100)/100; }
 /* ══════════════════════════════════════════════════════
    TABS
    ══════════════════════════════════════════════════════ */
+/* Only Consolidated and 4 Weeks are shown as tab buttons for now. The other channels
+   (Upwork/Partnership/CSR/Behance&Fiverr) stay defined in CHANNELS and their render code
+   stays intact — just not reachable from the tab bar — so they can be brought back later
+   without rebuilding anything. */
+const VISIBLE_TAB_KEYS = ['consolidated', 'weekly'];
 function buildTabs(){
   const el = document.getElementById('tabs');
-  el.innerHTML = CHANNELS.map(c =>
+  el.innerHTML = CHANNELS.filter(c=> VISIBLE_TAB_KEYS.includes(c.key)).map(c =>
     `<button class="tab${c.key===currentChannel?' active':''}" data-key="${c.key}">${c.label}</button>`
   ).join('');
   el.querySelectorAll('.tab').forEach(btn=>{
@@ -1020,7 +1063,8 @@ function switchChannel(key){
   document.getElementById('tb-logo').textContent = ch.logo;
   document.getElementById('tb-title').innerHTML = `${ch.label} <span>/ Sales Dashboard</span>`;
   document.querySelectorAll('.tab').forEach(b=> b.classList.toggle('active', b.dataset.key===key));
-  document.getElementById('standard-tab-view').style.display = (key==='weekly') ? 'none' : '';
+  document.getElementById('standard-tab-view').style.display = (key==='weekly'||key==='consolidated') ? 'none' : '';
+  document.getElementById('consolidated-tab-view').style.display = (key==='consolidated') ? 'block' : 'none';
   document.getElementById('weekly-tab-view').style.display = (key==='weekly') ? 'block' : 'none';
   pill.className='live-pill loading'; pillText.textContent='Loading...';
   loadData();
@@ -1065,8 +1109,13 @@ async function loadData(){
   /* ── WEEKLY tab: separate script/URL, separate render path ── */
   if(currentChannel === 'weekly'){
     cmpSection.style.display = 'none';
+    /* Fire both requests in parallel: the weekly funnel data, and the main-script
+       consolidated payload the revenue speedometer needs (pinned above the funnel here
+       now — it used to live on the old Consolidated Key Metrics section). */
+    const weeklyPromise = fetchAny(WEEKLY_SCRIPT_URL);
+    const gaugePromise = fetchAny(SCRIPT_URL + '?channel=consolidated');
     try {
-      const data = await fetchAny(WEEKLY_SCRIPT_URL);
+      const data = await weeklyPromise;
       if(data.error) throw new Error(data.error);
       renderWeekly(data);
       pill.className='live-pill'; pillText.textContent='Live · Google Sheets';
@@ -1074,6 +1123,30 @@ async function loadData(){
       renderWeekly(DEMO_WEEKLY);
       pill.className='live-pill error'; pillText.textContent='Demo (offline)';
       console.warn('Weekly live load failed, showing demo:', e.message);
+    }
+    try {
+      const gd = await gaugePromise;
+      if(gd.error) throw new Error(gd.error);
+      renderGaugeCard(gd);
+    } catch(e){
+      renderGaugeCard({}); // no gauge data available — renderGaugeCard hides the card
+      console.warn('Gauge data load failed:', e.message);
+    }
+    return;
+  }
+
+  /* ── CONSOLIDATED tab: rebuilt on the same weekly report as "4 Weeks", aggregated
+     into months over the whole period to date instead of a 4-week window. ── */
+  if(currentChannel === 'consolidated'){
+    try {
+      const data = await fetchAny(WEEKLY_SCRIPT_URL);
+      if(data.error) throw new Error(data.error);
+      mnRenderConsolidated(data);
+      pill.className='live-pill'; pillText.textContent='Live · Google Sheets';
+    } catch(e){
+      mnRenderConsolidated(DEMO_WEEKLY);
+      pill.className='live-pill error'; pillText.textContent='Demo (offline)';
+      console.warn('Consolidated live load failed, showing demo:', e.message);
     }
     return;
   }
@@ -1145,6 +1218,8 @@ const WK_SECTION_STYLE = {
   'SALES':     { accent:'#047857', bg:'#ecfdf5' },
   'Партнерка': { accent:'#b45309', bg:'#fffbeb' },
   'Зведена воронка':  { accent:'#1d4ed8', bg:'#eff6ff' },
+  'Маркетинг': { accent:'#0891b2', bg:'#ecfeff' },
+  'Сейлс':     { accent:'#047857', bg:'#ecfdf5' },
 };
 const WK_WINDOW_SIZE = 4; // last completed week + up to 3 previous
 
@@ -1173,16 +1248,31 @@ function wkCumulatePlan(weekly){
 }
 /* Formats a raw plan/fact/cumulative number for display: rounds to at most 2 decimal
    places (never more), and drops trailing zeros so whole numbers still read as whole
-   numbers. Every Weekly-tab cell that shows a raw metric value goes through this. */
+   numbers. Every Weekly/Consolidated cell that shows a raw metric value goes through
+   this. `fmt==='pct'` appends a % sign (used by the derived conversion-rate metrics on
+   the new Consolidated tab, which share the same table renderer as plain counts). */
 function wkFmtNum(v){
   if(v==null) return '—';
   return String(Math.round(v*100)/100);
 }
-function wkTagFor(plan, fact){
+function wkFmtVal(v, fmt){
+  if(v==null) return '—';
+  if(fmt==='pct') return wkFmtNum(v)+'%';
+  if(fmt==='int') return String(Math.round(v));
+  return wkFmtNum(v);
+}
+/* Last non-null value in a cumulative series (mirrors the "last known" extraction used
+   throughout wkCumCellsHtml) — used wherever a single to-date total is needed outside a
+   table cell, e.g. the Партнерка target gauge. */
+function wkLastKnown(arr){
+  const filled = (arr||[]).filter(v=>v!=null);
+  return filled.length ? filled[filled.length-1] : null;
+}
+function wkTagFor(plan, fact, fmt){
   if(fact==null) return '<span class="cell-tag zero">—</span>';
-  if(plan==null) return `<span class="cell-tag zero">${wkFmtNum(fact)}</span>`;
+  if(plan==null) return `<span class="cell-tag zero">${wkFmtVal(fact,fmt)}</span>`;
   const good = fact >= plan;
-  return `<span class="cell-tag ${good?'good':'bad'}">${wkFmtNum(fact)}</span>`;
+  return `<span class="cell-tag ${good?'good':'bad'}">${wkFmtVal(fact,fmt)}</span>`;
 }
 function wkGapText(planCum, factCum){
   const p = planCum[planCum.length-1];
@@ -1227,31 +1317,38 @@ function wkCumCellsHtml(m){
   const filled = m.factCum.filter(v=>v!=null);
   const factLast = filled.length ? filled[filled.length-1] : null;
   const gap = wkGapText(m.planCum, m.factCum);
-  const factCell = factLast==null ? '<span class="cell-tag zero">—</span>' : wkTagFor(planLast, factLast);
+  const factCell = factLast==null ? '<span class="cell-tag zero">—</span>' : wkTagFor(planLast, factLast, m.fmt);
   const pctText = gap.text.replace(' від плану', '');
-  return `<td class="wk-sub wk-cum wk-cum-first">${wkFmtNum(planLast)}</td>` +
+  return `<td class="wk-sub wk-cum wk-cum-first">${wkFmtVal(planLast, m.fmt)}</td>` +
          `<td class="wk-sub wk-cum">${factCell}</td>` +
          `<td class="wk-sub wk-cum wk-cum-pct"><span class="badge ${gap.cls}">${pctText}</span></td>`;
 }
-function wkTableHtml(spec){
-  const n = spec.weekLabels.length;
-  const headWeeks = spec.weekLabels.map((wl,i)=>
-    `<th colspan="2" class="wk-week${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">${wkShortWeek(wl)}</th>`).join('');
-  const headSub = spec.weekLabels.map((wl,i)=>
+/* Generic period table (weeks OR months — anything with plan/fact per period plus a
+   cumulative "Накопичувально" column): `periodLabels` are already display-ready strings,
+   `cornerLabel` is the top-left header ("Метрика" for per-channel weekly cards, "Канал"
+   for the Consolidated per-metric cards where rows are channels instead). */
+function wkPeriodTableHtml(periodLabels, metrics, cornerLabel){
+  const n = periodLabels.length;
+  const headPeriods = periodLabels.map((pl,i)=>
+    `<th colspan="2" class="wk-week${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">${pl}</th>`).join('');
+  const headSub = periodLabels.map((pl,i)=>
     `<th class="wk-sub${i===n-1?' wk-now':''}${i>0?' wk-week-first':''}">План</th><th class="wk-sub${i===n-1?' wk-now':''}">Факт</th>`).join('');
   const cumHead = `<th colspan="3" class="wk-week wk-cum wk-cum-first">Накопичувально</th>`;
   const cumSub = `<th class="wk-sub wk-cum wk-cum-first">План</th><th class="wk-sub wk-cum">Факт</th><th class="wk-sub wk-cum">±%</th>`;
-  const rows = spec.metrics.map(m=>{
+  const rows = metrics.map(m=>{
     const cells = m.weekly.map((w,i)=>{
       const now = i===n-1 ? ' wk-now' : '';
       const first = i>0 ? ' wk-week-first' : '';
-      return `<td class="wk-sub${now}${first}">${wkFmtNum(w.plan)}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact)}</td>`;
+      return `<td class="wk-sub${now}${first}">${wkFmtVal(w.plan, m.fmt)}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact,m.fmt)}</td>`;
     }).join('');
     return `<tr${m.isTotal?' class="wk-total"':''}>
       <td><span class="mrow-dot"></span>${m.label}</td>${cells}${wkCumCellsHtml(m)}
     </tr>`;
   }).join('');
-  return `<table class="mini"><thead><tr><th rowspan="2">Метрика</th>${headWeeks}${cumHead}</tr><tr>${headSub}${cumSub}</tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="mini"><thead><tr><th rowspan="2">${cornerLabel}</th>${headPeriods}${cumHead}</tr><tr>${headSub}${cumSub}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+function wkTableHtml(spec){
+  return wkPeriodTableHtml(spec.weekLabels.map(wkShortWeek), spec.metrics, 'Метрика');
 }
 
 function wkBuildCard(container, spec){
@@ -1264,23 +1361,28 @@ function wkBuildCard(container, spec){
   container.appendChild(card);
 }
 
-/* One collapsible section: a clickable colored header (chevron flips, body hides) plus
-   the grid its cards get appended to. Used for SMM / SALES / Партнерка and for Партнери. */
-function wkBuildSection(container, key, note){
+/* One section: a colored header plus the grid its cards get appended to.
+   Used for SMM / SALES / Партнерка (collapsible, click to fold) and, pinned, for
+   "Зведена воронка" (always open — pass pinned:true to drop the click-to-collapse
+   behavior and the chevron, same treatment the old Key Metrics section always had). */
+function wkBuildSection(container, key, note, pinned){
   const style = WK_SECTION_STYLE[key] || { accent:'#374151', bg:'#f3f4f6' };
   const label = document.createElement('div');
-  label.className = 'wk-section-label';
+  label.className = 'wk-section-label' + (pinned ? ' pinned' : '');
   label.style.setProperty('--wk-accent', style.accent);
   label.style.setProperty('--wk-bg', style.bg);
-  label.innerHTML = `<span class="wk-section-name"><span class="wk-section-chevron">▾</span>${key}</span><span class="section-note">${note}</span>`;
+  const chevron = pinned ? '' : '<span class="wk-section-chevron">▾</span>';
+  label.innerHTML = `<span class="wk-section-name">${chevron}${key}</span><span class="section-note">${note}</span>`;
   container.appendChild(label);
   const body = document.createElement('div');
   body.className = 'wk-section-body';
   container.appendChild(body);
-  label.addEventListener('click', ()=>{
-    const collapsed = label.classList.toggle('collapsed');
-    body.hidden = collapsed;
-  });
+  if(!pinned){
+    label.addEventListener('click', ()=>{
+      const collapsed = label.classList.toggle('collapsed');
+      body.hidden = collapsed;
+    });
+  }
   const grid = document.createElement('div');
   grid.className = 'wk-grid';
   body.appendChild(grid);
@@ -1325,6 +1427,11 @@ const PARTNER_FUNNEL = {
     { channel:'Партнерська мережа Solve',        labels:['Угоди'] },
   ],
 };
+/* Ліди / дзвінки / партнери are always whole numbers; conversions (%, already fmt:'pct')
+   and угоди/продажі are allowed up to 2 decimal places — set by both wkBuildFunnelMetrics
+   (Weekly's "Зведена воронка") and mnBuildMetricRows (Consolidated) so the two views never
+   disagree on how the same canonical metric is formatted. */
+const WK_INT_METRICS = new Set(['Партнерів в мережі', 'Отримано лідів', 'Зустрічі проведено']);
 function wkSumWeek(entries){ // entries: [{plan,fact}, ...] for one week, across matched metrics — null only if ALL are null
   let plan = null, fact = null;
   entries.forEach(e=>{
@@ -1368,6 +1475,7 @@ function wkChannelWeekly(channelsByName, channelName, labels, weekCount){
 }
 function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName){
   const contributors = PARTNER_FUNNEL[canonicalLabel] || [];
+  const fmt = WK_INT_METRICS.has(canonicalLabel) ? 'int' : undefined;
   const rows = [];
   const totalWeekly = allWeekLabels.map(()=>({plan:null, fact:null}));
   contributors.forEach(c=>{
@@ -1378,12 +1486,12 @@ function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, c
       if(w.fact!=null) totalWeekly[i].fact = (totalWeekly[i].fact||0) + w.fact;
     });
     const windowed = weekly.slice(winStart, winEnd+1);
-    rows.push({ label:c.channel, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed) });
+    rows.push({ label:c.channel, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed), fmt });
   });
   const totalWindowed = totalWeekly.slice(winStart, winEnd+1);
   // "Партнерів в мережі" is treated exactly like every other funnel row here — plan/fact
   // summed over the 4-week window, накопичувально — no special-cased global 200 target.
-  const totalRow = { label:'Разом', weekly:totalWindowed, planCum:wkCumulatePlan(totalWindowed), factCum:wkCumulateFact(totalWindowed), isTotal:true };
+  const totalRow = { label:'Разом', weekly:totalWindowed, planCum:wkCumulatePlan(totalWindowed), factCum:wkCumulateFact(totalWindowed), isTotal:true, fmt };
   rows.push(totalRow);
   return rows;
 }
@@ -1407,9 +1515,10 @@ function renderWeekly(data){
   const channelsByName = {};
   (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
 
-  // "Зведена воронка" goes first — it's the aggregate summary across all channels,
-  // so it belongs above the per-channel SMM/SALES/Партнерка breakdowns, not below them.
-  const funnelGrid = wkBuildSection(container, 'Зведена воронка', `воронка по каналах · ${note}`);
+  // "Зведена воронка" is pinned at the top, always open (not collapsible) — it's the
+  // aggregate summary across all channels, shown together with the revenue speedometer
+  // above it (rendered separately into #gauge-card, outside this container).
+  const funnelGrid = wkBuildSection(container, 'Зведена воронка', `воронка по каналах · ${note}`, true);
   PARTNER_FUNNEL_ORDER.forEach(canonicalLabel=>{
     const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
     wkBuildCard(funnelGrid, { title:canonicalLabel, weekLabels, metrics:rows });
@@ -1417,7 +1526,7 @@ function renderWeekly(data){
 
   // "Глобальний план · Планова кількість партнерів в мережі" arrives as its own
   // pseudo-channel with one static value (not a normal per-week metric) — drop it as
-  // a card here; its number (200) is used as the fixed target inside Зведена воронка instead.
+  // a card here; the 200-partner target now only appears in Consolidated → Партнерка.
   const groups = wkSplitPartnerGroup(data.groups||[])
     .map(g=>({ key:g.key, channels:g.channels.filter(ch=> !/глобальн/i.test(ch.key)) }))
     .filter(g=> g.channels.length);
@@ -1432,6 +1541,274 @@ function renderWeekly(data){
       wkBuildCard(grid, { title:channel.key, weekLabels, metrics });
     });
   });
+}
+
+/* ══════════════════════════════════════════════════════
+   CONSOLIDATED — Маркетинг / Сейлс / Партнерка
+   ══════════════════════════════════════════════════════
+   Rebuilt (Sept 2026) on the SAME weekly report as "4 Weeks", reusing the exact same
+   PARTNER_FUNNEL contributor mapping above — just aggregated into calendar months over
+   the whole period to date instead of a rolling 4-week window. A week straddling two
+   months (e.g. 27.08–02.09) is split PROPORTIONALLY between them by day count: a week
+   with 4 days in August and 3 in September contributes 4/7 of its plan/fact to August
+   and 3/7 to September. */
+const MN_NAMES_UA = ['Січ','Лют','Бер','Кві','Тра','Чер','Лип','Сер','Вер','Жов','Лис','Гру'];
+function mnMonthKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
+function mnParseWeekRange(label){
+  const m = String(label).match(/(\d{2})\.(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})\.(\d{2})/);
+  if(!m) return null;
+  const yy = s => 2000+parseInt(s,10);
+  return {
+    start: new Date(yy(m[3]), parseInt(m[2],10)-1, parseInt(m[1],10)),
+    end:   new Date(yy(m[6]), parseInt(m[5],10)-1, parseInt(m[4],10)),
+  };
+}
+/* For weeks [0..lastIdx] (only COMPLETED weeks contribute — same "to date" boundary the
+   4-week window uses): walks every day of every week and buckets it into its calendar
+   month, returning the ordered month list and, per week, how its days split across the
+   month(s) it touches. That per-week split is the basis for prorating every metric. */
+function mnBuildMonthSplits(weekLabels, lastIdx){
+  const monthMeta = {};
+  const monthsOrder = [];
+  const perWeekSplit = [];
+  for(let i=0;i<weekLabels.length;i++){
+    const range = i<=lastIdx ? mnParseWeekRange(weekLabels[i]) : null;
+    const split = {};
+    if(range){
+      const day = new Date(range.start);
+      while(day <= range.end){
+        const y = day.getFullYear(), mo = day.getMonth();
+        const key = mnMonthKey(y,mo);
+        split[key] = (split[key]||0) + 1;
+        if(!monthMeta[key]){ monthMeta[key] = { key, label:MN_NAMES_UA[mo]+' '+y, y, m:mo }; monthsOrder.push(key); }
+        day.setDate(day.getDate()+1);
+      }
+    }
+    perWeekSplit.push(split);
+  }
+  monthsOrder.sort((a,b)=> monthMeta[a].y-monthMeta[b].y || monthMeta[a].m-monthMeta[b].m);
+  return { months: monthsOrder.map(k=>monthMeta[k]), perWeekSplit };
+}
+/* Prorates one channel-metric's full (unwindowed) weekly {plan,fact}[] array into a
+   monthly array aligned to `months`, splitting each week across the months it touches
+   proportional to day count. */
+function mnProrateToMonths(weekly, perWeekSplit, months){
+  const byKey = {}; months.forEach(mo=> byKey[mo.key] = { plan:null, fact:null });
+  weekly.forEach((w,i)=>{
+    const split = perWeekSplit[i] || {};
+    const totalDays = Object.values(split).reduce((a,b)=>a+b,0);
+    if(!totalDays) return;
+    Object.keys(split).forEach(key=>{
+      const frac = split[key]/totalDays;
+      const bucket = byKey[key];
+      if(!bucket) return;
+      if(w.plan!=null) bucket.plan = (bucket.plan||0) + w.plan*frac;
+      if(w.fact!=null) bucket.fact = (bucket.fact||0) + w.fact*frac;
+    });
+  });
+  return months.map(mo=> byKey[mo.key]);
+}
+/* Same shape/idea as wkBuildFunnelMetrics, but monthly and over the FULL period (no
+   window) — reuses the exact same PARTNER_FUNNEL contributor mapping the "4 Weeks"
+   Зведена воронка block uses, so the two views can never silently disagree about which
+   sheet rows feed which canonical metric. */
+function mnBuildMetricRows(canonicalLabel, months, perWeekSplit, allWeekLabels, channelsByName){
+  const contributors = PARTNER_FUNNEL[canonicalLabel] || [];
+  const fmt = WK_INT_METRICS.has(canonicalLabel) ? 'int' : undefined;
+  const rows = [];
+  const totalMonthly = months.map(()=>({plan:null, fact:null}));
+  contributors.forEach(c=>{
+    const weekly = wkChannelWeekly(channelsByName, c.channel, c.labels, allWeekLabels.length);
+    if(!weekly) return; // channel/metric not present in this run's data — skip, don't guess
+    const monthly = mnProrateToMonths(weekly, perWeekSplit, months);
+    monthly.forEach((w,i)=>{
+      if(w.plan!=null) totalMonthly[i].plan = (totalMonthly[i].plan||0) + w.plan;
+      if(w.fact!=null) totalMonthly[i].fact = (totalMonthly[i].fact||0) + w.fact;
+    });
+    rows.push({ label:c.channel, weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
+  });
+  rows.push({ label:'Разом', weekly:totalMonthly, planCum:wkCumulatePlan(totalMonthly), factCum:wkCumulateFact(totalMonthly), isTotal:true, fmt });
+  return rows;
+}
+/* Cumulative ratio of two already-cumulated series — e.g. cumulative calls ÷ cumulative
+   leads — NOT a sum/average of monthly percentages, which would be meaningless. */
+function mnRatioCum(numCumArr, denCumArr){
+  return numCumArr.map((num,i)=>{
+    const den = denCumArr[i];
+    if(num==null || den==null || !den) return null;
+    return num/den*100;
+  });
+}
+/* Derived conversion-rate metric (e.g. "Ліди → Дзвінки"): pairs up two already-built
+   metric row-sets by channel label (same contributor channels, same "Разом" row) and
+   computes toRow/fromRow*100 per month, plus the cumulative ratio via mnRatioCum. */
+function mnBuildConvRows(fromRows, toRows){
+  const toByLabel = {};
+  toRows.forEach(r=> toByLabel[r.label] = r);
+  const rows = [];
+  fromRows.forEach(fromRow=>{
+    const toRow = toByLabel[fromRow.label];
+    if(!toRow) return;
+    const monthly = fromRow.weekly.map((fw,i)=>{
+      const tw = toRow.weekly[i];
+      return {
+        plan: (fw.plan!=null && fw.plan) ? tw.plan/fw.plan*100 : null,
+        fact: (fw.fact!=null && fw.fact) ? (tw.fact!=null ? tw.fact/fw.fact*100 : null) : null,
+      };
+    });
+    rows.push({
+      label: fromRow.label,
+      weekly: monthly,
+      planCum: mnRatioCum(toRow.planCum, fromRow.planCum),
+      factCum: mnRatioCum(toRow.factCum, fromRow.factCum),
+      isTotal: fromRow.isTotal,
+      fmt: 'pct',
+    });
+  });
+  return rows;
+}
+/* Вартість ліда (CPL) — the weekly report has no budget/spend row yet, so this stays a
+   "—" placeholder until one is added there. Keeps the same row set as the other
+   Marketing metrics so the card layout stays consistent. */
+function mnBuildEmptyRows(likeRows){
+  return likeRows.map(r=> ({
+    label: r.label,
+    weekly: r.weekly.map(()=>({plan:null, fact:null})),
+    planCum: r.weekly.map(()=>null),
+    factCum: r.weekly.map(()=>null),
+    isTotal: r.isTotal,
+  }));
+}
+/* Same chart factory as makeChart(), just with caller-supplied labels instead of the
+   fixed Jan–Dec axis makeChart() hardcodes — Consolidated's month list rarely starts in
+   January and doesn't always cover all 12 months. */
+function mnMakeChart(id, labels, planCum, factCum, color, yFmt){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(el, {
+    type:'line',
+    data:{ labels, datasets:[planDS(planCum), factDS(factCum, color)] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:10, padding:12, font:{size:10} } },
+        tooltip:{ ...TOOLTIP, callbacks: yFmt ? { label: c => c.parsed.y==null?null:`${c.dataset.label}: ${yFmt(c.parsed.y)}` } : {} }
+      },
+      scales:{
+        x:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
+        y:{ grid:GRID, ticks:{color:'#9ca3af', callback:yFmt||undefined}, border:{display:false} }
+      }
+    }
+  });
+}
+/* Renders the optional "target gauge" — a standalone fill bar for a fixed target (e.g.
+   the 200-partner goal) that's kept OUT of the table/chart's plan line entirely: plan
+   there stays the real sheet-derived plan like every other metric. */
+function mnTargetGaugeHtml(gauge){
+  if(!gauge) return '';
+  const { target, value, label } = gauge;
+  const pct = (target && value!=null) ? Math.min(100, Math.round(value/target*100)) : 0;
+  const valueText = value==null ? '—' : wkFmtVal(value, 'int');
+  const pctText = value==null ? '—' : pct+'%';
+  return `<div class="mn-target-gauge">
+    <div class="mn-target-label">${label}</div>
+    <div class="mn-target-track"><div class="mn-target-fill" style="width:${pct}%"></div></div>
+    <div class="mn-target-value">${valueText} / ${target}<span class="mn-target-pct"> (${pctText})</span></div>
+  </div>`;
+}
+let mnChartSeq = 0;
+/* Table on the left, chart on the right (a full-width chart under the table read as too
+   stretched) — the chart shows the "Разом" total by default, and clicking any row in the
+   table (including a single channel) redraws it with that row's plan/fact instead. */
+function mnBuildCard(container, spec){ // spec: {title, note?, periodLabels, metrics, color, targetGauge?}
+  const card = document.createElement('div');
+  card.className = 'wk-card mn-card';
+  const chartId = 'mn-chart-' + (mnChartSeq++);
+  card.innerHTML = `
+    <div class="wk-card-header"><span class="wk-card-title">${spec.title}</span></div>
+    ${spec.note?`<div class="mn-card-note">${spec.note}</div>`:''}
+    ${mnTargetGaugeHtml(spec.targetGauge)}
+    <div class="mn-card-body">
+      <div class="wk-mini-wrap mn-table-col">${wkPeriodTableHtml(spec.periodLabels, spec.metrics, 'Канал')}</div>
+      <div class="mn-chart-col">
+        <div class="mn-chart-caption" id="${chartId}-caption"></div>
+        <div class="chart-wrap mn-chart-wrap"><canvas id="${chartId}"></canvas></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(card);
+
+  const total = spec.metrics.find(m=>m.isTotal) || spec.metrics[spec.metrics.length-1];
+  const caption = card.querySelector('#'+chartId+'-caption');
+  const draw = m => {
+    mnMakeChart(chartId, spec.periodLabels, m.planCum, m.factCum, spec.color||'#1d4ed8', v=> v==null?null:wkFmtVal(v, m.fmt));
+    if(caption) caption.textContent = m.label;
+  };
+  draw(total);
+
+  const rows = card.querySelectorAll('.mn-table-col tbody tr');
+  rows.forEach((tr,i)=>{
+    const m = spec.metrics[i];
+    if(!m) return;
+    tr.classList.add('mn-row-clickable');
+    if(m===total) tr.classList.add('mn-row-selected');
+    tr.addEventListener('click', ()=>{
+      rows.forEach(r=> r.classList.remove('mn-row-selected'));
+      tr.classList.add('mn-row-selected');
+      draw(m);
+    });
+  });
+}
+
+function mnRenderConsolidated(data){
+  const container = document.getElementById('consolidated-groups-container');
+  container.innerHTML = '';
+
+  const allWeekLabels = data.weekLabels || [];
+  const lastIdx = data.lastCompletedIndex!=null ? data.lastCompletedIndex : -1;
+  const { months, perWeekSplit } = mnBuildMonthSplits(allWeekLabels, lastIdx);
+
+  if(!months.length){
+    container.innerHTML = '<div class="wk-section-label pinned"><span class="wk-section-name">Немає завершених тижнів, щоб побудувати місяці</span></div>';
+    return;
+  }
+  const periodLabels = months.map(mo=>mo.label);
+
+  const channelsByName = {};
+  (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
+
+  const leadsRows    = mnBuildMetricRows('Отримано лідів',    months, perWeekSplit, allWeekLabels, channelsByName);
+  const callsRows    = mnBuildMetricRows('Зустрічі проведено', months, perWeekSplit, allWeekLabels, channelsByName);
+  const salesRows    = mnBuildMetricRows('Угоди',              months, perWeekSplit, allWeekLabels, channelsByName);
+  const partnersRows = mnBuildMetricRows('Партнерів в мережі',  months, perWeekSplit, allWeekLabels, channelsByName);
+  // The 200-partner target is NOT written into the plan — "Разом" plan stays the real
+  // sheet-derived sum, same as every other metric. The target instead gets its own
+  // separate fill gauge (see mnTargetGaugeHtml), fed by the to-date cumulative fact.
+  const partnersTotal = partnersRows.find(r=>r.isTotal);
+  const partnersToDate = partnersTotal ? wkLastKnown(partnersTotal.factCum) : null;
+
+  const lead2call = mnBuildConvRows(leadsRows, callsRows);
+  const call2sale = mnBuildConvRows(callsRows, salesRows);
+  const cpl = mnBuildEmptyRows(leadsRows);
+
+  const note = `помісячно (тиждень ділиться пропорційно дням між місяцями) · з початку звітного періоду`;
+  const mkGrid = (key, sectionNote) => wkBuildSection(container, key, sectionNote);
+
+  const mktGrid = mkGrid('Маркетинг', `ліди · конверсія в дзвінки · вартість ліда · ${note}`);
+  mnBuildCard(mktGrid, { title:'Ліди', periodLabels, metrics:leadsRows, color:'#1d4ed8' });
+  mnBuildCard(mktGrid, { title:'Конверсія лідів у дзвінки', periodLabels, metrics:lead2call, color:'#0891b2' });
+  mnBuildCard(mktGrid, { title:'Вартість ліда', note:'дані по бюджету поки не ведуться в недельному звіті — заповниться, коли зʼявиться рядок з витратами', periodLabels, metrics:cpl, color:'#b45309' });
+
+  const salesGrid = mkGrid('Сейлс', `дзвінки · конверсія в продажі · продажі · ${note}`);
+  mnBuildCard(salesGrid, { title:'Кількість дзвінків', periodLabels, metrics:callsRows, color:'#b45309' });
+  mnBuildCard(salesGrid, { title:'Конверсія дзвінок → продаж', periodLabels, metrics:call2sale, color:'#dc2626' });
+  mnBuildCard(salesGrid, { title:'Продажі', periodLabels, metrics:salesRows, color:'#059669' });
+
+  const partnersGrid = mkGrid('Партнерка', `ціль 200 партнерів у мережі · ${note}`);
+  mnBuildCard(partnersGrid, { title:'Партнерів в мережі', periodLabels, metrics:partnersRows, color:'#6d28d9',
+    targetGauge: { target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі' } });
 }
 
 /* demo fallback for the Weekly tab (used only if WEEKLY_SCRIPT_URL is unreachable) */
