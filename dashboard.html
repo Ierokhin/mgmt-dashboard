@@ -92,6 +92,9 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
 /* GAUGE CARD (Revenue speedometer) — now pinned at the top of the "4 Weeks" tab, standalone */
 .gauge-card-wrap { max-width:900px; margin:0 auto 20px; }
+.wk-empty-state { max-width:520px; margin:80px auto; text-align:center; padding:40px 24px; }
+.wk-empty-title { font-family:'DM Mono',monospace; font-size:20px; font-weight:700; color:var(--text); letter-spacing:.3px; margin-bottom:12px; }
+.wk-empty-text { font-size:14px; color:var(--text-muted); line-height:1.5; }
 .gauge-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 12px; }
 #gz-canvas { max-width:100%; height:auto; display:block; margin:0 auto; }
 .gauge-date { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-bottom:5px; text-align:center; }
@@ -377,6 +380,14 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
   </div>
   <div id="weekly-groups-container"></div>
 </div>
+<!-- UNIT ECONOMICS TAB (placeholder — LTV/CAC, their ratio, budgets, spend & revenue by
+     channel; not wired to a data source yet). -->
+<div id="unitecon-tab-view" style="display:none">
+  <div class="wk-empty-state">
+    <div class="wk-empty-title">Unit Economics</div>
+    <div class="wk-empty-text">Скоро тут: LTV/CAC, їх співвідношення, бюджети та revenue по каналах.</div>
+  </div>
+</div>
 </div>
 <div class="footer" id="footer">Sales Dashboard · 2025 · Data updates automatically from Google Sheets</div>
 <script>
@@ -389,12 +400,13 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR2qdwpXxtIOeD2jBgI
    the resulting /exec URL below. */
 const WEEKLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwve64_InvbnsMCtPadwQg5wz-qS0wnVN1QDs6CFGAllyNUPwtkh2TSOdXXm5kvhH_EDQ/exec';
 const CHANNELS = [
-  { key:'consolidated', label:'Consolidated',   logo:'Σ' },
+  { key:'consolidated', label:'Monthly',        logo:'Σ' },
   { key:'upwork',       label:'Upwork',         logo:'U' },
   { key:'partnership',  label:'Partnership',    logo:'P' },
   { key:'csr',          label:'CSR',            logo:'C' },
   { key:'behance',      label:'Behance&Fiverr', logo:'B' },
-  { key:'weekly',       label:'4 Weeks',        logo:'W' },
+  { key:'weekly',       label:'Weekly',         logo:'W' },
+  { key:'unitecon',     label:'Unit Economics', logo:'E' },
 ];
 let currentChannel = 'consolidated';
 /* The old "Weekly progress · current month" block (Upwork/Partnership tabs) now
@@ -1047,7 +1059,7 @@ function r2(v){ return v==null ? null : Math.round(v*100)/100; }
    (Upwork/Partnership/CSR/Behance&Fiverr) stay defined in CHANNELS and their render code
    stays intact — just not reachable from the tab bar — so they can be brought back later
    without rebuilding anything. */
-const VISIBLE_TAB_KEYS = ['consolidated', 'weekly'];
+const VISIBLE_TAB_KEYS = ['consolidated', 'weekly', 'unitecon'];
 function buildTabs(){
   const el = document.getElementById('tabs');
   el.innerHTML = CHANNELS.filter(c=> VISIBLE_TAB_KEYS.includes(c.key)).map(c =>
@@ -1064,9 +1076,10 @@ function switchChannel(key){
   document.getElementById('tb-logo').textContent = ch.logo;
   document.getElementById('tb-title').innerHTML = `${ch.label} <span>/ Sales Dashboard</span>`;
   document.querySelectorAll('.tab').forEach(b=> b.classList.toggle('active', b.dataset.key===key));
-  document.getElementById('standard-tab-view').style.display = (key==='weekly'||key==='consolidated') ? 'none' : '';
+  document.getElementById('standard-tab-view').style.display = (key==='weekly'||key==='consolidated'||key==='unitecon') ? 'none' : '';
   document.getElementById('consolidated-tab-view').style.display = (key==='consolidated') ? 'block' : 'none';
   document.getElementById('weekly-tab-view').style.display = (key==='weekly') ? 'block' : 'none';
+  document.getElementById('unitecon-tab-view').style.display = (key==='unitecon') ? 'block' : 'none';
   pill.className='live-pill loading'; pillText.textContent='Loading...';
   loadData();
 }
@@ -1106,6 +1119,13 @@ function fetchAny(url){
 }
 async function loadData(){
   const cmpSection = document.getElementById('cmp-section');
+
+  /* ── UNIT ECONOMICS tab: placeholder, no data source wired up yet ── */
+  if(currentChannel === 'unitecon'){
+    cmpSection.style.display = 'none';
+    pill.className='live-pill'; pillText.textContent='—';
+    return;
+  }
 
   /* ── WEEKLY tab: separate script/URL, separate render path ── */
   if(currentChannel === 'weekly'){
