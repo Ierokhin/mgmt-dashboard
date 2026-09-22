@@ -92,11 +92,12 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
 /* GAUGE CARD (Revenue speedometer) — now pinned at the top of the "4 Weeks" tab, standalone */
 /* The row spans the full width the wk-card tables below do. .gauge-card and .gz-side-col
-   both have flex-grow (4:1, basis 0) so the two of them ALWAYS split the row's full width
-   between them — no leftover gap, whatever the viewport. That 4:1 split is what makes the
-   gauge ~80% of the row and the widgets ~20%: the widgets used to be fixed-size squares
-   that left the gauge to soak up (and on very wide screens, waste) whatever was left: now
-   growing the widgets' share shrinks the gauge's share by the same amount, automatically.
+   both have flex-basis:0 and share flex-grow in an 8:5 ratio, so the two of them ALWAYS
+   split the row's full width between them (gauge ~62%, widgets ~38%) — no leftover gap,
+   whatever the viewport. (Was 4:1 — the gauge was still visibly wider than it needed to be,
+   leaving the widgets narrower than the space they could fill; 8:5 shrinks the gauge ~15%
+   from that and hands the freed width straight to the widgets, basis:0 on both keeping the
+   split purely proportional instead of anchored to a fixed starting width.)
    align-items:stretch (not flex-start) makes .gz-side-col match .gauge-card's full height,
    so the two stat tiles become tall rectangles that reach the gauge card's own bottom edge
    instead of stopping short and leaving blank page background beneath them.
@@ -105,16 +106,16 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
    out around a fixed-resolution image — no CSS-side cap on the canvas is needed. */
 .gauge-card-wrap { margin:0 auto 20px; }
 .gauge-row { display:flex; justify-content:flex-start; align-items:stretch; gap:14px; flex-wrap:wrap; }
-.gauge-row .gauge-card { flex:4 1 300px; min-width:0; }
-.gz-side-col { display:flex; flex-direction:row; align-items:stretch; gap:14px; flex:1 1 220px; min-width:320px; }
+.gauge-row .gauge-card { flex:8 1 0; min-width:300px; }
+.gz-side-col { display:flex; flex-direction:row; align-items:stretch; gap:14px; flex:5 1 0; min-width:340px; }
 .gz-side-stat { flex:1 1 0; min-width:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px 16px; display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; gap:10px; text-align:center; }
 .gz-side-label { font-family:'DM Mono',monospace; font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; }
 .gz-side-label span { text-transform:none; font-weight:500; color:var(--text-faint); letter-spacing:0; }
-.gz-side-ring { position:relative; width:132px; height:132px; border-radius:50%; flex-shrink:0; margin:2px 0; }
-.gz-side-ring::before { content:''; position:absolute; inset:15px; background:var(--surface); border-radius:50%; }
-.gz-side-ring span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:19px; font-weight:800; color:var(--text); }
-.gz-side-value { font-family:'DM Mono',monospace; font-size:29px; font-weight:800; color:var(--text); }
-.gz-side-of { font-size:15px; font-weight:500; color:var(--text-muted); }
+.gz-side-ring { position:relative; width:140px; height:140px; border-radius:50%; flex-shrink:0; margin:2px 0; }
+.gz-side-ring::before { content:''; position:absolute; inset:16px; background:var(--surface); border-radius:50%; }
+.gz-side-ring span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:20px; font-weight:800; color:var(--text); }
+.gz-side-value { font-family:'DM Mono',monospace; font-size:31px; font-weight:800; color:var(--text); }
+.gz-side-of { font-size:16px; font-weight:500; color:var(--text-muted); }
 @media (max-width: 780px) {
   /* Below this width the gauge and the widget row wrap onto separate lines; centering each
      wrapped line reads as deliberate instead of leaving it stranded at the left edge. Once
