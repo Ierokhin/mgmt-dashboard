@@ -166,16 +166,16 @@ table.dt tr.fact td { color:var(--text); font-weight:500; }
 /* Партнери section: "Разом" total row set apart, like a table footer */
 table.mini tr.wk-total td { font-weight:700; border-top:1.5px solid var(--border2); }
 table.mini tr.wk-total td:first-child { color:var(--text); }
-table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:12.5px; margin-bottom:0; }
-table.mini th { text-align:left; color:var(--text-muted); font-weight:600; font-size:10.5px; letter-spacing:.4px; text-transform:uppercase; padding:0 0 7px; border-bottom:1px solid var(--border); white-space:nowrap; }
+table.mini { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:12px; margin-bottom:0; }
+table.mini th { text-align:left; color:var(--text-muted); font-weight:600; font-size:10px; letter-spacing:.3px; text-transform:uppercase; padding:0 0 7px; border-bottom:1px solid var(--border); white-space:nowrap; }
 table.mini th:not(:first-child), table.mini td:not(:first-child) { text-align:right; }
-table.mini td { padding:7px 4px; border-bottom:1px solid rgba(0,0,0,0.06); color:var(--text-dim); }
+table.mini td { padding:7px 3px; border-bottom:1px solid rgba(0,0,0,0.06); color:var(--text-dim); }
 table.mini tr:last-child td { border-bottom:none; }
 table.mini td:first-child { color:var(--text); font-weight:500; text-align:left; display:flex; align-items:center; gap:6px; white-space:nowrap; }
 .mrow-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
 .cell-tag.zero { background:var(--surface2); color:var(--text-muted); }
 /* per-week plan/fact sub-columns in the metric table */
-table.mini th.wk-week, table.mini th.wk-sub, table.mini td.wk-sub { font-size:10.5px; letter-spacing:0; }
+table.mini th.wk-week, table.mini th.wk-sub, table.mini td.wk-sub { font-size:10px; letter-spacing:0; }
 table.mini th.wk-week-first, table.mini td.wk-week-first { border-left:1px solid var(--border); }
 table.mini th.wk-now, table.mini td.wk-now { background:#E6F1FB; }
 table.mini th.wk-now { color:var(--blue); }
@@ -183,8 +183,8 @@ table.mini td.wk-sub:nth-of-type(even) { color:var(--text-dim); }
 /* "Накопичувально" total column — visually set apart from the weekly columns */
 table.mini th.wk-cum, table.mini td.wk-cum { background:rgba(0,0,0,0.05); font-weight:700; }
 table.mini th.wk-cum-first, table.mini td.wk-cum-first { border-left:2px solid var(--border2); }
-table.mini td.wk-cum-pct { padding:4px 6px; }
-table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space:nowrap; font-weight:700; }
+table.mini td.wk-cum-pct { padding:4px 3px; }
+table.mini td.wk-cum-pct .badge { font-size:10px; padding:2px 5px; white-space:nowrap; font-weight:700; }
 /* Consolidated cards: cumulative chart below the table, and an optional note (used by
    the Вартість ліда placeholder to explain why it's empty) under the card title. */
 .mn-card-note { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); font-style:italic; margin:-4px 0 10px; }
@@ -1094,7 +1094,7 @@ function wkFmtNum(v){
 }
 function wkFmtVal(v, fmt){
   if(v==null) return '—';
-  if(fmt==='pct') return wkFmtNum(v)+'%';
+  if(fmt==='pct') return Math.round(v)+'%';
   if(fmt==='int') return String(Math.round(v));
   return wkFmtNum(v);
 }
@@ -1114,12 +1114,24 @@ function wkTagFor(plan, fact, fmt){
 function wkGapText(planCum, factCum){
   const p = planCum[planCum.length-1];
   const filled = factCum.filter(v=>v!=null);
-  if(!filled.length || !p) return { cls:'badge-neu', text:'немає даних' };
+  if(!filled.length || !p) return { cls:'badge-neu', text:'–' };
   const f = filled[filled.length-1];
   const diff = Math.round((f/p-1)*100);
   return diff>=0 ? { cls:'badge-good', text:`+${diff}% від плану` } : { cls:'badge-bad', text:`${diff}% від плану` };
 }
 
+/* Display-only rename for a data-driven Operational section key — the underlying key is
+   still whatever the spreadsheet calls it (and still drives WK_SECTION_STYLE colors), only
+   the on-screen title changes. "SALES" here is the per-channel Behance/Upwork/Fiverr group
+   (distinct from the "Sales" funnel department section above it), renamed to avoid the
+   confusing duplicate "Sales" heading twice on the same tab. */
+const WK_GROUP_DISPLAY = { 'SALES': 'Channels' };
+/* "Партнерська мережа Solve" -> "Партнерська Solve" etc — drops the redundant "мережа"
+   from channel labels so narrow table/card columns need less width. Only touches the
+   DISPLAY text; matching against spreadsheet data always uses the untouched original. */
+function wkShortLabel(name){
+  return String(name).replace(/Партнерська мережа\s?/, 'Партнерська ').trim();
+}
 /* Pull "Партнерська мережа" / "Партнерська мережа Solve" (anything with "партнер" in
    the name) out of whichever group they arrived in, into their own section — the user
    wants Партнерка visually separated from SALES, not buried inside it. */
@@ -1203,14 +1215,14 @@ function wkBuildCard(container, spec){
    Used for SMM / SALES / Партнерка (collapsible, click to fold) and, pinned, for
    "Зведена воронка" (always open — pass pinned:true to drop the click-to-collapse
    behavior and the chevron, same treatment the old Key Metrics section always had). */
-function wkBuildSection(container, key, note, pinned){
+function wkBuildSection(container, key, note, pinned, displayLabel){
   const style = WK_SECTION_STYLE[key] || { accent:'#374151', bg:'#f3f4f6' };
   const label = document.createElement('div');
   label.className = 'wk-section-label' + (pinned ? ' pinned' : '');
   label.style.setProperty('--wk-accent', style.accent);
   label.style.setProperty('--wk-bg', style.bg);
   const chevron = pinned ? '' : '<span class="wk-section-chevron">▾</span>';
-  label.innerHTML = `<span class="wk-section-name">${chevron}${key}</span><span class="section-note">${note}</span>`;
+  label.innerHTML = `<span class="wk-section-name">${chevron}${displayLabel||key}</span><span class="section-note">${note}</span>`;
   container.appendChild(label);
   const body = document.createElement('div');
   body.className = 'wk-section-body';
@@ -1246,7 +1258,10 @@ const PARTNER_FUNNEL = {
     { channel:'Fiverr',  labels:['Цільові'] },
     { channel:'Партнерська мережа (комʼюніті)', labels:['Отримано лідів'] },
     { channel:'Партнерська мережа',              labels:['Отримано лідів'] },
-    { channel:'Партнерська мережа Solve',        labels:['Отримано лідів'] },
+    // Solve doesn't log a separate "leads received" row in the sheet — every meeting held
+    // with a lead there IS the lead, so its "Ліди" fact reads from the same "Проведено
+    // зустрічей з лідами" row as "Зустрічі проведено" below, instead of a nonexistent one.
+    { channel:'Партнерська мережа Solve',        labels:['Проведено зустрічей з лідами'] },
   ],
   'Зустрічі проведено': [
     { channel:'Behance', labels:['Дзвінки'] },
@@ -1324,7 +1339,7 @@ function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, c
       if(w.fact!=null) totalWeekly[i].fact = (totalWeekly[i].fact||0) + w.fact;
     });
     const windowed = weekly.slice(winStart, winEnd+1);
-    rows.push({ label:c.channel, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed), fmt });
+    rows.push({ label:wkShortLabel(c.channel), weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed), fmt });
   });
   const totalWindowed = totalWeekly.slice(winStart, winEnd+1);
   // "Партнерів в мережі" is treated exactly like every other funnel row here — plan/fact
@@ -1384,13 +1399,14 @@ function renderWeekly(data){
     .filter(g=> g.channels.length);
 
   groups.forEach(group=>{
-    const grid = wkBuildSection(container, group.key, note);
+    // pinned:true — every Operational section stays expanded, no collapse/chevron.
+    const grid = wkBuildSection(container, group.key, note, true, WK_GROUP_DISPLAY[group.key]);
     group.channels.forEach(channel=>{
       const metrics = channel.metrics.map(m=>{
         const windowed = m.weekly.slice(winStart, winEnd+1);
         return { label:m.label, weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed) };
       });
-      wkBuildCard(grid, { title:channel.key, weekLabels, metrics });
+      wkBuildCard(grid, { title:wkShortLabel(channel.key), weekLabels, metrics });
     });
   });
 }
@@ -1479,7 +1495,7 @@ function mnBuildMetricRows(canonicalLabel, months, perWeekSplit, allWeekLabels, 
       totalMonthly[i].plan += w.plan;
       totalMonthly[i].fact += w.fact;
     });
-    rows.push({ label:c.channel, weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
+    rows.push({ label:wkShortLabel(c.channel), weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
   });
   rows.push({ label:'Разом', weekly:totalMonthly, planCum:wkCumulatePlan(totalMonthly), factCum:wkCumulateFact(totalMonthly), isTotal:true, fmt });
   return rows;
@@ -1568,6 +1584,17 @@ function mnBuildEmptyRows(likeRows){
 /* Same chart factory as makeChart(), just with caller-supplied labels instead of the
    fixed Jan–Dec axis makeChart() hardcodes — Consolidated's month list rarely starts in
    January and doesn't always cover all 12 months. */
+/* See the comment at its call site in mnBuildCard's draw() — nulls out BOTH lines past
+   `lastMonthIdx` (the last fully-completed month), so the chart doesn't draw plan or
+   actual into the still-in-progress current month or any future one. Index-based (not a
+   null-check on the series itself) because the monthly rows have every month filled in
+   already — 0s past "now", not nulls, for plan AND fact — by design (see
+   mnProrateToMonths / wkCumulateFact's "no gap after the last real week" carry-forward),
+   so there's no gap in the data itself to detect. */
+function mnSeriesForChart(cum, lastMonthIdx){
+  if(lastMonthIdx==null || lastMonthIdx<0) return (cum||[]).map(()=>null);
+  return (cum||[]).map((v,i)=> i<=lastMonthIdx ? v : null);
+}
 function mnMakeChart(id, labels, planCum, factCum, color, yFmt){
   const el = document.getElementById(id);
   if(!el) return;
@@ -1594,14 +1621,14 @@ function mnMakeChart(id, labels, planCum, factCum, color, yFmt){
    there stays the real sheet-derived plan like every other metric. */
 function mnTargetGaugeHtml(gauge){
   if(!gauge) return '';
-  const { target, value, label } = gauge;
+  const { target, value, label, fmt } = gauge;
   const pct = (target && value!=null) ? Math.min(100, Math.round(value/target*100)) : 0;
-  const valueText = value==null ? '—' : wkFmtVal(value, 'int');
+  const valueText = value==null ? '—' : wkFmtVal(value, fmt);
   const pctText = value==null ? '—' : pct+'%';
   return `<div class="mn-target-gauge">
     <div class="mn-target-label">${label}</div>
     <div class="mn-target-track"><div class="mn-target-fill" style="width:${pct}%"></div></div>
-    <div class="mn-target-value">${valueText} / ${target}<span class="mn-target-pct"> (${pctText})</span></div>
+    <div class="mn-target-value">${valueText} / ${wkFmtVal(target, fmt)}<span class="mn-target-pct"> (${pctText})</span></div>
   </div>`;
 }
 
@@ -1614,8 +1641,8 @@ function mnTargetGaugeHtml(gauge){
 
 /* Single-point (not cumulative-series) version of wkGapText — plan/fact for one month. */
 function mnGapTextSingle(plan, fact){
-  if(fact==null) return { cls:'badge-neu', text:'немає даних' };
-  if(!plan) return { cls:'badge-neu', text:'немає плану' };
+  if(fact==null) return { cls:'badge-neu', text:'–' };
+  if(!plan) return { cls:'badge-neu', text:'–' };
   const diff = Math.round((fact/plan-1)*100);
   return diff>=0 ? { cls:'badge-good', text:`+${diff}% від плану` } : { cls:'badge-bad', text:`${diff}% від плану` };
 }
@@ -1678,7 +1705,17 @@ function mnBuildCard(container, spec){ // spec: {title, note?, periodLabels, met
   const total = spec.metrics.find(m=>m.isTotal) || spec.metrics[spec.metrics.length-1];
   const caption = card.querySelector('#'+chartId+'-caption');
   const draw = m => {
-    mnMakeChart(chartId, spec.periodLabels, m.planCum, m.factCum, spec.color||'#1d4ed8', v=> v==null?null:wkFmtVal(v, m.fmt));
+    // Both plan and fact are populated for every month up to December (plan because it's
+    // set for the whole year in advance; fact because the still-in-progress/future months
+    // default to 0, not null — see mnProrateToMonths). Left as-is, that drew a flat
+    // "forecast" line for both series straight through months that haven't happened yet.
+    // Cut CHART data off after the last fully-completed month; the x-axis still runs to
+    // December, so the resulting empty space is exactly the "how much year is left" cue.
+    // The table's own Накопичувально column still compares against the real full-year
+    // plan total and the real last-known fact — untouched by this, chart-only.
+    const planForChart = mnSeriesForChart(m.planCum, spec.lastMonthIdx);
+    const factForChart = mnSeriesForChart(m.factCum, spec.lastMonthIdx);
+    mnMakeChart(chartId, spec.periodLabels, planForChart, factForChart, spec.color||'#1d4ed8', v=> v==null?null:wkFmtVal(v, m.fmt));
     if(caption) caption.textContent = m.label;
   };
   draw(total);
@@ -1736,12 +1773,18 @@ function mnRenderConsolidated(data, legacyUpwork){
   const call2sale = mnBuildConvRows(callsRows, salesRows);
   const cpl = mnBuildEmptyRows(leadsRows);
 
+  // The monthly rows always have all 12 months filled in (0s past "now", not nulls — see
+  // mnProrateToMonths), so charts can't tell "no data yet" from "genuinely zero" on their
+  // own. This is the one true boundary — the last fully-completed month — reused both for
+  // the top KPI cards below AND to cut the charts' plan line off there (see mnBuildCard).
+  const currentMonthIdx = mnLastCompletedMonthIdx(allWeekLabels, lastIdx);
+
   // ── Top KPI row: 4 at-a-glance cards for the last fully-completed calendar month ──
   (function renderTopKpis(){
     const leadsTotal = leadsRows.find(r=>r.isTotal);
     const callsTotal = callsRows.find(r=>r.isTotal);
     const salesTotal = salesRows.find(r=>r.isTotal);
-    const mIdx = mnLastCompletedMonthIdx(allWeekLabels, lastIdx);
+    const mIdx = currentMonthIdx;
     const inRange = mIdx>=0 && mIdx<12;
     const monthLabel = inRange ? months[mIdx].label : '—';
     const leadsM = inRange ? leadsTotal.weekly[mIdx] : { plan:null, fact:null };
@@ -1754,41 +1797,49 @@ function mnRenderConsolidated(data, legacyUpwork){
     const lead2callPct = (leadsM.fact) ? (callsM.fact!=null ? Math.round(callsM.fact/leadsM.fact*100) : null) : null;
     const call2salePct = (callsM.fact) ? (salesM.fact!=null ? Math.round(salesM.fact/callsM.fact*100) : null) : null;
     const salesCumFact = wkLastKnown(salesTotal.factCum);
-    const salesCumGap = wkGapText(salesTotal.planCum, salesTotal.factCum);
+    // Plan is set for the whole year up front, so the cumulative series' last slot is
+    // always the full-year total — same value the table's Накопичувально column already
+    // compares against (wkGapText's convention), reused here as the gauge's target.
+    const salesYearPlan = salesTotal.planCum[salesTotal.planCum.length-1];
 
     const row = document.createElement('div');
     row.className = 'mn-kpi-row';
     row.innerHTML =
+      // Bottom section, standardized across all 4: Ліди/Дзвінки keep their one-line
+      // conversion stat; Угоди/Партнерів (both "cumulative vs. a year-end total") share
+      // the same target-gauge look instead of Угоди's old one-off badge.
       mnKpiCardHtml({ title:'Ліди', monthLabel, plan:leadsM.plan, fact:leadsM.fact, fmt:'int', extra:[
         { label:'Конверсія в дзвінки', value: lead2callPct==null?'—':lead2callPct+'%' },
       ]}) +
       mnKpiCardHtml({ title:'Дзвінки', monthLabel, plan:callsM.plan, fact:callsM.fact, fmt:'int', extra:[
         { label:'Конверсія в угоди', value: call2salePct==null?'—':call2salePct+'%' },
       ]}) +
-      mnKpiCardHtml({ title:'Угоди', monthLabel, plan:salesM.plan, fact:salesM.fact, extra:[
-        { label:'Накопичувально', value: `${wkFmtVal(salesCumFact)} <span class="badge ${salesCumGap.cls}" style="margin-left:4px">${salesCumGap.text.replace(' від плану','')}</span>` },
-      ]}) +
+      mnKpiCardHtml({ title:'Угоди', monthLabel, plan:salesM.plan, fact:salesM.fact, extra:[],
+        afterHtml: mnTargetGaugeHtml({ target:salesYearPlan, value:salesCumFact, label:'Накопичувально · план на рік' }) }) +
       mnKpiCardHtml({ title:'Партнерів в мережі', monthLabel, plan:partnersM.plan, fact:partnersM.fact, fmt:'int', extra:[],
-        afterHtml: mnTargetGaugeHtml({ target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі' }) });
+        afterHtml: mnTargetGaugeHtml({ target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі', fmt:'int' }) });
     container.appendChild(row);
   })();
 
   const note = `помісячно (тиждень ділиться пропорційно дням між місяцями) · з початку звітного періоду`;
   const mkGrid = (key, sectionNote) => wkBuildSection(container, key, sectionNote);
+  // Every card below shares the same reporting boundary — thread it through here once
+  // instead of repeating it on each call (see mnBuildCard's draw() for what it's for).
+  const buildCard = (grid, spec) => mnBuildCard(grid, { ...spec, lastMonthIdx:currentMonthIdx });
 
   const mktGrid = mkGrid('Маркетинг', `ліди · конверсія в дзвінки · вартість ліда · ${note}`);
-  mnBuildCard(mktGrid, { title:'Ліди', periodLabels, metrics:leadsRows, color:'#1d4ed8' });
-  mnBuildCard(mktGrid, { title:'Конверсія лідів у дзвінки', periodLabels, metrics:lead2call, color:'#0891b2' });
-  mnBuildCard(mktGrid, { title:'Вартість ліда', note:'дані по бюджету поки не ведуться в недельному звіті — заповниться, коли зʼявиться рядок з витратами', periodLabels, metrics:cpl, color:'#b45309' });
+  buildCard(mktGrid, { title:'Ліди', periodLabels, metrics:leadsRows, color:'#1d4ed8' });
+  buildCard(mktGrid, { title:'Конверсія лідів у дзвінки', periodLabels, metrics:lead2call, color:'#0891b2' });
+  buildCard(mktGrid, { title:'Вартість ліда', note:'дані по бюджету поки не ведуться в недельному звіті — заповниться, коли зʼявиться рядок з витратами', periodLabels, metrics:cpl, color:'#b45309' });
 
   const salesGrid = mkGrid('Сейлс', `дзвінки · конверсія в продажі · продажі · ${note}`);
-  mnBuildCard(salesGrid, { title:'Кількість дзвінків', periodLabels, metrics:callsRows, color:'#b45309' });
-  mnBuildCard(salesGrid, { title:'Конверсія дзвінок → продаж', periodLabels, metrics:call2sale, color:'#dc2626' });
-  mnBuildCard(salesGrid, { title:'Продажі', periodLabels, metrics:salesRows, color:'#059669' });
+  buildCard(salesGrid, { title:'Кількість дзвінків', periodLabels, metrics:callsRows, color:'#b45309' });
+  buildCard(salesGrid, { title:'Конверсія дзвінок → продаж', periodLabels, metrics:call2sale, color:'#dc2626' });
+  buildCard(salesGrid, { title:'Продажі', periodLabels, metrics:salesRows, color:'#059669' });
 
   const partnersGrid = mkGrid('Партнерка', `ціль 200 партнерів у мережі · ${note}`);
-  mnBuildCard(partnersGrid, { title:'Партнерів в мережі', periodLabels, metrics:partnersRows, color:'#6d28d9',
-    targetGauge: { target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі' } });
+  buildCard(partnersGrid, { title:'Партнерів в мережі', periodLabels, metrics:partnersRows, color:'#6d28d9',
+    targetGauge: { target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі', fmt:'int' } });
 }
 
 /* demo fallback for the Weekly tab (used only if WEEKLY_SCRIPT_URL is unreachable) */
