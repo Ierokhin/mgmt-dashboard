@@ -91,14 +91,21 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi-ring-wrap { display:flex; flex:1; align-items:center; justify-content:center; min-height:0; }
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
 /* GAUGE CARD (Revenue speedometer) — now pinned at the top of the "4 Weeks" tab, standalone */
-/* No max-width here — the row should span the same width as the wk-card tables below,
-   which just stretch to fill #weekly-tab-view. The 900px cap this used to have was the
-   actual reason the gauge+widgets block looked narrower than the tables. */
+/* The row still spans the full width the wk-card tables below do (no max-width here),
+   but the gauge itself is capped near its natural size (canvas + padding) instead of
+   stretching to fill that whole width — the two stat tiles now sit BESIDE each other
+   (a row, not a stacked column), which eats into the width the gauge would otherwise
+   have claimed, and justify-content:space-between keeps the gauge left-aligned and the
+   tiles right-aligned so the row's outer edges still line up with the tables. */
 .gauge-card-wrap { margin:0 auto 20px; }
-.gauge-row { display:flex; gap:14px; align-items:stretch; }
-.gauge-row .gauge-card { flex:1 1 auto; min-width:0; }
-.gz-side-col { display:flex; flex-direction:column; gap:14px; flex:0 0 210px; }
-.gz-side-stat { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; text-align:center; }
+.gauge-row { display:flex; justify-content:space-between; align-items:stretch; gap:14px; flex-wrap:wrap; }
+/* gauge-card grows to fill its line (alone or paired) up to 660px, and can shrink down to
+   380px before the row wraps — the side tiles shrink together with it (flex:1 1 140px, not
+   flex-shrink:0) so the row narrows smoothly instead of jumping straight to a wrap that
+   leaves dead blank space beside a non-stretching item. */
+.gauge-row .gauge-card { flex:1 1 380px; max-width:660px; min-width:0; }
+.gz-side-col { display:flex; flex-direction:row; gap:14px; flex:1 1 336px; max-width:336px; min-width:220px; }
+.gz-side-stat { flex:1 1 140px; min-width:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; text-align:center; }
 .gz-side-label { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; }
 .gz-side-label span { text-transform:none; font-weight:500; color:var(--text-faint); letter-spacing:0; }
 .gz-side-ring { position:relative; width:96px; height:96px; border-radius:50%; flex-shrink:0; margin:2px 0; }
@@ -106,9 +113,15 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .gz-side-ring span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:15px; font-weight:800; color:var(--text); }
 .gz-side-value { font-family:'DM Mono',monospace; font-size:22px; font-weight:800; color:var(--text); }
 .gz-side-of { font-size:14px; font-weight:500; color:var(--text-muted); }
-@media (max-width: 720px) {
-  .gauge-row { flex-direction:column; }
-  .gz-side-col { flex-direction:row; flex-basis:auto; }
+@media (max-width: 780px) {
+  /* Below this width the gauge and the widget row wrap onto separate lines (each is
+     narrower than the row itself); centering each wrapped line reads as deliberate
+     instead of leaving it stranded against the left edge with blank space trailing it. */
+  .gauge-row { justify-content:center; }
+}
+@media (max-width: 480px) {
+  .gz-side-col { flex-direction:column; max-width:none; min-width:0; }
+  .gz-side-ring { width:80px; height:80px; }
 }
 .wk-empty-state { max-width:520px; margin:80px auto; text-align:center; padding:40px 24px; }
 .wk-empty-title { font-family:'DM Mono',monospace; font-size:20px; font-weight:700; color:var(--text); letter-spacing:.3px; margin-bottom:12px; }
