@@ -95,10 +95,13 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .gauge-row { display:flex; gap:14px; align-items:stretch; }
 .gauge-row .gauge-card { flex:1 1 auto; min-width:0; }
 .gz-side-col { display:flex; flex-direction:column; gap:14px; flex:0 0 210px; }
-.gz-side-stat { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; justify-content:center; }
-.gz-side-label { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.gz-side-stat { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; text-align:center; }
+.gz-side-label { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; }
 .gz-side-label span { text-transform:none; font-weight:500; color:var(--text-faint); letter-spacing:0; }
-.gz-side-value { font-family:'DM Mono',monospace; font-size:22px; font-weight:800; color:var(--text); margin-bottom:8px; }
+.gz-side-ring { position:relative; width:96px; height:96px; border-radius:50%; flex-shrink:0; margin:2px 0; }
+.gz-side-ring::before { content:''; position:absolute; inset:11px; background:var(--surface); border-radius:50%; }
+.gz-side-ring span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:15px; font-weight:800; color:var(--text); }
+.gz-side-value { font-family:'DM Mono',monospace; font-size:22px; font-weight:800; color:var(--text); }
 .gz-side-of { font-size:14px; font-weight:500; color:var(--text-muted); }
 @media (max-width: 720px) {
   .gauge-row { flex-direction:column; }
@@ -397,11 +400,13 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
       <div class="gz-side-col">
         <div class="gz-side-stat" id="gz-side-leads">
           <div class="gz-side-label">Ліди <span id="gz-side-leads-note"></span></div>
+          <div class="gz-side-ring" id="gz-side-leads-ring"><span id="gz-side-leads-ringpct">—</span></div>
           <div class="gz-side-value"><span id="gz-side-leads-fact">—</span><span class="gz-side-of"> / <span id="gz-side-leads-plan">—</span></span></div>
           <span class="badge badge-neu" id="gz-side-leads-badge">—</span>
         </div>
         <div class="gz-side-stat" id="gz-side-deals">
           <div class="gz-side-label">Угоди <span id="gz-side-deals-note"></span></div>
+          <div class="gz-side-ring" id="gz-side-deals-ring"><span id="gz-side-deals-ringpct">—</span></div>
           <div class="gz-side-value"><span id="gz-side-deals-fact">—</span><span class="gz-side-of"> / <span id="gz-side-deals-plan">—</span></span></div>
           <span class="badge badge-neu" id="gz-side-deals-badge">—</span>
         </div>
@@ -1575,11 +1580,15 @@ function wkRenderGaugeSideStat(key, totalRow, weekCount){
   const factEl = document.getElementById(`gz-side-${key}-fact`);
   const planEl = document.getElementById(`gz-side-${key}-plan`);
   const badgeEl = document.getElementById(`gz-side-${key}-badge`);
+  const ringEl = document.getElementById(`gz-side-${key}-ring`);
+  const ringPctEl = document.getElementById(`gz-side-${key}-ringpct`);
   if(!noteEl) return;
   noteEl.textContent = `· ${weekCount} тижні`;
   if(!totalRow){
     factEl.textContent = '—'; planEl.textContent = '—';
     badgeEl.textContent = '—'; badgeEl.className = 'badge badge-neu';
+    if(ringEl) ringEl.style.background = '#eceae5';
+    if(ringPctEl) ringPctEl.textContent = '—';
     return;
   }
   const planLast = totalRow.planCum.length ? totalRow.planCum[totalRow.planCum.length-1] : null;
@@ -1589,6 +1598,20 @@ function wkRenderGaugeSideStat(key, totalRow, weekCount){
   const gap = wkGapText(totalRow.planCum, totalRow.factCum);
   badgeEl.textContent = gap.text;
   badgeEl.className = 'badge ' + gap.cls;
+  // Ring: % of the 4-week cumulative plan already achieved (capped at 100% visually —
+  // the badge above already carries the exact, possibly >100%, number). Same good/bad
+  // color the badge uses, so the two never disagree.
+  if(ringEl){
+    const ringColor = gap.cls==='badge-good' ? '#0F6E56' : (gap.cls==='badge-bad' ? '#A32D2D' : '#9a9a95');
+    if(factLast==null || !planLast){
+      ringEl.style.background = '#eceae5';
+      if(ringPctEl) ringPctEl.textContent = '—';
+    } else {
+      const ringPct = Math.max(0, Math.min(Math.round(factLast/planLast*100), 100));
+      ringEl.style.background = `conic-gradient(${ringColor} 0% ${ringPct}%, #eceae5 ${ringPct}% 100%)`;
+      if(ringPctEl) ringPctEl.textContent = ringPct+'%';
+    }
+  }
 }
 function renderWeekly(data){
   const container = document.getElementById('weekly-groups-container');
