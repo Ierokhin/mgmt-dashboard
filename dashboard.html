@@ -92,6 +92,18 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
 /* GAUGE CARD (Revenue speedometer) — now pinned at the top of the "4 Weeks" tab, standalone */
 .gauge-card-wrap { max-width:900px; margin:0 auto 20px; }
+.gauge-row { display:flex; gap:14px; align-items:stretch; }
+.gauge-row .gauge-card { flex:1 1 auto; min-width:0; }
+.gz-side-col { display:flex; flex-direction:column; gap:14px; flex:0 0 210px; }
+.gz-side-stat { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; flex-direction:column; justify-content:center; }
+.gz-side-label { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.gz-side-label span { text-transform:none; font-weight:500; color:var(--text-faint); letter-spacing:0; }
+.gz-side-value { font-family:'DM Mono',monospace; font-size:22px; font-weight:800; color:var(--text); margin-bottom:8px; }
+.gz-side-of { font-size:14px; font-weight:500; color:var(--text-muted); }
+@media (max-width: 720px) {
+  .gauge-row { flex-direction:column; }
+  .gz-side-col { flex-direction:row; flex-basis:auto; }
+}
 .wk-empty-state { max-width:520px; margin:80px auto; text-align:center; padding:40px 24px; }
 .wk-empty-title { font-family:'DM Mono',monospace; font-size:20px; font-weight:700; color:var(--text); letter-spacing:.3px; margin-bottom:12px; }
 .wk-empty-text { font-size:14px; color:var(--text-muted); line-height:1.5; }
@@ -358,25 +370,41 @@ table.mini td.wk-cum-pct .badge { font-size:10.5px; padding:2px 7px; white-space
      tab ("Operational"), so no style="display:none" here. -->
 <div id="weekly-tab-view">
   <!-- Pinned, non-collapsible: revenue speedometer (moved here from the old Consolidated
-       Key Metrics) + "Зведена воронка", built by renderWeekly() below. -->
+       Key Metrics) + "Зведена воронка", built by renderWeekly() below. Two small stat
+       tiles sit beside the gauge — 4-week cumulative Ліди/Угоди vs plan, filled by
+       renderWeekly() from the same funnel data the cards below use. -->
   <div class="gauge-card-wrap">
-    <div class="gauge-card" id="gauge-card" style="display:none;">
-      <div class="gauge-date" id="gz-date">—</div>
-      <div class="gauge-top-row">
-        <div class="gauge-metric"><div class="gauge-metric-label">Доход</div><div class="gauge-metric-value" id="gz-fact">—</div><div class="gauge-metric-sub">от плана</div></div>
-        <div class="gauge-status gauge-status-ok" id="gz-status-card">
-          <span class="gz-val" id="gz-status-val">—</span>
-          <span class="gz-sub">от графика</span>
+    <div class="gauge-row">
+      <div class="gauge-card" id="gauge-card" style="display:none;">
+        <div class="gauge-date" id="gz-date">—</div>
+        <div class="gauge-top-row">
+          <div class="gauge-metric"><div class="gauge-metric-label">Доход</div><div class="gauge-metric-value" id="gz-fact">—</div><div class="gauge-metric-sub">от плана</div></div>
+          <div class="gauge-status gauge-status-ok" id="gz-status-card">
+            <span class="gz-val" id="gz-status-val">—</span>
+            <span class="gz-sub">от графика</span>
+          </div>
+          <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
         </div>
-        <div class="gauge-metric"><div class="gauge-metric-label">Время</div><div class="gauge-metric-value" id="gz-time">—</div><div class="gauge-metric-sub" id="gz-time-sub">— дней</div></div>
+        <div class="gauge-wrap"><canvas id="gz-canvas" width="620" height="270"></canvas></div>
+        <div class="gauge-legend">
+          <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
+          <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
+          <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
+          <span class="gauge-leg-item"><svg width="14" height="10"><line x1="1" y1="8" x2="10" y2="2" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="2" cy="9" r="2" fill="#c0392b"/></svg>Время</span>
+          <span class="gauge-leg-item"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/><polygon points="20,5 13,2 13,8" fill="#1a1a1a"/></svg>Доход</span>
+        </div>
       </div>
-      <div class="gauge-wrap"><canvas id="gz-canvas" width="740" height="325"></canvas></div>
-      <div class="gauge-legend">
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:linear-gradient(90deg,#C0392B,#E67E22);"></span>Убыток</span>
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#F0B429;"></span>План</span>
-        <span class="gauge-leg-item"><span class="gauge-leg-dot" style="background:#27AE60;"></span>Сверх плана</span>
-        <span class="gauge-leg-item"><svg width="14" height="10"><line x1="1" y1="8" x2="10" y2="2" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="2" cy="9" r="2" fill="#c0392b"/></svg>Время</span>
-        <span class="gauge-leg-item"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/><polygon points="20,5 13,2 13,8" fill="#1a1a1a"/></svg>Доход</span>
+      <div class="gz-side-col">
+        <div class="gz-side-stat" id="gz-side-leads">
+          <div class="gz-side-label">Ліди <span id="gz-side-leads-note"></span></div>
+          <div class="gz-side-value"><span id="gz-side-leads-fact">—</span><span class="gz-side-of"> / <span id="gz-side-leads-plan">—</span></span></div>
+          <span class="badge badge-neu" id="gz-side-leads-badge">—</span>
+        </div>
+        <div class="gz-side-stat" id="gz-side-deals">
+          <div class="gz-side-label">Угоди <span id="gz-side-deals-note"></span></div>
+          <div class="gz-side-value"><span id="gz-side-deals-fact">—</span><span class="gz-side-of"> / <span id="gz-side-deals-plan">—</span></span></div>
+          <span class="badge badge-neu" id="gz-side-deals-badge">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -704,7 +732,10 @@ function drawGaugeCanvas(g, dt, dp, workdayDates){
   const ckM='rgba(0,0,0,.22)', ckF='rgba(250,249,246,.99)', ckR='rgba(0,0,0,.26)';
   const sN='#1a1a1a', bM='rgba(0,0,0,.8)';
   const ox=W/2, oy=H-36;
-  const Ro=Math.min(W*.43,H-50);
+  // H-70 (not H-50): the outer tick labels are drawn at Ro+22, so Ro needs enough
+  // clearance above it for that label text not to clip against the canvas's own top
+  // edge — H-50 left only ~14px there, which is what was cutting "75%" off.
+  const Ro=Math.min(W*.43,H-70);
   const Ri=Ro*.56;
   const SA=Math.PI, EA=2*Math.PI;
   const br=g.bepBaseline/g.plan;
@@ -1536,6 +1567,29 @@ function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, c
   return rows;
 }
 
+/* Fills one of the two small stat tiles beside the gauge — same cumulative-to-date
+   plan/fact + gap badge already shown in the funnel card's "Накопичувально" column for
+   that row (wkCumCellsHtml), just surfaced as its own quick read next to the gauge. */
+function wkRenderGaugeSideStat(key, totalRow, weekCount){
+  const noteEl = document.getElementById(`gz-side-${key}-note`);
+  const factEl = document.getElementById(`gz-side-${key}-fact`);
+  const planEl = document.getElementById(`gz-side-${key}-plan`);
+  const badgeEl = document.getElementById(`gz-side-${key}-badge`);
+  if(!noteEl) return;
+  noteEl.textContent = `· ${weekCount} тижні`;
+  if(!totalRow){
+    factEl.textContent = '—'; planEl.textContent = '—';
+    badgeEl.textContent = '—'; badgeEl.className = 'badge badge-neu';
+    return;
+  }
+  const planLast = totalRow.planCum.length ? totalRow.planCum[totalRow.planCum.length-1] : null;
+  const factLast = wkLastKnown(totalRow.factCum);
+  factEl.textContent = wkFmtVal(factLast, totalRow.fmt);
+  planEl.textContent = wkFmtVal(planLast, totalRow.fmt);
+  const gap = wkGapText(totalRow.planCum, totalRow.factCum);
+  badgeEl.textContent = gap.text;
+  badgeEl.className = 'badge ' + gap.cls;
+}
 function renderWeekly(data){
   const container = document.getElementById('weekly-groups-container');
   container.innerHTML = '';
@@ -1561,10 +1615,17 @@ function renderWeekly(data){
   const funnelGrid = document.createElement('div');
   funnelGrid.className = 'wk-grid wk-grid-pinned';
   container.appendChild(funnelGrid);
+  let leadsTotalRow = null, dealsTotalRow = null;
   PARTNER_FUNNEL_ORDER.forEach(canonicalLabel=>{
     const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
     wkBuildCard(funnelGrid, { title:canonicalLabel, weekLabels, metrics:rows });
+    if(canonicalLabel==='Отримано лідів') leadsTotalRow = rows.find(r=>r.isTotal);
+    if(canonicalLabel==='Угоди') dealsTotalRow = rows.find(r=>r.isTotal);
   });
+  // Side-by-side with the gauge: same 4-week cumulative-to-date plan/fact the funnel
+  // cards above already show for these two rows, just pulled out as its own quick read.
+  wkRenderGaugeSideStat('leads', leadsTotalRow, weekLabels.length);
+  wkRenderGaugeSideStat('deals', dealsTotalRow, weekLabels.length);
 
   // "Глобальний план · Планова кількість партнерів в мережі" arrives as its own
   // pseudo-channel with one static value (not a normal per-week metric) — drop it as
