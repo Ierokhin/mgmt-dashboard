@@ -91,7 +91,10 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .kpi-grid.has-gauge .kpi-ring-wrap { display:flex; flex:1; align-items:center; justify-content:center; min-height:0; }
 .kpi-grid.has-gauge .kpi { justify-content:flex-start; }
 /* GAUGE CARD (Revenue speedometer) — now pinned at the top of the "4 Weeks" tab, standalone */
-.gauge-card-wrap { max-width:900px; margin:0 auto 20px; }
+/* No max-width here — the row should span the same width as the wk-card tables below,
+   which just stretch to fill #weekly-tab-view. The 900px cap this used to have was the
+   actual reason the gauge+widgets block looked narrower than the tables. */
+.gauge-card-wrap { margin:0 auto 20px; }
 .gauge-row { display:flex; gap:14px; align-items:stretch; }
 .gauge-row .gauge-card { flex:1 1 auto; min-width:0; }
 .gz-side-col { display:flex; flex-direction:column; gap:14px; flex:0 0 210px; }
