@@ -1621,14 +1621,33 @@ function mnMakeChart(id, labels, planCum, factCum, color, yFmt){
    there stays the real sheet-derived plan like every other metric. */
 function mnTargetGaugeHtml(gauge){
   if(!gauge) return '';
-  const { target, value, label, fmt } = gauge;
+  const { target, value, label, fmt, gap } = gauge;
   const pct = (target && value!=null) ? Math.min(100, Math.round(value/target*100)) : 0;
   const valueText = value==null ? '—' : wkFmtVal(value, fmt);
-  const pctText = value==null ? '—' : pct+'%';
+  // Two ways to read the trailing figure: a plain "(NN% of target)" fraction (default —
+  // e.g. the 200-partner goal, where there's no "plan" to be ahead/behind of), or, when
+  // `gap` is passed, the same colored ahead/behind badge used everywhere else in the app
+  // (wkGapText's {cls, text}) — for metrics that DO have a plan to compare against.
+  const trailing = gap
+    ? `<span class="badge ${gap.cls}" style="margin-left:6px">${gap.text}</span>`
+    : `<span class="mn-target-pct"> (${value==null?'—':pct+'%'})</span>`;
   return `<div class="mn-target-gauge">
     <div class="mn-target-label">${label}</div>
     <div class="mn-target-track"><div class="mn-target-fill" style="width:${pct}%"></div></div>
-    <div class="mn-target-value">${valueText} / ${wkFmtVal(target, fmt)}<span class="mn-target-pct"> (${pctText})</span></div>
+    <div class="mn-target-value">${valueText} / ${wkFmtVal(target, fmt)}${trailing}</div>
+  </div>`;
+}
+/* Same gray "gauge" box, but for a plain single-line stat (e.g. a conversion %) that has
+   no target/fill-bar concept — just label + value, kept visually identical to
+   mnTargetGaugeHtml's box so all 4 top KPI cards share one bottom-section style. */
+function mnStatBoxHtml(label, value){
+  // Same markup as mnTargetGaugeHtml (label + track + value) so the box is the exact same
+  // height in both variants — the track is just hidden (not omitted) here, since there's
+  // no fill-bar concept for a plain stat, only its 10px of reserved space is wanted.
+  return `<div class="mn-target-gauge">
+    <div class="mn-target-label">${label}</div>
+    <div class="mn-target-track" style="visibility:hidden"></div>
+    <div class="mn-target-value">${value}</div>
   </div>`;
 }
 
@@ -1799,24 +1818,24 @@ function mnRenderConsolidated(data, legacyUpwork){
     const salesCumFact = wkLastKnown(salesTotal.factCum);
     // Plan is set for the whole year up front, so the cumulative series' last slot is
     // always the full-year total — same value the table's Накопичувально column already
-    // compares against (wkGapText's convention), reused here as the gauge's target.
+    // compares against (wkGapText's convention), reused here as the gauge's target AND
+    // for the ahead/behind badge (same computation, same colors, as everywhere else).
     const salesYearPlan = salesTotal.planCum[salesTotal.planCum.length-1];
+    const salesCumGap = wkGapText(salesTotal.planCum, salesTotal.factCum);
 
     const row = document.createElement('div');
     row.className = 'mn-kpi-row';
     row.innerHTML =
-      // Bottom section, standardized across all 4: Ліди/Дзвінки keep their one-line
-      // conversion stat; Угоди/Партнерів (both "cumulative vs. a year-end total") share
-      // the same target-gauge look instead of Угоди's old one-off badge.
-      mnKpiCardHtml({ title:'Ліди', monthLabel, plan:leadsM.plan, fact:leadsM.fact, fmt:'int', extra:[
-        { label:'Конверсія в дзвінки', value: lead2callPct==null?'—':lead2callPct+'%' },
-      ]}) +
-      mnKpiCardHtml({ title:'Дзвінки', monthLabel, plan:callsM.plan, fact:callsM.fact, fmt:'int', extra:[
-        { label:'Конверсія в угоди', value: call2salePct==null?'—':call2salePct+'%' },
-      ]}) +
-      mnKpiCardHtml({ title:'Угоди', monthLabel, plan:salesM.plan, fact:salesM.fact, extra:[],
-        afterHtml: mnTargetGaugeHtml({ target:salesYearPlan, value:salesCumFact, label:'Накопичувально · план на рік' }) }) +
-      mnKpiCardHtml({ title:'Партнерів в мережі', monthLabel, plan:partnersM.plan, fact:partnersM.fact, fmt:'int', extra:[],
+      // Bottom section, standardized across all 4: same gray box for every card. Ліди/
+      // Дзвінки get a plain label+value stat (conversion %); Угоди/Партнерів (both
+      // "cumulative vs. a year-end total") get the target-gauge fill bar too.
+      mnKpiCardHtml({ title:'Ліди', monthLabel, plan:leadsM.plan, fact:leadsM.fact, fmt:'int',
+        afterHtml: mnStatBoxHtml('Конверсія в дзвінки', lead2callPct==null?'—':lead2callPct+'%') }) +
+      mnKpiCardHtml({ title:'Дзвінки', monthLabel, plan:callsM.plan, fact:callsM.fact, fmt:'int',
+        afterHtml: mnStatBoxHtml('Конверсія в угоди', call2salePct==null?'—':call2salePct+'%') }) +
+      mnKpiCardHtml({ title:'Угоди', monthLabel, plan:salesM.plan, fact:salesM.fact,
+        afterHtml: mnTargetGaugeHtml({ target:salesYearPlan, value:salesCumFact, label:'Накопичувально', gap:salesCumGap }) }) +
+      mnKpiCardHtml({ title:'Партнерів в мережі', monthLabel, plan:partnersM.plan, fact:partnersM.fact, fmt:'int',
         afterHtml: mnTargetGaugeHtml({ target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі', fmt:'int' }) });
     container.appendChild(row);
   })();
