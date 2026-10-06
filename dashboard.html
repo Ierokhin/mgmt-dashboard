@@ -1699,7 +1699,11 @@ function mnTargetGaugeHtml(gauge){
    below the hero number instead). More of any of these 4 metrics is always the good
    direction, so "up" is always badge-good here. */
 function mnMoMDeltaText(prevFact, curFact){
-  if(curFact==null || prevFact==null || !prevFact) return { cls:'badge-neu', text:'–' };
+  if(curFact==null || prevFact==null) return { cls:'badge-neu', text:'–' };
+  // No change (including 0 → 0) is a real "0%", not a dash. A dash stays only where the
+  // % can't be computed: previous month was 0 and this month isn't (division by zero).
+  if(curFact===prevFact) return { cls:'badge-neu', text:'0%' };
+  if(!prevFact) return { cls:'badge-neu', text:'–' };
   const diff = Math.round((curFact/prevFact-1)*100);
   return diff>=0 ? { cls:'badge-good', text:`+${diff}%` } : { cls:'badge-bad', text:`${diff}%` };
 }
