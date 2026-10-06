@@ -377,7 +377,7 @@ table.mini td.wk-cum-pct .badge { font-size:10px; padding:2px 5px; white-space:n
 <div id="unitecon-tab-view" style="display:none">
   <div class="wk-empty-state">
     <div class="wk-empty-title">Unit Economics</div>
-    <div class="wk-empty-text">Скоро тут: LTV/CAC, їх співвідношення, бюджети та revenue по каналах.</div>
+    <div class="wk-empty-text">Coming soon: LTV/CAC, their ratio, budgets and revenue by channel.</div>
   </div>
 </div>
 </div>
@@ -474,7 +474,7 @@ Chart.defaults.color = '#9ca3af';
 const GRID = { color:'rgba(0,0,0,0.05)', drawBorder:false };
 const TOOLTIP = { backgroundColor:'#fff', borderColor:'rgba(0,0,0,0.1)', borderWidth:1, titleColor:'#0f1117', bodyColor:'#6b7280', padding:10, cornerRadius:8 };
 const planDS = data => ({ label:'Plan', data, borderColor:'#d1d5db', backgroundColor:'transparent', borderWidth:1.5, borderDash:[5,4], pointRadius:0, tension:0.3 });
-const factDS = (data,color) => ({ label:'Actual', data, borderColor:color, backgroundColor:color+'18', borderWidth:2, pointRadius:4, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:2, fill:true, tension:0.3, spanGaps:false });
+const factDS = (data,color) => ({ label:'Fact', data, borderColor:color, backgroundColor:color+'18', borderWidth:2, pointRadius:4, pointBackgroundColor:color, pointBorderColor:'#fff', pointBorderWidth:2, fill:true, tension:0.3, spanGaps:false });
 const charts = {};
 function makeChart(id, plan, fact, color, yFmt){
   const el = document.getElementById(id);
@@ -1062,10 +1062,8 @@ const DEMO_SUMMARY = [
 const WK_SECTION_STYLE = {
   'SMM':       { accent:'#6d28d9', bg:'#f5f3ff' },
   'SALES':     { accent:'#047857', bg:'#ecfdf5' },
-  'Партнерка': { accent:'#b45309', bg:'#fffbeb' },
-  'Зведена воронка':  { accent:'#1d4ed8', bg:'#eff6ff' },
-  'Маркетинг': { accent:'#0891b2', bg:'#ecfeff' },
-  'Сейлс':     { accent:'#047857', bg:'#ecfdf5' },
+  'Partners':  { accent:'#b45309', bg:'#fffbeb' },
+  'Funnel summary':  { accent:'#1d4ed8', bg:'#eff6ff' },
   'Marketing': { accent:'#0891b2', bg:'#ecfeff' },
   'Sales':     { accent:'#047857', bg:'#ecfdf5' },
 };
@@ -1125,10 +1123,12 @@ function wkTagFor(plan, fact, fmt){
 function wkGapText(planCum, factCum){
   const p = planCum[planCum.length-1];
   const filled = factCum.filter(v=>v!=null);
-  if(!filled.length || !p) return { cls:'badge-neu', text:'–' };
+  if(!filled.length) return { cls:'badge-neu', text:'–' };
   const f = filled[filled.length-1];
+  // Zero plan: nothing to be ahead/behind of — "0%" if nothing happened either, else a dash.
+  if(!p) return { cls:'badge-neu', text: f===0 ? '0%' : '–' };
   const diff = Math.round((f/p-1)*100);
-  return diff>=0 ? { cls:'badge-good', text:`+${diff}% від плану` } : { cls:'badge-bad', text:`${diff}% від плану` };
+  return diff>=0 ? { cls:'badge-good', text:`+${diff}% vs plan` } : { cls:'badge-bad', text:`${diff}% vs plan` };
 }
 
 /* Display-only rename for a data-driven Operational section key — the underlying key is
@@ -1137,11 +1137,41 @@ function wkGapText(planCum, factCum){
    (distinct from the "Sales" funnel department section above it), renamed to avoid the
    confusing duplicate "Sales" heading twice on the same tab. */
 const WK_GROUP_DISPLAY = { 'SALES': 'Channels' };
+/* Channels that are temporarily NOT shown anywhere (Operational cards, Strategic tables and
+   the totals/KPIs built from them). Matched against the spreadsheet's exact channel name —
+   add/remove names here (e.g. when the Solve slot is replaced by a new channel). */
+const WK_HIDDEN_CHANNELS = ['Партнерська мережа Solve'];
+function wkVisibleGroups(groups){
+  return (groups||[])
+    .map(g=>({ ...g, channels:g.channels.filter(ch=> !WK_HIDDEN_CHANNELS.includes(ch.key)) }))
+    .filter(g=> g.channels.length);
+}
+/* Display-only English names for labels that arrive from the spreadsheet in Ukrainian.
+   Matching against the sheet (PARTNER_FUNNEL, channelsByName …) always uses the original
+   Ukrainian text; only what is drawn on screen goes through wkT(). Unknown labels fall
+   back to the original text, so a new sheet row never disappears. */
+const WK_I18N_RAW = {
+  'Партнерська мережа (комʼюніті)':'Partner network (community)', 'Партнерська мережа':'Partner network',
+  'Партнерська мережа Solve':'Partner network Solve', 'Глобальний план':'Global plan',
+  'LinkedIn Бориса':"LinkedIn (Boris)", 'LinkedIn Наталії':"LinkedIn (Natalia)",
+  'Пости':'Posts', 'Нові підписники':'New followers', 'Охоплення':'Reach', 'Перегляди профілю':'Profile views',
+  'Коментарі':'Comments', 'Глядачі':'Viewers', 'Взаємодії':'Interactions',
+  'Всі заявки/контакти':'All requests/contacts', 'Цільові':'Qualified', 'Дзвінки':'Calls', 'Угоди':'Deals',
+  'Біди відправлено':'Bids sent', 'Біди відкрито':'Bids viewed', 'Біди - відповіді':'Bids – replies',
+  'Зустрічі заплановано':'Meetings scheduled', 'Зустрічі проведено':'Meetings held', 'Інвайти отримано':'Invites received',
+  'Планова кількість партнерів в мережі':'Planned partners in network',
+  'Всього контактів':'Total contacts', 'Написали':'Messaged', 'Прийняли запит':'Accepted request',
+  'Партнерів в мережі':'Partners in network', 'Отримано лідів':'Leads received',
+  'Проведено зустрічей з лідами':'Meetings held with leads', 'Разом':'Total',
+};
+const WK_I18N = {};
+Object.keys(WK_I18N_RAW).forEach(k=>{ WK_I18N[wkNormLabel(k)] = WK_I18N_RAW[k]; });
+function wkT(s){ const t = WK_I18N[wkNormLabel(s)]; return t!=null ? t : s; }
 /* "Партнерська мережа Solve" -> "Партнерська Solve" etc — drops the redundant "мережа"
    from channel labels so narrow table/card columns need less width. Only touches the
    DISPLAY text; matching against spreadsheet data always uses the untouched original. */
 function wkShortLabel(name){
-  return String(name).replace(/Партнерська мережа\s?/, 'Партнерська ').trim();
+  return wkT(String(name).trim());
 }
 /* Pull "Партнерська мережа" / "Партнерська мережа Solve" (anything with "партнер" in
    the name) out of whichever group they arrived in, into their own section — the user
@@ -1157,7 +1187,7 @@ function wkSplitPartnerGroup(groups){
     });
     if(keep.length) rest.push({ key:g.key, channels:keep });
   });
-  if(partnerChannels.length) rest.push({ key:'Партнерка', channels:partnerChannels });
+  if(partnerChannels.length) rest.push({ key:'Partners', channels:partnerChannels });
   return rest;
 }
 
@@ -1178,7 +1208,7 @@ function wkCumCellsHtml(m){
   const factLast = filled.length ? filled[filled.length-1] : null;
   const gap = wkGapText(m.planCum, m.factCum);
   const factCell = factLast==null ? '<span class="cell-tag zero">—</span>' : wkTagFor(planLast, factLast, m.fmt);
-  const pctText = gap.text.replace(' від плану', '');
+  const pctText = gap.text.replace(' vs plan', '');
   return `<td class="wk-sub wk-cum wk-cum-first">${wkFmtVal(planLast, m.fmt)}</td>` +
          `<td class="wk-sub wk-cum">${factCell}</td>` +
          `<td class="wk-sub wk-cum wk-cum-pct"><span class="badge ${gap.cls}">${pctText}</span></td>`;
@@ -1187,31 +1217,41 @@ function wkCumCellsHtml(m){
    cumulative "Накопичувально" column): `periodLabels` are already display-ready strings,
    `cornerLabel` is the top-left header ("Метрика" for per-channel weekly cards, "Канал"
    for the Consolidated per-metric cards where rows are channels instead). */
-function wkPeriodTableHtml(periodLabels, metrics, cornerLabel, highlightNow, currentIdx){
-  if(highlightNow==null) highlightNow = true; // Weekly: highlight the current week. Monthly passes an explicit currentIdx instead — a full Січ–Гру row makes "last column" meaningless as "now".
+function wkPeriodTableHtml(periodLabels, metrics, cornerLabel, highlightNow, currentIdx, pastIdx){
+  // Weekly tables highlight the current week (highlightNow). Monthly tables pass false.
+  // `pastIdx` (monthly tables only) = index of the last fully completed month: months up to
+  // it show real numbers (a missing value there is a genuine 0, shown as 0 / 0%), the
+  // in-progress month and all later months are shown as dashes (filled in from the 1st of
+  // the next month). Placeholder rows (no data source at all, e.g. cost per lead) keep "—".
+  if(highlightNow==null) highlightNow = true;
   const n = periodLabels.length;
   const nowIdx = currentIdx!=null ? currentIdx : n-1;
   const isNow = i => highlightNow && i===nowIdx;
   const headPeriods = periodLabels.map((pl,i)=>
     `<th colspan="2" class="wk-week${isNow(i)?' wk-now':''}${i>0?' wk-week-first':''}">${pl}</th>`).join('');
   const headSub = periodLabels.map((pl,i)=>
-    `<th class="wk-sub${isNow(i)?' wk-now':''}${i>0?' wk-week-first':''}">План</th><th class="wk-sub${isNow(i)?' wk-now':''}">Факт</th>`).join('');
-  const cumHead = `<th colspan="3" class="wk-week wk-cum wk-cum-first">Накопичувально</th>`;
-  const cumSub = `<th class="wk-sub wk-cum wk-cum-first">План</th><th class="wk-sub wk-cum">Факт</th><th class="wk-sub wk-cum">±%</th>`;
+    `<th class="wk-sub${isNow(i)?' wk-now':''}${i>0?' wk-week-first':''}">Plan</th><th class="wk-sub${isNow(i)?' wk-now':''}">Fact</th>`).join('');
+  const cumHead = `<th colspan="3" class="wk-week wk-cum wk-cum-first">Cumulative</th>`;
+  const cumSub = `<th class="wk-sub wk-cum wk-cum-first">Plan</th><th class="wk-sub wk-cum">Fact</th><th class="wk-sub wk-cum">±%</th>`;
   const rows = metrics.map(m=>{
     const cells = m.weekly.map((w,i)=>{
       const now = isNow(i) ? ' wk-now' : '';
       const first = i>0 ? ' wk-week-first' : '';
-      return `<td class="wk-sub${now}${first}">${wkFmtVal(w.plan, m.fmt)}</td><td class="wk-sub${now}">${wkTagFor(w.plan,w.fact,m.fmt)}</td>`;
+      let plan = w.plan, fact = w.fact;
+      if(pastIdx!=null){
+        if(i>pastIdx) return `<td class="wk-sub${now}${first}">—</td><td class="wk-sub${now}"><span class="cell-tag zero">—</span></td>`;
+        if(!m.placeholder){ if(plan==null) plan = 0; if(fact==null) fact = 0; }
+      }
+      return `<td class="wk-sub${now}${first}">${wkFmtVal(plan, m.fmt)}</td><td class="wk-sub${now}">${wkTagFor(plan,fact,m.fmt)}</td>`;
     }).join('');
     return `<tr${m.isTotal?' class="wk-total"':''}>
-      <td><span class="mrow-dot"></span>${m.label}</td>${cells}${wkCumCellsHtml(m)}
+      <td><span class="mrow-dot"></span>${wkT(m.label)}</td>${cells}${wkCumCellsHtml(m)}
     </tr>`;
   }).join('');
   return `<table class="mini"><thead><tr><th rowspan="2">${cornerLabel}</th>${headPeriods}${cumHead}</tr><tr>${headSub}${cumSub}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 function wkTableHtml(spec){
-  return wkPeriodTableHtml(spec.weekLabels.map(wkShortWeek), spec.metrics, 'Метрика');
+  return wkPeriodTableHtml(spec.weekLabels.map(wkShortWeek), spec.metrics, 'Metric');
 }
 
 function wkBuildCard(container, spec){
@@ -1235,7 +1275,7 @@ function wkBuildSection(container, key, note, pinned, displayLabel){
   label.style.setProperty('--wk-accent', style.accent);
   label.style.setProperty('--wk-bg', style.bg);
   const chevron = pinned ? '' : '<span class="wk-section-chevron">▾</span>';
-  label.innerHTML = `<span class="wk-section-name">${chevron}${displayLabel||key}</span><span class="section-note">${note}</span>`;
+  label.innerHTML = `<span class="wk-section-name">${chevron}${wkT(displayLabel||key)}</span><span class="section-note">${note}</span>`;
   container.appendChild(label);
   const body = document.createElement('div');
   body.className = 'wk-section-body';
@@ -1357,7 +1397,7 @@ function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, c
   const totalWindowed = totalWeekly.slice(winStart, winEnd+1);
   // "Партнерів в мережі" is treated exactly like every other funnel row here — plan/fact
   // summed over the 4-week window, накопичувально — no special-cased global 200 target.
-  const totalRow = { label:'Разом', weekly:totalWindowed, planCum:wkCumulatePlan(totalWindowed), factCum:wkCumulateFact(totalWindowed), isTotal:true, fmt };
+  const totalRow = { label:'Total', weekly:totalWindowed, planCum:wkCumulatePlan(totalWindowed), factCum:wkCumulateFact(totalWindowed), isTotal:true, fmt };
   rows.push(totalRow);
   return rows;
 }
@@ -1368,18 +1408,19 @@ function renderWeekly(data){
 
   const allWeekLabels = data.weekLabels || [];
   const lastIdx = data.lastCompletedIndex!=null ? data.lastCompletedIndex : -1;
-  const lastLabel = lastIdx>=0 ? allWeekLabels[lastIdx] : 'ще немає завершених тижнів';
+  const lastLabel = lastIdx>=0 ? allWeekLabels[lastIdx] : 'no completed weeks yet';
 
   // window: last completed week + up to 3 previous (fewer if not yet available)
   const winEnd = Math.max(lastIdx, 0);
   const winStart = allWeekLabels.length ? Math.max(0, winEnd - (WK_WINDOW_SIZE-1)) : 0;
   const weekLabels = allWeekLabels.slice(winStart, winEnd+1);
   const windowLabel = weekLabels.length ? `${weekLabels[0]} … ${weekLabels[weekLabels.length-1]}` : lastLabel;
-  const note = `останні ${weekLabels.length} тижні: ${windowLabel}`;
+  const note = `last ${weekLabels.length} weeks: ${windowLabel}`;
 
   // flat channel lookup by exact name, for the cross-channel Зведена воронка block below
+  const visibleGroups = wkVisibleGroups(data.groups);
   const channelsByName = {};
-  (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
+  visibleGroups.forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
 
   // The cross-channel funnel cards are pinned at the top, in one Sales section — "Партнерів
   // в мережі" (top-of-funnel, Marketing's own metric) is dropped from this tab entirely
@@ -1389,13 +1430,13 @@ function renderWeekly(data){
   const salesGrid = wkBuildSection(container, 'Sales', note, true);
   PARTNER_FUNNEL_ORDER.filter(label=> label!=='Партнерів в мережі').forEach(canonicalLabel=>{
     const rows = wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, channelsByName);
-    wkBuildCard(salesGrid, { title:canonicalLabel, weekLabels, metrics:rows });
+    wkBuildCard(salesGrid, { title:wkT(canonicalLabel), weekLabels, metrics:rows });
   });
 
   // "Глобальний план · Планова кількість партнерів в мережі" arrives as its own
   // pseudo-channel with one static value (not a normal per-week metric) — drop it as
   // a card here; the 200-partner target now only appears in Consolidated → Партнерка.
-  const groups = wkSplitPartnerGroup(data.groups||[])
+  const groups = wkSplitPartnerGroup(visibleGroups)
     .map(g=>({ key:g.key, channels:g.channels.filter(ch=> !/глобальн/i.test(ch.key)) }))
     .filter(g=> g.channels.length);
 
@@ -1422,7 +1463,7 @@ function renderWeekly(data){
    events (a call, a deal, a lead), so a week straddling two months (e.g. 28.09–04.10)
    goes ENTIRELY, plan and fact together, to the month it ENDS in (October there). Same
    "week belongs to the month it ends in" rule mnLastCompletedMonthIdx already uses. */
-const MN_NAMES_UA = ['Січ','Лют','Бер','Кві','Тра','Чер','Лип','Сер','Вер','Жов','Лис','Гру'];
+const MN_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function mnMonthKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
 function mnParseWeekRange(label){
   const m = String(label).match(/(\d{2})\.(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})\.(\d{2})/);
@@ -1442,7 +1483,7 @@ function mnParseWeekRange(label){
 function mnBuildMonthSplits(weekLabels, lastIdx){
   const months = [];
   for(let mo=0; mo<12; mo++){
-    months.push({ key:mnMonthKey(CURRENT_YEAR,mo), label:MN_NAMES_UA[mo]+' '+CURRENT_YEAR, y:CURRENT_YEAR, m:mo });
+    months.push({ key:mnMonthKey(CURRENT_YEAR,mo), label:MN_NAMES[mo], y:CURRENT_YEAR, m:mo });
   }
   const perWeekSplit = [];
   for(let i=0;i<weekLabels.length;i++){
@@ -1496,7 +1537,7 @@ function mnBuildMetricRows(canonicalLabel, months, perWeekSplit, allWeekLabels, 
     });
     rows.push({ label:wkShortLabel(c.channel), weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
   });
-  rows.push({ label:'Разом', weekly:totalMonthly, planCum:wkCumulatePlan(totalMonthly), factCum:wkCumulateFact(totalMonthly), isTotal:true, fmt });
+  rows.push({ label:'Total', weekly:totalMonthly, planCum:wkCumulatePlan(totalMonthly), factCum:wkCumulateFact(totalMonthly), isTotal:true, fmt });
   return rows;
 }
 /* Cumulative ratio of two already-cumulated series — e.g. cumulative calls ÷ cumulative
@@ -1511,25 +1552,29 @@ function mnRatioCum(numCumArr, denCumArr){
 /* Derived conversion-rate metric (e.g. "Ліди → Дзвінки"): pairs up two already-built
    metric row-sets by channel label (same contributor channels, same "Разом" row) and
    computes toRow/fromRow*100 per month, plus the cumulative ratio via mnRatioCum. */
-function mnBuildConvRows(fromRows, toRows){
+function mnBuildConvRows(fromRows, toRows, lastMonthIdx){
   const toByLabel = {};
   toRows.forEach(r=> toByLabel[r.label] = r);
   const rows = [];
   fromRows.forEach(fromRow=>{
     const toRow = toByLabel[fromRow.label];
     if(!toRow) return;
+    // Completed months (≤ lastMonthIdx) never show a dash: no leads / no calls that month
+    // means a conversion of 0%, not "unknown". Later months stay null (rendered as dashes).
+    const past = i => lastMonthIdx!=null && i<=lastMonthIdx;
     const monthly = fromRow.weekly.map((fw,i)=>{
       const tw = toRow.weekly[i];
-      return {
-        plan: (fw.plan!=null && fw.plan) ? tw.plan/fw.plan*100 : null,
-        fact: (fw.fact!=null && fw.fact) ? (tw.fact!=null ? tw.fact/fw.fact*100 : null) : null,
-      };
+      const plan = (fw.plan!=null && fw.plan) ? tw.plan/fw.plan*100 : null;
+      const fact = (fw.fact!=null && fw.fact) ? (tw.fact!=null ? tw.fact/fw.fact*100 : null) : null;
+      return { plan: plan==null && past(i) ? 0 : plan, fact: fact==null && past(i) ? 0 : fact };
     });
+    const planCum = mnRatioCum(toRow.planCum, fromRow.planCum).map(v=> v==null ? 0 : v); // plan exists for the whole year
+    const factCum = mnRatioCum(toRow.factCum, fromRow.factCum).map((v,i)=> v==null && past(i) ? 0 : v);
     rows.push({
       label: fromRow.label,
       weekly: monthly,
-      planCum: mnRatioCum(toRow.planCum, fromRow.planCum),
-      factCum: mnRatioCum(toRow.factCum, fromRow.factCum),
+      planCum,
+      factCum,
       isTotal: fromRow.isTotal,
       fmt: 'pct',
     });
@@ -1578,6 +1623,7 @@ function mnBuildEmptyRows(likeRows){
     planCum: r.weekly.map(()=>null),
     factCum: r.weekly.map(()=>null),
     isTotal: r.isTotal,
+    placeholder: true, // no data source at all — keeps "—" instead of being zero-filled
   }));
 }
 /* Same chart factory as makeChart(), just with caller-supplied labels instead of the
@@ -1679,7 +1725,7 @@ function mnKpiCardHtml({title, dotColor, plan, fact, fmt, deltaCls, deltaText, d
       <div class="mn-kpi-id"><span class="mn-kpi-dot" style="background:${dotColor}"></span>${title}</div>
       <div class="mn-kpi-delta"><span class="badge ${deltaCls}">${deltaText}</span>${deltaNote?`<span class="mn-kpi-delta-note">${deltaNote}</span>`:''}</div>
     </div>
-    <div class="mn-kpi-hero"><span class="mn-kpi-hero-val">${wkFmtVal(fact, fmt)}</span><span class="mn-kpi-hero-plan"> / ${wkFmtVal(plan, fmt)} план</span></div>
+    <div class="mn-kpi-hero"><span class="mn-kpi-hero-val">${wkFmtVal(fact, fmt)}</span><span class="mn-kpi-hero-plan"> / ${wkFmtVal(plan, fmt)} plan</span></div>
     <div class="mn-kpi-track"><div class="mn-kpi-track-fill" style="width:${pct}%;background:${dotColor}"></div></div>
     ${afterHtml || ''}
   </div>`;
@@ -1688,8 +1734,17 @@ function mnKpiCardHtml({title, dotColor, plan, fact, fmt, deltaCls, deltaText, d
    % for Ліди/Дзвінки/Угоди (stage-to-stage, then end-to-end lead→deal for Угоди). Партнерів
    currently has none (its old "Ціль 200" cumulative figure was dropped; no replacement
    decided yet), so that card is shorter than the other three until one is chosen. */
-function mnStatRowHtml(label, value){
-  return `<div class="mn-kpi-stat-row"><span>${label}</span><b>${value}</b></div>`;
+function mnStatRowHtml(label, value, delta){
+  // `delta` (optional) = {cls,text} month-over-month badge in percentage points, shown right next to the value.
+  const badge = delta ? `<span class="badge ${delta.cls}" style="margin-left:6px">${delta.text}</span>` : '';
+  return `<div class="mn-kpi-stat-row"><span>${label}</span><span class="mn-kpi-stat-val"><b>${value}</b>${badge}</span></div>`;
+}
+/* Month-over-month change of a percentage, in percentage points (pp). */
+function mnPpDelta(prevPct, curPct){
+  if(prevPct==null || curPct==null) return { cls:'badge-neu', text:'–' };
+  const d = Math.round(curPct) - Math.round(prevPct);
+  if(d===0) return { cls:'badge-neu', text:'0 pp' };
+  return d>0 ? { cls:'badge-good', text:`+${d} pp` } : { cls:'badge-bad', text:`${d} pp` };
 }
 let mnChartSeq = 0;
 /* Table on the left, chart on the right (a full-width chart under the table read as too
@@ -1704,7 +1759,7 @@ function mnBuildCard(container, spec){ // spec: {title, note?, periodLabels, met
     ${spec.note?`<div class="mn-card-note">${spec.note}</div>`:''}
     ${mnTargetGaugeHtml(spec.targetGauge)}
     <div class="mn-card-body">
-      <div class="wk-mini-wrap mn-table-col">${wkPeriodTableHtml(spec.periodLabels, spec.metrics, 'Канал', false)}</div>
+      <div class="wk-mini-wrap mn-table-col">${wkPeriodTableHtml(spec.periodLabels, spec.metrics, 'Channel', false, null, spec.lastMonthIdx!=null ? spec.lastMonthIdx : -1)}</div>
       <div class="mn-chart-col">
         <div class="mn-chart-caption" id="${chartId}-caption"></div>
         <div class="chart-wrap mn-chart-wrap"><canvas id="${chartId}"></canvas></div>
@@ -1754,13 +1809,13 @@ function mnRenderConsolidated(data, legacyUpwork){
   const { months, perWeekSplit } = mnBuildMonthSplits(allWeekLabels, lastIdx);
 
   if(!months.length){
-    container.innerHTML = '<div class="wk-section-label pinned"><span class="wk-section-name">Немає завершених тижнів, щоб побудувати місяці</span></div>';
+    container.innerHTML = '<div class="wk-section-label pinned"><span class="wk-section-name">No completed weeks yet to build months from</span></div>';
     return;
   }
   const periodLabels = months.map(mo=>mo.label);
 
   const channelsByName = {};
-  (data.groups||[]).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
+  wkVisibleGroups(data.groups).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
 
   const leadsRows    = mnBuildMetricRows('Отримано лідів',    months, perWeekSplit, allWeekLabels, channelsByName);
   const callsRows    = mnBuildMetricRows('Зустрічі проведено', months, perWeekSplit, allWeekLabels, channelsByName);
@@ -1778,17 +1833,21 @@ function mnRenderConsolidated(data, legacyUpwork){
   // sheet-derived sum, same as every other metric. The target instead gets its own
   // separate fill gauge (see mnTargetGaugeHtml), fed by the to-date cumulative fact.
   const partnersTotal = partnersRows.find(r=>r.isTotal);
+
+  // The reporting boundary = the last fully-completed month. Tables show real numbers (0
+  // where nothing happened) up to it; the in-progress month and later months are dashes.
+  const currentMonthIdx = mnLastCompletedMonthIdx(allWeekLabels, lastIdx);
+
+  const lead2call = mnBuildConvRows(leadsRows, callsRows, currentMonthIdx);
+  const call2sale = mnBuildConvRows(callsRows, salesRows, currentMonthIdx);
+  const cpl = mnBuildEmptyRows(leadsRows);
+  // Cut every cumulative FACT series off at the boundary, so the "Cumulative" table column,
+  // the chart and the partner gauge all read as of the last completed month — not including
+  // the in-progress month's partial numbers.
+  [leadsRows, callsRows, salesRows, partnersRows, lead2call, call2sale].forEach(set=>
+    set.forEach(r=>{ r.factCum = r.factCum.map((v,i)=> i<=currentMonthIdx ? v : null); }));
   const partnersToDate = partnersTotal ? wkLastKnown(partnersTotal.factCum) : null;
 
-  const lead2call = mnBuildConvRows(leadsRows, callsRows);
-  const call2sale = mnBuildConvRows(callsRows, salesRows);
-  const cpl = mnBuildEmptyRows(leadsRows);
-
-  // The monthly rows always have all 12 months filled in (0s past "now", not nulls — see
-  // mnProrateToMonths), so charts can't tell "no data yet" from "genuinely zero" on their
-  // own. This is the one true boundary — the last fully-completed month — reused both for
-  // the top KPI cards below AND to cut the charts' plan line off there (see mnBuildCard).
-  const currentMonthIdx = mnLastCompletedMonthIdx(allWeekLabels, lastIdx);
 
   // ── Top KPI row: 4 at-a-glance cards for the last fully-completed calendar month ──
   (function renderTopKpis(){
@@ -1797,26 +1856,33 @@ function mnRenderConsolidated(data, legacyUpwork){
     const salesTotal = salesRows.find(r=>r.isTotal);
     const mIdx = currentMonthIdx;
     const inRange = mIdx>=0 && mIdx<12;
-    const monthLabel = inRange ? months[mIdx].label : '—';
+    const monthLabel = inRange ? (months[mIdx].label+' '+months[mIdx].y) : '—';
     const leadsM = inRange ? leadsTotal.weekly[mIdx] : { plan:null, fact:null };
     const callsM = inRange ? callsTotal.weekly[mIdx] : { plan:null, fact:null };
     const salesM = inRange ? salesTotal.weekly[mIdx] : { plan:null, fact:null };
     const partnersM = inRange ? partnersTotal.weekly[mIdx] : { plan:null, fact:null };
-    // Fact-based conversion for that same month — same formula mnBuildConvRows already
-    // uses per month (tw.fact/fw.fact*100), just read for one specific month instead of
-    // the whole monthly series, so this can never disagree with "Конверсія…" below.
-    const lead2callPct = (leadsM.fact) ? (callsM.fact!=null ? Math.round(callsM.fact/leadsM.fact*100) : null) : null;
-    const call2salePct = (callsM.fact) ? (salesM.fact!=null ? Math.round(salesM.fact/callsM.fact*100) : null) : null;
-    // End-to-end (наскрізна) conversion for the Угоди card — same fact-based formula,
-    // straight from lead to deal, skipping the intermediate call stage.
-    const lead2salePct = (leadsM.fact) ? (salesM.fact!=null ? Math.round(salesM.fact/leadsM.fact*100) : null) : null;
-
-    // Month-over-month: the previous fully-completed month's fact for each metric, plus
-    // a generic "до попер. міс." caption (not a specific month name). Real data throughout —
-    // the same `weekly`/`months` arrays the detail sections below are built from.
+    // Fact-based conversion for a given month index — same formula mnBuildConvRows uses per
+    // month (to.fact/from.fact*100). In a completed month, 0 leads (or 0 calls) means 0%, not
+    // "unknown"; only a month outside the data range gives null (shown as a dash).
+    const pctFor = (fromTotal, toTotal, idx) => {
+      if(idx<0 || idx>=12) return null;
+      const f = fromTotal.weekly[idx].fact, t = toTotal.weekly[idx].fact;
+      if(!f) return 0;
+      return Math.round((t||0)/f*100);
+    };
+    const pctTxt = v => v==null ? '—' : v+'%';
     const prevMonthIdx = mIdx-1;
     const prevInRange = inRange && prevMonthIdx>=0;
-    const deltaNote = prevInRange ? 'до попер. міс.' : '';
+    const lead2callPct = inRange ? pctFor(leadsTotal, callsTotal, mIdx) : null;
+    const call2salePct = inRange ? pctFor(callsTotal, salesTotal, mIdx) : null;
+    // End-to-end conversion for the Deals card — lead straight to deal, skipping the call stage.
+    const lead2salePct = inRange ? pctFor(leadsTotal, salesTotal, mIdx) : null;
+    const lead2callDelta = prevInRange ? mnPpDelta(pctFor(leadsTotal, callsTotal, prevMonthIdx), lead2callPct) : null;
+    const call2saleDelta = prevInRange ? mnPpDelta(pctFor(callsTotal, salesTotal, prevMonthIdx), call2salePct) : null;
+    const lead2saleDelta = prevInRange ? mnPpDelta(pctFor(leadsTotal, salesTotal, prevMonthIdx), lead2salePct) : null;
+
+    // Month-over-month deltas for the main numbers (generic "vs prev. month" caption).
+    const deltaNote = prevInRange ? 'vs prev. month' : '';
     const leadsPrevFact = prevInRange ? leadsTotal.weekly[prevMonthIdx].fact : null;
     const callsPrevFact = prevInRange ? callsTotal.weekly[prevMonthIdx].fact : null;
     const salesPrevFact = prevInRange ? salesTotal.weekly[prevMonthIdx].fact : null;
@@ -1834,7 +1900,7 @@ function mnRenderConsolidated(data, legacyUpwork){
 
     const eyebrow = document.createElement('div');
     eyebrow.className = 'mn-kpi-eyebrow';
-    eyebrow.innerHTML = `<span class="mn-kpi-eyebrow-text">Стратегічні KPI · ${monthLabel} · останній завершений місяць</span><div class="mn-kpi-eyebrow-rule"></div>`;
+    eyebrow.innerHTML = `<span class="mn-kpi-eyebrow-text">Strategic KPIs · ${monthLabel} · last completed month</span><div class="mn-kpi-eyebrow-rule"></div>`;
     container.appendChild(eyebrow);
 
     const row = document.createElement('div');
@@ -1842,40 +1908,41 @@ function mnRenderConsolidated(data, legacyUpwork){
     row.innerHTML =
       // Every card: hero + MoM delta badge + plan-progress track, then a stat row below a
       // hairline — Ліди/Дзвінки/Угоди each get a conversion %; Партнерів has none for now.
-      mnKpiCardHtml({ title:'Ліди', dotColor:COLOR.leads, plan:leadsM.plan, fact:leadsM.fact, fmt:'int',
+      mnKpiCardHtml({ title:'Leads', dotColor:COLOR.leads, plan:leadsM.plan, fact:leadsM.fact, fmt:'int',
         deltaCls:leadsDelta.cls, deltaText:leadsDelta.text, deltaNote,
-        afterHtml: mnStatRowHtml('Конверсія в дзвінки', lead2callPct==null?'—':lead2callPct+'%') }) +
-      mnKpiCardHtml({ title:'Дзвінки', dotColor:COLOR.calls, plan:callsM.plan, fact:callsM.fact, fmt:'int',
+        afterHtml: mnStatRowHtml('Conversion to calls', pctTxt(lead2callPct), lead2callDelta) }) +
+      mnKpiCardHtml({ title:'Calls', dotColor:COLOR.calls, plan:callsM.plan, fact:callsM.fact, fmt:'int',
         deltaCls:callsDelta.cls, deltaText:callsDelta.text, deltaNote,
-        afterHtml: mnStatRowHtml('Конверсія в угоди', call2salePct==null?'—':call2salePct+'%') }) +
-      mnKpiCardHtml({ title:'Угоди', dotColor:COLOR.sales, plan:salesM.plan, fact:salesM.fact,
+        afterHtml: mnStatRowHtml('Conversion to deals', pctTxt(call2salePct), call2saleDelta) }) +
+      mnKpiCardHtml({ title:'Deals', dotColor:COLOR.sales, plan:salesM.plan, fact:salesM.fact,
         deltaCls:salesDelta.cls, deltaText:salesDelta.text, deltaNote,
-        afterHtml: mnStatRowHtml('Конверсія лід → угода', lead2salePct==null?'—':lead2salePct+'%') }) +
-      // No secondary stat here yet — "Ціль 200" was dropped, replacement still TBD.
-      mnKpiCardHtml({ title:'Партнерів в мережі', dotColor:COLOR.partners, plan:partnersM.plan, fact:partnersM.fact, fmt:'int',
-        deltaCls:partnersDelta.cls, deltaText:partnersDelta.text, deltaNote });
+        afterHtml: mnStatRowHtml('Lead → deal conversion', pctTxt(lead2salePct), lead2saleDelta) }) +
+      // Partners: running total of partners in the network up to the end of the last completed month.
+      mnKpiCardHtml({ title:'Partners in network', dotColor:COLOR.partners, plan:partnersM.plan, fact:partnersM.fact, fmt:'int',
+        deltaCls:partnersDelta.cls, deltaText:partnersDelta.text, deltaNote,
+        afterHtml: mnStatRowHtml('Cumulative', partnersToDate==null ? '—' : wkFmtVal(partnersToDate,'int')) });
     container.appendChild(row);
   })();
 
-  const note = `помісячно (тиждень цілком іде в місяць, у якому закінчується) · з початку звітного періоду`;
+  const note = `monthly (a week counts fully toward the month it ends in) · year to date`;
   const mkGrid = (key, sectionNote) => wkBuildSection(container, key, sectionNote);
   // Every card below shares the same reporting boundary — thread it through here once
   // instead of repeating it on each call (see mnBuildCard's draw() for what it's for).
   const buildCard = (grid, spec) => mnBuildCard(grid, { ...spec, lastMonthIdx:currentMonthIdx });
 
-  const mktGrid = mkGrid('Маркетинг', `ліди · конверсія в дзвінки · вартість ліда · ${note}`);
-  buildCard(mktGrid, { title:'Ліди', periodLabels, metrics:leadsRows, color:'#1d4ed8' });
-  buildCard(mktGrid, { title:'Конверсія лідів у дзвінки', periodLabels, metrics:lead2call, color:'#0891b2' });
-  buildCard(mktGrid, { title:'Вартість ліда', note:'дані по бюджету поки не ведуться в недельному звіті — заповниться, коли зʼявиться рядок з витратами', periodLabels, metrics:cpl, color:'#b45309' });
+  const mktGrid = mkGrid('Marketing', `leads · conversion to calls · cost per lead · ${note}`);
+  buildCard(mktGrid, { title:'Leads', periodLabels, metrics:leadsRows, color:'#1d4ed8' });
+  buildCard(mktGrid, { title:'Lead → call conversion', periodLabels, metrics:lead2call, color:'#0891b2' });
+  buildCard(mktGrid, { title:'Cost per lead', note:'budget data is not tracked in the weekly report yet — will fill in once a spend row appears', periodLabels, metrics:cpl, color:'#b45309' });
 
-  const salesGrid = mkGrid('Сейлс', `дзвінки · конверсія в продажі · продажі · ${note}`);
-  buildCard(salesGrid, { title:'Кількість дзвінків', periodLabels, metrics:callsRows, color:'#b45309' });
-  buildCard(salesGrid, { title:'Конверсія дзвінок → продаж', periodLabels, metrics:call2sale, color:'#dc2626' });
-  buildCard(salesGrid, { title:'Продажі', periodLabels, metrics:salesRows, color:'#059669' });
+  const salesGrid = mkGrid('Sales', `calls · conversion to deals · deals · ${note}`);
+  buildCard(salesGrid, { title:'Calls', periodLabels, metrics:callsRows, color:'#b45309' });
+  buildCard(salesGrid, { title:'Call → deal conversion', periodLabels, metrics:call2sale, color:'#dc2626' });
+  buildCard(salesGrid, { title:'Deals', periodLabels, metrics:salesRows, color:'#059669' });
 
-  const partnersGrid = mkGrid('Партнерка', `ціль 200 партнерів у мережі · ${note}`);
-  buildCard(partnersGrid, { title:'Партнерів в мережі', periodLabels, metrics:partnersRows, color:'#6d28d9',
-    targetGauge: { target:200, value:partnersToDate, label:'Ціль: 200 партнерів у мережі', fmt:'int' } });
+  const partnersGrid = mkGrid('Partners', `target: 200 partners in the network · ${note}`);
+  buildCard(partnersGrid, { title:'Partners in network', periodLabels, metrics:partnersRows, color:'#6d28d9',
+    targetGauge: { target:200, value:partnersToDate, label:'Target: 200 partners in the network', fmt:'int' } });
 }
 
 /* demo fallback for the Weekly tab (used only if WEEKLY_SCRIPT_URL is unreachable) */
