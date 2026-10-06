@@ -195,11 +195,11 @@ table.mini td.wk-cum-pct .badge { font-size:10px; padding:2px 5px; white-space:n
    drops onto its own full-width row below the table when there truly isn't room for it
    beside the table at its fixed width — no horizontal scrollbar either way. */
 .mn-card-body { display:flex; flex-wrap:wrap; align-items:flex-start; gap:14px; min-width:0; }
-/* Flat card treatment (same Variant B redesign as the KPI row above): background-plane
-   only, no border — Weekly's own cards (.wk-card without .mn-card) keep their original
-   bordered look untouched. No current-month highlighting in this table (tried, then
-   asked to be removed) — every month column reads the same. */
-.mn-card { border:none; background:var(--surface2); }
+/* Table+chart cards share the KPI widgets' look: white surface, same thin border (both
+   come from .wk-card / .mn-kpi-card using the same tokens), so the Strategic tab reads as
+   one system. No current-month highlighting in these tables — every month column reads
+   the same. */
+.mn-card { background:var(--surface); border:1px solid var(--border); }
 .mn-table-col { flex:1 1 480px; min-width:0; }
 .mn-chart-col { flex:0 0 400px; width:400px; }
 .mn-chart-caption { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; text-align:center; }
@@ -1417,10 +1417,11 @@ function renderWeekly(data){
    ══════════════════════════════════════════════════════
    Rebuilt (Sept 2026) on the SAME weekly report as "4 Weeks", reusing the exact same
    PARTNER_FUNNEL contributor mapping above — just aggregated into calendar months over
-   the whole period to date instead of a rolling 4-week window. A week straddling two
-   months (e.g. 27.08–02.09) is split PROPORTIONALLY between them by day count: a week
-   with 4 days in August and 3 in September contributes 4/7 of its plan/fact to August
-   and 3/7 to September. */
+   the whole period to date instead of a rolling 4-week window. A week is NEVER split:
+   the report only has weekly totals (no daily data) and the metrics are indivisible
+   events (a call, a deal, a lead), so a week straddling two months (e.g. 28.09–04.10)
+   goes ENTIRELY, plan and fact together, to the month it ENDS in (October there). Same
+   "week belongs to the month it ends in" rule mnLastCompletedMonthIdx already uses. */
 const MN_NAMES_UA = ['Січ','Лют','Бер','Кві','Тра','Чер','Лип','Сер','Вер','Жов','Лис','Гру'];
 function mnMonthKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
 function mnParseWeekRange(label){
@@ -1436,8 +1437,8 @@ function mnParseWeekRange(label){
    happen to fall into) — months a week never touches simply get 0 later on, via
    mnProrateToMonths' zero-initialized buckets, instead of being left out of the table.
    perWeekSplit still only walks COMPLETED weeks [0..lastIdx] — same "to date" boundary
-   the 4-week window uses — bucketing each day into its calendar month; that per-week
-   split is the basis for prorating every metric. */
+   the 4-week window uses — and maps each such week to exactly ONE month (the one its
+   end date falls in) as {monthKey: 1}, so nothing is ever divided between months. */
 function mnBuildMonthSplits(weekLabels, lastIdx){
   const months = [];
   for(let mo=0; mo<12; mo++){
@@ -1448,20 +1449,17 @@ function mnBuildMonthSplits(weekLabels, lastIdx){
     const range = i<=lastIdx ? mnParseWeekRange(weekLabels[i]) : null;
     const split = {};
     if(range){
-      const day = new Date(range.start);
-      while(day <= range.end){
-        const key = mnMonthKey(day.getFullYear(), day.getMonth());
-        split[key] = (split[key]||0) + 1;
-        day.setDate(day.getDate()+1);
-      }
+      // Whole week -> the month it ends in (never split across months).
+      split[mnMonthKey(range.end.getFullYear(), range.end.getMonth())] = 1;
     }
     perWeekSplit.push(split);
   }
   return { months, perWeekSplit };
 }
-/* Prorates one channel-metric's full (unwindowed) weekly {plan,fact}[] array into a
-   monthly array aligned to `months`, splitting each week across the months it touches
-   proportional to day count. A month no week ever touches stays at its 0/0 default —
+/* Aggregates one channel-metric's full (unwindowed) weekly {plan,fact}[] array into a
+   monthly array aligned to `months`. perWeekSplit now maps every week to a single month
+   (fraction 1), so this is a plain sum of whole weeks — the proportional-split code path
+   is kept only because it degenerates to that. A month no week ever touches stays at 0/0 —
    shown as "0" rather than "—", so the table always has all 12 months filled in. */
 function mnProrateToMonths(weekly, perWeekSplit, months){
   const byKey = {}; months.forEach(mo=> byKey[mo.key] = { plan:0, fact:0 });
@@ -1814,12 +1812,11 @@ function mnRenderConsolidated(data, legacyUpwork){
     const lead2salePct = (leadsM.fact) ? (salesM.fact!=null ? Math.round(salesM.fact/leadsM.fact*100) : null) : null;
 
     // Month-over-month: the previous fully-completed month's fact for each metric, plus
-    // its short label for the badge's small "до <month>" caption. Real data throughout —
+    // a generic "до попер. міс." caption (not a specific month name). Real data throughout —
     // the same `weekly`/`months` arrays the detail sections below are built from.
     const prevMonthIdx = mIdx-1;
     const prevInRange = inRange && prevMonthIdx>=0;
-    const prevMonthLabel = prevInRange ? MN_NAMES_UA[months[prevMonthIdx].m] : null;
-    const deltaNote = prevMonthLabel ? `до ${prevMonthLabel}` : '';
+    const deltaNote = prevInRange ? 'до попер. міс.' : '';
     const leadsPrevFact = prevInRange ? leadsTotal.weekly[prevMonthIdx].fact : null;
     const callsPrevFact = prevInRange ? callsTotal.weekly[prevMonthIdx].fact : null;
     const salesPrevFact = prevInRange ? salesTotal.weekly[prevMonthIdx].fact : null;
@@ -1860,7 +1857,7 @@ function mnRenderConsolidated(data, legacyUpwork){
     container.appendChild(row);
   })();
 
-  const note = `помісячно (тиждень ділиться пропорційно дням між місяцями) · з початку звітного періоду`;
+  const note = `помісячно (тиждень цілком іде в місяць, у якому закінчується) · з початку звітного періоду`;
   const mkGrid = (key, sectionNote) => wkBuildSection(container, key, sectionNote);
   // Every card below shares the same reporting boundary — thread it through here once
   // instead of repeating it on each call (see mnBuildCard's draw() for what it's for).
