@@ -344,8 +344,8 @@ table.mini tr.wk-total td.wk-cum { background:#f3f3f0; }
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-logo" id="tb-logo">W</div>
-    <div class="topbar-title" id="tb-title">Operational <span>/ Channels Dashboard</span></div>
+    <div class="topbar-logo" id="tb-logo">Σ</div>
+    <div class="topbar-title" id="tb-title">Strategic <span>/ Channels Dashboard</span></div>
   </div>
   <div class="topbar-right">
     <span class="topbar-date" id="js-date">—</span>
@@ -456,7 +456,7 @@ table.mini tr.wk-total td.wk-cum { background:#f3f3f0; }
 </div>
 <!-- CONSOLIDATED TAB (rebuilt Sept 2026: Маркетинг / Сейлс / Партнерка, sourced from the same
      weekly report as "4 Weeks" but aggregated into months over the full period to date). -->
-<div id="consolidated-tab-view" style="display:none">
+<div id="consolidated-tab-view">
   <div id="consolidated-groups-container"></div>
 </div>
 <!-- WEEKLY TAB (separate Google doc: SMM / SALES per-week blocks) — the default landing
@@ -464,7 +464,7 @@ table.mini tr.wk-total td.wk-cum { background:#f3f3f0; }
      widgets that used to sit here were removed at the user's request; renderWeekly() now
      just builds the funnel cards (split into Marketing/Sales sections) straight into
      #weekly-groups-container. -->
-<div id="weekly-tab-view">
+<div id="weekly-tab-view" style="display:none">
   <div id="weekly-groups-container"></div>
 </div>
 <!-- UNIT ECONOMICS TAB (placeholder — LTV/CAC, their ratio, budgets, spend & revenue by
@@ -495,7 +495,7 @@ const CHANNELS = [
   { key:'weekly',       label:'Operational',    logo:'W' },
   { key:'unitecon',     label:'Unit Economics', logo:'E' },
 ];
-let currentChannel = 'weekly';
+let currentChannel = 'consolidated'; // Operational is hidden (Oct 2026) — Strategic opens first
 /* The old "Weekly progress · current month" block (Upwork/Partnership tabs) now
    duplicates the new Weekly tab — hidden for now. Flip back to true to restore it. */
 const SHOW_MONTHLY_WEEKLY_PROGRESS = false;
@@ -978,7 +978,9 @@ function r2(v){ return v==null ? null : Math.round(v*100)/100; }
    without rebuilding anything. */
 /* Tab bar order follows THIS array's order (not CHANNELS' declaration order) — map, not
    filter, so reordering tabs is just reordering these keys. */
-const VISIBLE_TAB_KEYS = ['weekly', 'consolidated', 'unitecon'];
+/* 'weekly' (Operational) is hidden for now — its code and data stay intact (Strategic is
+   built from the same weekly report); put 'weekly' back into this list to restore the tab. */
+const VISIBLE_TAB_KEYS = ['consolidated', 'unitecon'];
 function buildTabs(){
   const el = document.getElementById('tabs');
   el.innerHTML = VISIBLE_TAB_KEYS.map(key=> CHANNELS.find(c=>c.key===key)).filter(Boolean).map(c =>
@@ -1258,6 +1260,9 @@ const WK_I18N_RAW = {
   'Всього контактів':'Total contacts', 'Написали':'Messaged', 'Прийняли запит':'Accepted request',
   'Партнерів в мережі':'Partners in network', 'Отримано лідів':'Leads received',
   'Проведено зустрічей з лідами':'Meetings held with leads', 'Разом':'Total',
+  'Партнерська мережа clients':'Partner network (clients)', 'Сайт':'Website',
+  'Всі заявки / контакти':'All requests/contacts', 'Відповіді':'Replies', 'Релевантні відповіді':'Relevant replies',
+  'Заплановані дзвінки':'Calls scheduled', 'Проведені дзвінки':'Calls held',
 };
 const WK_I18N = {};
 Object.keys(WK_I18N_RAW).forEach(k=>{ WK_I18N[wkNormLabel(k)] = WK_I18N_RAW[k]; });
@@ -1410,6 +1415,7 @@ const PARTNER_FUNNEL = {
     // with a lead there IS the lead, so its "Ліди" fact reads from the same "Проведено
     // зустрічей з лідами" row as "Зустрічі проведено" below, instead of a nonexistent one.
     { channel:'Партнерська мережа Solve',        labels:['Проведено зустрічей з лідами'] },
+    { channel:'Партнерська мережа clients',      labels:['Отримано лідів'] },
   ],
   'Зустрічі проведено': [
     { channel:'Behance', labels:['Дзвінки'] },
@@ -1418,6 +1424,7 @@ const PARTNER_FUNNEL = {
     { channel:'Партнерська мережа (комʼюніті)', labels:['Проведено зустрічей з лідами'] },
     { channel:'Партнерська мережа',              labels:['Проведено зустрічей з лідами'] },
     { channel:'Партнерська мережа Solve',        labels:['Проведено зустрічей з лідами'] },
+    { channel:'Партнерська мережа clients',      labels:['Проведено зустрічей з лідами'] },
   ],
   'Угоди': [
     { channel:'Behance', labels:['Угоди'] },
@@ -1426,8 +1433,29 @@ const PARTNER_FUNNEL = {
     { channel:'Партнерська мережа (комʼюніті)', labels:['Угоди'] },
     { channel:'Партнерська мережа',              labels:['Угоди'] },
     { channel:'Партнерська мережа Solve',        labels:['Угоди'] },
+    { channel:'Партнерська мережа clients',      labels:['Угоди'] },
   ],
 };
+/* SMM, Сайт (website) and CSR feed the same three funnel metrics with the same row names.
+   SMM is ONE row: every channel of the sheet's "SMM" group (Instagram, LinkedIn ×2, Threads,
+   and any SMM channel added later) summed together — `group` instead of `channel`. They are
+   inserted right after Fiverr so the tables read: platforms → SMM → website → CSR → partners. */
+(function(){
+  const extra = (label) => [
+    { group:'SMM', label:'SMM', labels:[label] },
+    { channel:'Сайт', labels:[label] },
+    { channel:'CSR',  labels:[label] },
+  ];
+  const insertAfterFiverr = (key, label) => {
+    const arr = PARTNER_FUNNEL[key];
+    const i = arr.findIndex(c=> c.channel==='Fiverr');
+    arr.splice(i+1, 0, ...extra(label));
+  };
+  insertAfterFiverr('Отримано лідів', 'Отримано лідів');
+  insertAfterFiverr('Зустрічі проведено', 'Проведено зустрічей з лідами');
+  insertAfterFiverr('Угоди', 'Угоди');
+  PARTNER_FUNNEL['Партнерів в мережі'].push({ channel:'Партнерська мережа clients', labels:['Партнерів в мережі'] });
+})();
 /* Ліди / дзвінки / партнери are always whole numbers; conversions (%, already fmt:'pct')
    and угоди/продажі are allowed up to 2 decimal places — set by both wkBuildFunnelMetrics
    (Weekly's "Зведена воронка") and mnBuildMetricRows (Consolidated) so the two views never
@@ -1462,8 +1490,39 @@ function wkNormLabel(s){
    so a mapping that doesn't (yet) apply just renders as "—" instead of throwing. Label
    matching is done via wkNormLabel() so minor dash/whitespace/case differences in the
    sheet's actual cell text don't cause a silent miss. */
+function wkFindChannel(channelsByName, channelName){
+  if(channelsByName[channelName]) return channelsByName[channelName];
+  const want = wkNormLabel(channelName);
+  const key = Object.keys(channelsByName).find(k=> wkNormLabel(k)===want);
+  return key ? channelsByName[key] : null;
+}
+/* Channel index used by both tabs: name → channel, plus a non-enumerable `byGroup`
+   (normalized group name → channel names) for group-level contributors like SMM. */
+function wkIndexChannels(groups){
+  const channelsByName = {};
+  const byGroup = {};
+  wkVisibleGroups(groups).forEach(g=> g.channels.forEach(ch=>{
+    channelsByName[ch.key] = ch;
+    const gk = wkNormLabel(g.key);
+    (byGroup[gk] = byGroup[gk] || []).push(ch.key);
+  }));
+  Object.defineProperty(channelsByName, 'byGroup', { value:byGroup, enumerable:false });
+  return channelsByName;
+}
+/* Weekly {plan,fact} for one funnel contributor: a single channel, or (c.group) the sum of
+   every channel in that sheet group. null if nothing in this run's data matches. */
+function wkContributorWeekly(channelsByName, c, weekCount){
+  if(!c.group) return wkChannelWeekly(channelsByName, c.channel, c.labels, weekCount);
+  const names = (channelsByName.byGroup || {})[wkNormLabel(c.group)] || [];
+  const parts = names.map(n=> wkChannelWeekly(channelsByName, n, c.labels, weekCount)).filter(Boolean);
+  if(!parts.length) return null;
+  const out = [];
+  for(let i=0;i<weekCount;i++) out.push(wkSumWeek(parts.map(p=> p[i])));
+  return out;
+}
+function wkContributorLabel(c){ return c.label || wkShortLabel(c.channel); }
 function wkChannelWeekly(channelsByName, channelName, labels, weekCount){
-  const channel = channelsByName[channelName];
+  const channel = wkFindChannel(channelsByName, channelName);
   if(!channel) return null;
   const normLabels = labels.map(wkNormLabel);
   const matches = channel.metrics.filter(m=> normLabels.includes(wkNormLabel(m.label)));
@@ -1480,14 +1539,14 @@ function wkBuildFunnelMetrics(canonicalLabel, winStart, winEnd, allWeekLabels, c
   const rows = [];
   const totalWeekly = allWeekLabels.map(()=>({plan:null, fact:null}));
   contributors.forEach(c=>{
-    const weekly = wkChannelWeekly(channelsByName, c.channel, c.labels, allWeekLabels.length);
+    const weekly = wkContributorWeekly(channelsByName, c, allWeekLabels.length);
     if(!weekly) return; // that channel/metric isn't present in this run's data — skip, don't guess
     weekly.forEach((w,i)=>{
       if(w.plan!=null) totalWeekly[i].plan = (totalWeekly[i].plan||0) + w.plan;
       if(w.fact!=null) totalWeekly[i].fact = (totalWeekly[i].fact||0) + w.fact;
     });
     const windowed = weekly.slice(winStart, winEnd+1);
-    rows.push({ label:wkShortLabel(c.channel), weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed), fmt });
+    rows.push({ label:wkContributorLabel(c), weekly:windowed, planCum:wkCumulatePlan(windowed), factCum:wkCumulateFact(windowed), fmt });
   });
   const totalWindowed = totalWeekly.slice(winStart, winEnd+1);
   // "Партнерів в мережі" is treated exactly like every other funnel row here — plan/fact
@@ -1514,8 +1573,7 @@ function renderWeekly(data){
 
   // flat channel lookup by exact name, for the cross-channel Зведена воронка block below
   const visibleGroups = wkVisibleGroups(data.groups);
-  const channelsByName = {};
-  visibleGroups.forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
+  const channelsByName = wkIndexChannels(data.groups);
 
   // The cross-channel funnel cards are pinned at the top, in one Sales section — "Партнерів
   // в мережі" (top-of-funnel, Marketing's own metric) is dropped from this tab entirely
@@ -1623,14 +1681,14 @@ function mnBuildMetricRows(canonicalLabel, months, perWeekSplit, allWeekLabels, 
   const rows = [];
   const totalMonthly = months.map(()=>({plan:0, fact:0}));
   contributors.forEach(c=>{
-    const weekly = wkChannelWeekly(channelsByName, c.channel, c.labels, allWeekLabels.length);
+    const weekly = wkContributorWeekly(channelsByName, c, allWeekLabels.length);
     if(!weekly) return; // channel/metric not present in this run's data — skip, don't guess
     const monthly = mnProrateToMonths(weekly, perWeekSplit, months);
     monthly.forEach((w,i)=>{
       totalMonthly[i].plan += w.plan;
       totalMonthly[i].fact += w.fact;
     });
-    rows.push({ label:wkShortLabel(c.channel), weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
+    rows.push({ label:wkContributorLabel(c), weekly:monthly, planCum:wkCumulatePlan(monthly), factCum:wkCumulateFact(monthly), fmt });
   });
   rows.push({ label:'Total', weekly:totalMonthly, planCum:wkCumulatePlan(totalMonthly), factCum:wkCumulateFact(totalMonthly), isTotal:true, fmt });
   return rows;
@@ -1952,8 +2010,7 @@ function mnRenderConsolidated(data, legacyUpwork){
   }
   const periodLabels = months.map(mo=>mo.label);
 
-  const channelsByName = {};
-  wkVisibleGroups(data.groups).forEach(g=> g.channels.forEach(ch=>{ channelsByName[ch.key] = ch; }));
+  const channelsByName = wkIndexChannels(data.groups);
 
   const leadsRows    = mnBuildMetricRows('Отримано лідів',    months, perWeekSplit, allWeekLabels, channelsByName);
   const callsRows    = mnBuildMetricRows('Зустрічі проведено', months, perWeekSplit, allWeekLabels, channelsByName);
