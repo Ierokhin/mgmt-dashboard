@@ -339,6 +339,10 @@ table.mini tr.wk-total td.wk-cum { background:#f3f3f0; }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
 /* Unit Economics tab */
+.ue-kb { align-items:stretch; }
+.ue-kb .kb-group { display:flex; flex-direction:column; }
+.ue-kb .kb-card { flex:1; }
+.ue-card .fn-step, .ue-spend .fn-step { align-content:center; }
 .ue-null { color:var(--text-faint); }
 .ue-card .fn-step { grid-template-columns:36px minmax(0,1fr); column-gap:12px; padding:20px 10px 20px 18px; }
 .ue-card .fn-val { font-size:34px; letter-spacing:-1.2px; }
@@ -504,7 +508,7 @@ const WEEKLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwve64_Invbns
    own Apps Script (the one that already serves the financial dashboard, extended with a
    `?view=unit` branch — see unit_economics_apps_script.gs). Paste that web app's /exec URL here;
    while it is empty the tab shows a September demo. */
-const UNIT_SCRIPT_URL = '';
+const UNIT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw36nrATLLcCmObsP884WvULlXafjC6yl1sZIWYy00wh55oEKhm9XuGcpTkfsosnVsa8g/exec';
 const CHANNELS = [
   { key:'consolidated', label:'Strategic',      logo:'Σ' },
   { key:'upwork',       label:'Upwork',         logo:'U' },
@@ -2305,6 +2309,10 @@ function ueStepHtml(s){ // {label, icon, color, value, fmt, prev, prevLabel, mod
   const trend = s.prevLabel!=null
     ? `<div class="fn-trend">${ueTrendPillHtml(s.prev, s.value, s.mode)}<span class="fn-trend-note">vs ${s.prevLabel}</span></div>` : '';
   let extra = `<div class="fn-target">${s.sub||''}</div>`;
+  if(s.spacer){ // invisible copy of the benchmark row, so every step has the same height and the numbers line up
+    extra = `<div class="fn-target" style="visibility:hidden" aria-hidden="true"><b>0</b> / <b>0</b> benchmark</div>
+      <div class="fn-bar" style="visibility:hidden" aria-hidden="true"><div class="fn-track"></div><span class="fn-pct">0%</span></div>`;
+  }
   if(s.target!=null){
     const pctRaw = s.value!=null ? Math.round(s.value/s.target*100) : 0;
     extra = `<div class="fn-target"><b>${ueFmt(s.value,s.fmt)}</b> / <b>${ueFmt(s.target,s.fmt)}</b> ${s.targetLabel||''}</div>
@@ -2444,9 +2452,9 @@ function mnRenderUnitEcon(unitRaw, weekly){
         <div class="kb-hint">Lifetime value vs cost of acquisition <span class="kb-info" tabindex="0" data-tip="${ratioTip}">i</span></div>
       </div>
       <div class="kb-card fn-card ue-card">
-        ${ueStepHtml({ label:'LTV', icon:'layers', color:UE_COLOR.ltv, value:at(ltvT,latest), fmt:'eur', prev:at(ltvT,prevIdx), prevLabel, mode:'up', sub:'CM 18 mo ÷ unique clients' })}
+        ${ueStepHtml({ label:'LTV', icon:'layers', color:UE_COLOR.ltv, value:at(ltvT,latest), fmt:'eur', prev:at(ltvT,prevIdx), prevLabel, mode:'up', spacer:true })}
         ${ueOpHtml('÷', 'divided by')}
-        ${ueStepHtml({ label:'CAC', icon:'coin', color:UE_COLOR.cac, value:at(cacT,latest), fmt:'eur', prev:at(cacT,prevIdx), prevLabel, mode:'down', sub:'BD costs 12 mo ÷ sales 12 mo' })}
+        ${ueStepHtml({ label:'CAC', icon:'coin', color:UE_COLOR.cac, value:at(cacT,latest), fmt:'eur', prev:at(cacT,prevIdx), prevLabel, mode:'down', spacer:true })}
         ${ueOpHtml('=', 'ratio')}
         ${ueStepHtml({ label:'LTV / CAC', icon:'percent', color:UE_COLOR.ratio, value:at(ratioT,latest), fmt:'x', prev:at(ratioT,prevIdx), prevLabel, mode:'up', target:UE_BENCHMARK, targetLabel:'benchmark' })}
       </div>
