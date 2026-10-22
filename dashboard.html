@@ -338,6 +338,23 @@ table.mini tr.wk-total td.wk-cum { background:#f3f3f0; }
 }
 /* FOOTER */
 .footer { text-align:center; padding:20px; font-family:'DM Mono',monospace; font-size:10px; color:var(--text-faint); border-top:1px solid var(--border); background:var(--surface); }
+/* Unit Economics tab */
+.ue-null { color:var(--text-faint); }
+.ue-card .fn-step { grid-template-columns:36px minmax(0,1fr); column-gap:12px; padding:20px 10px 20px 18px; }
+.ue-card .fn-val { font-size:34px; letter-spacing:-1.2px; }
+.ue-card .fn-link { flex-basis:92px; }
+.ue-card .fn-conv { width:68px; height:68px; }
+.ue-card .fn-conv b { font-size:20px; }
+.ue-spend { flex-direction:column; }
+.ue-spend .fn-step { grid-template-columns:36px minmax(0,1fr); column-gap:12px; padding:20px 18px; }
+.ue-spend .fn-val { font-size:34px; letter-spacing:-1.2px; }
+.ue-spend .pn-divider { width:auto; height:1px; margin:0 20px; }
+.ue-spend .pn-total { flex:1 1 auto; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px 18px; }
+.ue-spend .pn-total .fn-val { margin-top:0; font-size:28px; }
+.ue-spend .pn-total-unit { display:none; }
+@media (max-width:860px){
+  .ue-card .fn-conv { width:auto; height:auto; }
+}
 </style>
 </head>
 <body>
@@ -467,13 +484,10 @@ table.mini tr.wk-total td.wk-cum { background:#f3f3f0; }
 <div id="weekly-tab-view" style="display:none">
   <div id="weekly-groups-container"></div>
 </div>
-<!-- UNIT ECONOMICS TAB (placeholder — LTV/CAC, their ratio, budgets, spend & revenue by
-     channel; not wired to a data source yet). -->
+<!-- UNIT ECONOMICS TAB: channel cost, cost per lead, partner cost, sales / CAC / LTV / LTV-CAC
+     (finance sheet "ФР 2026" → "Unit Economics", plus leads and new partners from the weekly report). -->
 <div id="unitecon-tab-view" style="display:none">
-  <div class="wk-empty-state">
-    <div class="wk-empty-title">Unit Economics</div>
-    <div class="wk-empty-text">Coming soon: LTV/CAC, their ratio, budgets and revenue by channel.</div>
-  </div>
+  <div id="unitecon-groups-container"></div>
 </div>
 </div>
 <div class="footer" id="footer">Channels Dashboard · 2025 · Data updates automatically from Google Sheets</div>
@@ -486,6 +500,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxR2qdwpXxtIOeD2jBgI
    ("План/Факт weekly BD"). Deploy that script as its own web app and paste
    the resulting /exec URL below. */
 const WEEKLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwve64_InvbnsMCtPadwQg5wz-qS0wnVN1QDs6CFGAllyNUPwtkh2TSOdXXm5kvhH_EDQ/exec';
+/* Unit Economics tab reads the FINANCE spreadsheet ("ФР 2026", tab "Unit Economics") through its
+   own Apps Script (the one that already serves the financial dashboard, extended with a
+   `?view=unit` branch — see unit_economics_apps_script.gs). Paste that web app's /exec URL here;
+   while it is empty the tab shows a September demo. */
+const UNIT_SCRIPT_URL = '';
 const CHANNELS = [
   { key:'consolidated', label:'Strategic',      logo:'Σ' },
   { key:'upwork',       label:'Upwork',         logo:'U' },
@@ -1041,10 +1060,25 @@ function fetchAny(url){
 async function loadData(){
   const cmpSection = document.getElementById('cmp-section');
 
-  /* ── UNIT ECONOMICS tab: placeholder, no data source wired up yet ── */
+  /* ── UNIT ECONOMICS tab: finance sheet (costs, CAC, LTV…) + weekly report (leads, new partners) ── */
   if(currentChannel === 'unitecon'){
     cmpSection.style.display = 'none';
-    pill.className='live-pill'; pillText.textContent='—';
+    const weeklyPromise = fetchAny(WEEKLY_SCRIPT_URL).then(d=> (d && !d.error) ? d : null).catch(()=> null);
+    let unitRaw = null, status = 'Demo (not connected)';
+    if(UNIT_SCRIPT_URL){
+      try {
+        const d = await fetchAny(UNIT_SCRIPT_URL + (UNIT_SCRIPT_URL.indexOf('?')>=0 ? '&' : '?') + 'view=unit');
+        if(d.error) throw new Error(d.error);
+        unitRaw = d; status = 'live';
+      } catch(e){
+        status = 'Demo (offline)';
+        console.warn('Unit Economics live load failed, showing demo:', e.message);
+      }
+    }
+    const weekly = await weeklyPromise;
+    mnRenderUnitEcon(unitRaw || UE_DEMO, weekly);
+    if(status==='live'){ pill.className='live-pill'; pillText.textContent='Live · Google Sheets'; }
+    else { pill.className='live-pill error'; pillText.textContent=status; }
     return;
   }
 
@@ -1163,6 +1197,9 @@ const WK_SECTION_STYLE = {
   'Funnel summary':  { accent:'#1d4ed8', bg:'#eff6ff' },
   'Marketing': { accent:'#0891b2', bg:'#ecfeff' },
   'Sales':     { accent:'#047857', bg:'#ecfdf5' },
+  'Cost':      { accent:'#475569', bg:'#f1f5f9' },
+  'Unit economics': { accent:'#1d4ed8', bg:'#eff6ff' },
+  'Inputs':    { accent:'#64748b', bg:'#f8fafc' },
 };
 const WK_WINDOW_SIZE = 4; // last completed week + up to 3 previous
 
@@ -2138,6 +2175,349 @@ function mnRenderConsolidated(data, legacyUpwork){
   buildCard(partnersGrid, { title:'Partners in network', periodLabels, metrics:partnersRows, color:UI_COLOR.partners,
     targetGauge: { target:200, value:partnersToDate, label:'Target: 200 partners in the network', fmt:'int' } });
 }
+
+/* ══════════════════════════════════════════════════════
+   UNIT ECONOMICS TAB
+   Source: finance spreadsheet "ФР 2026", tab "Unit Economics" (UNIT_SCRIPT_URL, ?view=unit).
+   Blocks in the sheet (per channel, Jan–Dec): Chanels cost · Uniq clients last 18 mo ·
+   Sales last 12 mo · CM last 18 mo · BD costs last 12 mo · CAC · LTV · LTV/CAC.
+   Rules: an empty / error cell is "no data" → shown as a dash (never zero-filled); CAC, LTV and
+   LTV/CAC are taken from the sheet as calculated there, but a value ≤ 0 means its inputs are
+   empty (the sheet shows €0 / #DIV/0!), so it is shown as a dash too. Cost per lead and
+   partner cost combine this sheet's channel cost with the weekly report (leads / new partners).
+   ══════════════════════════════════════════════════════ */
+const UE_BLOCK_KEYS = ['cost','clients','sales','cm','bd','cac','ltv','ltvcac'];
+const UE_COLOR = { cost:'#64748b', cpl:'#2563eb', partner:'#7c3aed', sales:'#16a34a', cac:'#ea580c', ltv:'#16a34a', ratio:'#2563eb' };
+const UE_BENCHMARK = 3; // LTV/CAC rule of thumb
+function ueNorm(s){ return String(s==null?'':s).replace(/\s+/g,' ').trim().toLowerCase(); }
+/* finance-sheet channel name → row label of the weekly report (Strategic tables). RFP has no
+   counterpart there, so it never gets a cost-per-lead. */
+const UE_TO_WEEKLY = {};
+[
+  ['Upwork','Upwork'], ['SMM','SMM'], ['CSR','CSR'], ['Behance, Dribbble, Clutch','Behance'],
+  ['Fiverr','Fiverr'], ['Website','Website'],
+  ['Partner network (community)','Partner network (community)'],
+  ['Partner network','Partner network'],
+  ['Partner network (clients)','Partner network (clients)'],
+].forEach(([a,b])=>{ UE_TO_WEEKLY[ueNorm(a)] = ueNorm(b); });
+const UE_PARTNER_CHANNELS = ['Partner network (community)','Partner network','Partner network (clients)'].map(ueNorm);
+
+function ueFmt(v, fmt){
+  if(v==null || !isFinite(v)) return '—';
+  if(fmt==='eur'){
+    const a = Math.abs(v);
+    return '€' + (a>=100 ? Math.round(v) : Math.round(v*10)/10).toLocaleString('en-US');
+  }
+  if(fmt==='x') return String(Math.round(v*100)/100) + '×';
+  return String(Math.round(v));
+}
+function ueNormalize(raw){
+  const out = {};
+  UE_BLOCK_KEYS.forEach(k=>{
+    const b = raw && raw.blocks && raw.blocks[k];
+    out[k] = ((b && b.rows) || []).map(r=>({
+      label: String(r.name==null?'':r.name).replace(/\s+/g,' ').trim(),
+      isTotal: !!r.isTotal || /^total$/i.test(String(r.name==null?'':r.name).trim()),
+      values: Array.from({length:12}, (_,i)=>{ const v = (r.values||[])[i]; return (typeof v==='number' && isFinite(v)) ? v : null; }),
+    }));
+  });
+  return out;
+}
+const ueSumOf = arr => { const f = arr.filter(v=>v!=null); return f.length ? f.reduce((a,b)=>a+b,0) : null; };
+const ueLastOf = arr => { for(let i=arr.length-1;i>=0;i--) if(arr[i]!=null) return arr[i]; return null; };
+/* One block → table rows (channels + Total). additive blocks (cost, clients, sales, CM, BD)
+   get a Total summed from the channel rows (null if every channel is empty — the sheet's own
+   Total shows €0 there); ratio blocks keep the sheet's own Total row, positive values only. */
+function ueBlockRows(blocks, key, opts){
+  const o = opts || {};
+  const src = blocks[key] || [];
+  const clean = v => (v==null || (o.positiveOnly && v<=0)) ? null : v;
+  const chan = src.filter(r=>!r.isTotal).map(r=>({ label:r.label, values:r.values.map(clean) }));
+  let total;
+  if(o.additive){
+    // A Total of 0 means "nothing recorded" (e.g. CM before Upwork's figures start while the other
+    // channels read €0), not a real zero → dash.
+    total = Array.from({length:12}, (_,i)=>{ const s = ueSumOf(chan.map(r=>r.values[i])); return s ? s : null; });
+  } else {
+    const t = src.find(r=>r.isTotal);
+    total = t ? t.values.map(clean) : Array(12).fill(null);
+  }
+  const rows = chan.concat([{ label:'Total', values:total, isTotal:true }]);
+  rows.forEach(r=>{ r.fmt = o.fmt; r.summary = o.summary==='sum' ? ueSumOf(r.values) : ueLastOf(r.values); });
+  return rows;
+}
+/* Monthly leads / new partners per weekly-report row label, from the same month aggregation the
+   Strategic tab uses (a week counts fully toward the month it ends in). */
+function ueWeeklyFacts(weekly){
+  if(!weekly || !weekly.groups) return null;
+  const allWeekLabels = weekly.weekLabels || [];
+  const lastIdx = weekly.lastCompletedIndex!=null ? weekly.lastCompletedIndex : -1;
+  const { months, perWeekSplit } = mnBuildMonthSplits(allWeekLabels, lastIdx);
+  const idx = wkIndexChannels(weekly.groups);
+  const facts = rows => { const m = {}; rows.forEach(r=>{ if(!r.isTotal) m[ueNorm(r.label)] = r.weekly.map(w=>w.fact); }); return m; };
+  return {
+    leads:    facts(mnBuildMetricRows('Отримано лідів',    months, perWeekSplit, allWeekLabels, idx)),
+    partners: facts(mnBuildMetricRows('Партнерів в мережі', months, perWeekSplit, allWeekLabels, idx)),
+  };
+}
+/* cost ÷ count per channel and month. `countByLabel` = weekly-report facts keyed by normalised
+   row label; `mapFn` maps a finance-sheet channel to that key (null → not tracked → dashes).
+   A month with no cost, or a count of 0, is a dash. Total = cost of the tracked channels ÷
+   their combined count; the last column is the same ratio over the months that have a cost. */
+function ueCostPerRows(costRows, countByLabel, mapFn, include){
+  const rows = []; const tracked = [];
+  costRows.filter(r=>!r.isTotal).forEach(r=>{
+    if(include && !include(r)) return;
+    const key = countByLabel ? mapFn(r.label) : null;
+    const counts = key && countByLabel[key] ? countByLabel[key] : null;
+    const values = r.values.map((c,i)=>{
+      const n = counts ? counts[i] : null;
+      return (c!=null && n) ? c/n : null;
+    });
+    let costSum = 0, cntSum = 0;
+    if(counts) r.values.forEach((c,i)=>{ if(c!=null){ costSum += c; cntSum += (counts[i]||0); } });
+    rows.push({ label:r.label, values, fmt:'eur', summary: cntSum ? costSum/cntSum : null });
+    if(counts) tracked.push({ cost:r.values, counts });
+  });
+  const total = Array.from({length:12}, (_,i)=>{
+    const c = ueSumOf(tracked.map(t=>t.cost[i]));
+    const n = tracked.reduce((a,t)=> a + (t.cost[i]!=null ? (t.counts[i]||0) : 0), 0);
+    return (c!=null && n) ? c/n : null;
+  });
+  let cs = 0, ns = 0;
+  tracked.forEach(t=> t.cost.forEach((c,i)=>{ if(c!=null){ cs += c; ns += (t.counts[i]||0); } }));
+  rows.push({ label:'Total', values:total, isTotal:true, fmt:'eur', summary: ns ? cs/ns : null });
+  return rows;
+}
+
+/* ── presentation ── */
+function ueTrendPillHtml(prev, cur, mode){ // mode: 'up' (higher is good) | 'down' (lower is good) | 'neutral'
+  const d = mnMoMDeltaText(prev, cur);
+  let cls = d.cls, txt = d.text;
+  if(mode==='neutral') cls = 'badge-neu';
+  else if(mode==='down' && cls!=='badge-neu') cls = cls==='badge-good' ? 'badge-bad' : 'badge-good';
+  if(txt.startsWith('+')) txt = '↑ ' + txt.slice(1);
+  else if(txt.startsWith('-')) txt = '↓ ' + txt.slice(1);
+  else if(txt==='0%') txt = '→ 0%';
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+function ueStepHtml(s){ // {label, icon, color, value, fmt, prev, prevLabel, mode, sub, target, targetLabel}
+  const trend = s.prevLabel!=null
+    ? `<div class="fn-trend">${ueTrendPillHtml(s.prev, s.value, s.mode)}<span class="fn-trend-note">vs ${s.prevLabel}</span></div>` : '';
+  let extra = `<div class="fn-target">${s.sub||''}</div>`;
+  if(s.target!=null){
+    const pctRaw = s.value!=null ? Math.round(s.value/s.target*100) : 0;
+    extra = `<div class="fn-target"><b>${ueFmt(s.value,s.fmt)}</b> / <b>${ueFmt(s.target,s.fmt)}</b> ${s.targetLabel||''}</div>
+      <div class="fn-bar"><div class="fn-track"><div class="fn-fill" style="width:${Math.max(0,Math.min(pctRaw,100))}%;background:${s.color}"></div></div><span class="fn-pct">${s.value!=null?pctRaw+'%':'—'}</span></div>`;
+  }
+  return `<div class="fn-step">
+    ${uiIcon(s.icon, s.color, 'lg')}
+    <div class="fn-label">${s.label}</div>
+    <div class="fn-body">
+      <div class="fn-hero"><span class="fn-val">${ueFmt(s.value, s.fmt)}</span>${trend}</div>
+      ${extra}
+    </div>
+  </div>`;
+}
+function ueOpHtml(sym, caption){
+  return `<div class="fn-link"><div class="fn-conv"><b>${sym}</b><span>${caption}</span></div>
+    <svg class="fn-chev" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,0 40,50 0,100"/></svg></div>`;
+}
+function ueTableHtml(monthLabels, rows, fmt, sumLabel){
+  const head = monthLabels.map(m=>`<th class="wk-sub">${m}</th>`).join('');
+  const body = rows.map(r=>{
+    const cells = r.values.map(v=>`<td class="wk-sub${v==null?' ue-null':''}">${ueFmt(v, r.fmt||fmt)}</td>`).join('');
+    return `<tr${r.isTotal?' class="wk-total"':''}><td><span class="mrow-dot"></span>${r.label}</td>${cells}` +
+      `<td class="wk-sub wk-cum wk-cum-first${r.summary==null?' ue-null':''}">${ueFmt(r.summary, r.fmt||fmt)}</td></tr>`;
+  }).join('');
+  return `<table class="mini"><thead><tr><th>Channel</th>${head}<th class="wk-sub wk-cum wk-cum-first">${sumLabel}</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+let ueChartSeq = 0;
+let ueChartIds = [];
+function ueMakeChart(id, labels, values, color, fmt, seriesLabel){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(charts[id]) charts[id].destroy();
+  const f = v => ueFmt(v, fmt);
+  charts[id] = new Chart(el, {
+    type:'line',
+    data:{ labels, datasets:[ { ...factDS(values, color), label:seriesLabel } ] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ ...TOOLTIP, callbacks:{ label: c => c.parsed.y==null ? null : `${c.dataset.label}: ${f(c.parsed.y)}` } }
+      },
+      scales:{
+        x:{ grid:GRID, ticks:{color:'#9ca3af'}, border:{display:false} },
+        y:{ grid:GRID, ticks:{color:'#9ca3af', callback:f}, border:{display:false} }
+      }
+    }
+  });
+}
+/* Table (left) + chart (right) card — same shell as Strategic's cards; the chart shows the Total
+   row and follows whichever row is clicked. */
+function ueBuildCard(container, spec){ // {title, note, icon, color, monthLabels, rows, fmt, sumLabel}
+  const card = document.createElement('div');
+  card.className = 'wk-card mn-card';
+  const chartId = 'ue-chart-' + (ueChartSeq++);
+  ueChartIds.push(chartId);
+  card.innerHTML = `
+    <div class="wk-card-header">${uiIcon(spec.icon, spec.color)}<span class="wk-card-title">${spec.title}</span></div>
+    ${spec.note?`<div class="mn-card-note">${spec.note}</div>`:''}
+    <div class="mn-card-body">
+      <div class="wk-mini-wrap mn-table-col">${ueTableHtml(spec.monthLabels, spec.rows, spec.fmt, spec.sumLabel)}</div>
+      <div class="mn-chart-col">
+        <div class="mn-chart-caption" id="${chartId}-caption"></div>
+        <div class="chart-wrap mn-chart-wrap"><canvas id="${chartId}"></canvas></div>
+      </div>
+    </div>`;
+  container.appendChild(card);
+  const total = spec.rows.find(r=>r.isTotal) || spec.rows[spec.rows.length-1];
+  const caption = card.querySelector('#'+chartId+'-caption');
+  const draw = r => {
+    ueMakeChart(chartId, spec.monthLabels, r.values, spec.color, r.fmt||spec.fmt, r.label);
+    if(caption) caption.textContent = r.label;
+  };
+  draw(total);
+  const trs = card.querySelectorAll('.mn-table-col tbody tr');
+  trs.forEach((tr,i)=>{
+    const r = spec.rows[i];
+    if(!r) return;
+    tr.classList.add('mn-row-clickable');
+    if(r===total) tr.classList.add('mn-row-selected');
+    tr.addEventListener('click', ()=>{
+      trs.forEach(x=> x.classList.remove('mn-row-selected'));
+      tr.classList.add('mn-row-selected');
+      draw(r);
+    });
+  });
+}
+
+function mnRenderUnitEcon(unitRaw, weekly){
+  const container = document.getElementById('unitecon-groups-container');
+  ueChartIds.forEach(id=>{ if(charts[id]){ charts[id].destroy(); delete charts[id]; } });
+  ueChartIds = [];
+  container.innerHTML = '';
+
+  const blocks = ueNormalize(unitRaw);
+  const monthLabels = MN_NAMES.slice();
+
+  const cost    = ueBlockRows(blocks, 'cost',    { additive:true, fmt:'eur', summary:'sum' });
+  const sales   = ueBlockRows(blocks, 'sales',   { additive:true, fmt:'int', summary:'latest' });
+  const clients = ueBlockRows(blocks, 'clients', { additive:true, fmt:'int', summary:'latest' });
+  const cm      = ueBlockRows(blocks, 'cm',      { additive:true, fmt:'eur', summary:'latest' });
+  const bd      = ueBlockRows(blocks, 'bd',      { additive:true, fmt:'eur', summary:'latest' });
+  const cac     = ueBlockRows(blocks, 'cac',     { fmt:'eur', summary:'latest', positiveOnly:true });
+  const ltv     = ueBlockRows(blocks, 'ltv',     { fmt:'eur', summary:'latest', positiveOnly:true });
+  const ratio   = ueBlockRows(blocks, 'ltvcac',  { fmt:'x',   summary:'latest', positiveOnly:true });
+
+  const wf = ueWeeklyFacts(weekly);
+  const cpl = ueCostPerRows(cost, wf && wf.leads, n => UE_TO_WEEKLY[ueNorm(n)] || null);
+  const partnerCost = ueCostPerRows(cost, wf && wf.partners, n => UE_TO_WEEKLY[ueNorm(n)] || null,
+    r => UE_PARTNER_CHANNELS.includes(ueNorm(r.label)));
+
+  const tot = rows => rows.find(r=>r.isTotal);
+  const costT = tot(cost), cacT = tot(cac), ltvT = tot(ltv), ratioT = tot(ratio), cplT = tot(cpl);
+
+  // The widgets show the latest month that has any unit-economics figure.
+  let latest = -1;
+  [costT, cacT, ltvT, ratioT].forEach(r=> r.values.forEach((v,i)=>{ if(v!=null && i>latest) latest = i; }));
+  const at = (row, i) => (i>=0 && i<12) ? row.values[i] : null;
+  const prevIdx = latest-1;
+  const prevLabel = latest>0 ? MN_NAMES[prevIdx] : null;
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'mn-kpi-eyebrow';
+  eyebrow.innerHTML = `<span class="mn-kpi-eyebrow-text">Unit economics · ${latest>=0 ? MN_NAMES[latest]+' '+CURRENT_YEAR+' · latest month with data' : 'no data yet'}</span><div class="mn-kpi-eyebrow-rule"></div>`;
+  container.appendChild(eyebrow);
+
+  const ratioTip = 'LTV = contribution margin of the last 18 months ÷ unique clients of the last 18 months. CAC = BD costs of the last 12 months ÷ sales of the last 12 months. Both come from the Unit Economics sheet; a month without data shows a dash. LTV/CAC of 3× or more is the usual rule of thumb.';
+  const spendTip = 'Channels cost = total monthly spend on all lead channels (finance sheet). Cost per lead = spend of the channels tracked in the weekly report ÷ leads received in the month.';
+  const kb = document.createElement('div');
+  kb.className = 'kb ue-kb';
+  kb.innerHTML = `
+    <div class="kb-group">
+      <div class="kb-head">
+        <div class="kb-title">Unit economics</div>
+        <div class="kb-hint">Lifetime value vs cost of acquisition <span class="kb-info" tabindex="0" data-tip="${ratioTip}">i</span></div>
+      </div>
+      <div class="kb-card fn-card ue-card">
+        ${ueStepHtml({ label:'LTV', icon:'layers', color:UE_COLOR.ltv, value:at(ltvT,latest), fmt:'eur', prev:at(ltvT,prevIdx), prevLabel, mode:'up', sub:'CM 18 mo ÷ unique clients' })}
+        ${ueOpHtml('÷', 'divided by')}
+        ${ueStepHtml({ label:'CAC', icon:'coin', color:UE_COLOR.cac, value:at(cacT,latest), fmt:'eur', prev:at(cacT,prevIdx), prevLabel, mode:'down', sub:'BD costs 12 mo ÷ sales 12 mo' })}
+        ${ueOpHtml('=', 'ratio')}
+        ${ueStepHtml({ label:'LTV / CAC', icon:'percent', color:UE_COLOR.ratio, value:at(ratioT,latest), fmt:'x', prev:at(ratioT,prevIdx), prevLabel, mode:'up', target:UE_BENCHMARK, targetLabel:'benchmark' })}
+      </div>
+    </div>
+    <div class="kb-group">
+      <div class="kb-head">
+        <div class="kb-title">Marketing spend <span class="kb-info" tabindex="0" data-tip="${spendTip}">i</span></div>
+      </div>
+      <div class="kb-card pn-card ue-spend">
+        ${ueStepHtml({ label:'Channels cost', icon:'coin', color:UE_COLOR.cost, value:at(costT,latest), fmt:'eur', prev:at(costT,prevIdx), prevLabel, mode:'neutral', sub:'all lead channels' })}
+        <div class="pn-divider"></div>
+        <div class="pn-total">
+          <div class="pn-total-id">${uiIcon('users', UE_COLOR.cpl)}<span class="fn-label">Cost per lead</span></div>
+          <div class="fn-val">${ueFmt(at(cplT,latest),'eur')}</div>
+          <div class="pn-total-unit">per lead</div>
+        </div>
+      </div>
+    </div>`;
+  container.appendChild(kb);
+
+  const mk = (key, note, label) => wkBuildSection(container, key, note, false, label);
+  const monthly = 'monthly · EUR · a month without data shows a dash';
+
+  const costGrid = mk('Cost', monthly);
+  ueBuildCard(costGrid, { title:'Channels cost', note:'Spend per lead channel from the finance sheet. Last column: year to date.', icon:'coin', color:UE_COLOR.cost, monthLabels, rows:cost, fmt:'eur', sumLabel:'YTD' });
+  ueBuildCard(costGrid, { title:'Cost per lead', note: wf ? 'Channel cost ÷ leads received in the month (same leads as the Strategic tab). RFP has no leads row in the weekly report, so it is left out of the total. Last column: year to date.' : 'The weekly report is unreachable right now, so cost per lead cannot be calculated.', icon:'users', color:UE_COLOR.cpl, monthLabels, rows:cpl, fmt:'eur', sumLabel:'YTD' });
+  ueBuildCard(costGrid, { title:'Partner cost per new partner', note: wf ? 'Cost of the three Partner network channels ÷ new partners added to the network in the month (Strategic “New partners”). No new partners in a month → dash. Last column: year to date.' : 'The weekly report is unreachable right now, so partner cost cannot be calculated.', icon:'users', color:UE_COLOR.partner, monthLabels, rows:partnerCost, fmt:'eur', sumLabel:'YTD' });
+
+  const ueGrid = mk('Unit economics', 'rolling windows as calculated in the finance sheet · a month without data shows a dash');
+  ueBuildCard(ueGrid, { title:'Sales, last 12 months', note:'Rolling 12-month window: every month shows the sales of the 12 months up to it, so months are not additive. Last column: latest value.', icon:'handshake', color:UE_COLOR.sales, monthLabels, rows:sales, fmt:'int', sumLabel:'Latest' });
+  ueBuildCard(ueGrid, { title:'CAC', note:'BD costs (last 12 mo) ÷ sales (last 12 mo), as calculated in the sheet. Channels without sales yet have no CAC.', icon:'coin', color:UE_COLOR.cac, monthLabels, rows:cac, fmt:'eur', sumLabel:'Latest' });
+  ueBuildCard(ueGrid, { title:'LTV', note:'Contribution margin (last 18 mo) ÷ unique clients (last 18 mo), as calculated in the sheet.', icon:'layers', color:UE_COLOR.ltv, monthLabels, rows:ltv, fmt:'eur', sumLabel:'Latest' });
+  ueBuildCard(ueGrid, { title:'LTV / CAC', note:'LTV ÷ CAC. 3× or more is the usual rule of thumb.', icon:'percent', color:UE_COLOR.ratio, monthLabels, rows:ratio, fmt:'x', sumLabel:'Latest' });
+
+  const inGrid = mk('Inputs', 'what CAC and LTV are calculated from · click to expand');
+  const inLabel = inGrid.parentElement.previousElementSibling;
+  inLabel.classList.add('collapsed');
+  inGrid.parentElement.hidden = true;
+  ueBuildCard(inGrid, { title:'Unique clients, last 18 months', icon:'users', color:UE_COLOR.cost, monthLabels, rows:clients, fmt:'int', sumLabel:'Latest' });
+  ueBuildCard(inGrid, { title:'Contribution margin, last 18 months', icon:'layers', color:UE_COLOR.cost, monthLabels, rows:cm, fmt:'eur', sumLabel:'Latest' });
+  ueBuildCard(inGrid, { title:'BD costs, last 12 months', icon:'coin', color:UE_COLOR.cost, monthLabels, rows:bd, fmt:'eur', sumLabel:'Latest' });
+}
+
+/* Offline fallback for the Unit Economics tab (the September figures from the finance sheet),
+   used only while UNIT_SCRIPT_URL is empty or unreachable. */
+const UE_DEMO_CHANNELS = ['Upwork','SMM','CSR','RFP','Behance, Dribbble, Clutch','Fiverr','Website','Partner network (community)','Partner network','Partner network (clients)'];
+function ueDemoBlock(upwork, others, extra){
+  const rows = UE_DEMO_CHANNELS.map(n=>({ name:n, values: n==='Upwork' ? upwork : (extra && extra[n] ? extra[n] : others) }));
+  rows.push({ name:'Total', isTotal:true, values: Array(12).fill(null) });
+  return { rows };
+}
+const UE_DEMO = (function(){
+  const nulls = () => Array(12).fill(null);
+  const sep = v => { const a = nulls(); a[8] = v; return a; };
+  const zeros9 = () => nulls().map((_,i)=> i<9 ? 0 : null);
+  const costs = { 'Upwork':1099, 'SMM':949, 'CSR':240, 'RFP':132, 'Behance, Dribbble, Clutch':410, 'Fiverr':410, 'Website':240,
+                  'Partner network (community)':583, 'Partner network':687, 'Partner network (clients)':240 };
+  const costRows = UE_DEMO_CHANNELS.map(n=>({ name:n, values:sep(costs[n]) }));
+  costRows.push({ name:'Total', isTotal:true, values:nulls() });
+  const ratioBlock = v => { const b = ueDemoBlock(sep(v), nulls()); b.rows[b.rows.length-1].values = sep(v); return b; };
+  return { blocks:{
+    cost:    { rows:costRows },
+    clients: ueDemoBlock([18,19,19,21,22,22,20,19,19,null,null,null], zeros9()),
+    sales:   ueDemoBlock([10,9,8,9,9,9,8,6,6,null,null,null], zeros9()),
+    cm:      ueDemoBlock(sep(115701), zeros9()),
+    bd:      ueDemoBlock(sep(20818), zeros9()),
+    cac:     ratioBlock(3470),
+    ltv:     ratioBlock(6090),
+    ltvcac:  ratioBlock(1.76),
+  }};
+})();
 
 /* demo fallback for the Weekly tab (used only if WEEKLY_SCRIPT_URL is unreachable) */
 function wkDemoWeek(planPerWeek, fact1, weeksFilled, totalWeeks, seed){
