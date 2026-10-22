@@ -2213,7 +2213,7 @@ function ueFmt(v, fmt){
     const a = Math.abs(v);
     return '€' + (a>=100 ? Math.round(v) : Math.round(v*10)/10).toLocaleString('en-US');
   }
-  if(fmt==='pct') return String(Math.round(v*10)/10) + '%';
+  if(fmt==='pct') return v.toFixed(2) + '%'; // as in the sheet (two decimals)
   if(fmt==='x') return String(Math.round(v*100)/100) + '×';
   return String(Math.round(v));
 }
@@ -2257,7 +2257,8 @@ function ueBlockRows(blocks, key, opts){
    (0.6486 = 64.86%); a line with no value in a month is a dash. "Branding" and "Web" are the
    sheet's subtotal lines for the rows above them, so they are drawn like totals. */
 function ueMarginRows(blocks){
-  const src = (blocks.margin || []).filter(r=>!r.isTotal);
+  // Only the "Gross Margin …" rows: the sheet has other tables below this block (clients, Upwork …).
+  const src = (blocks.margin || []).filter(r=> /^gross\s+margin\s/i.test(r.label));
   const mx = Math.max(0, ...src.flatMap(r=> r.values.filter(v=>v!=null).map(Math.abs)));
   const k = mx <= 1.5 ? 100 : 1; // fractions → percent
   const rows = src.map(r=>{
