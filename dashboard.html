@@ -1291,6 +1291,7 @@ function wkVisibleGroups(groups){
    back to the original text, so a new sheet row never disappears. */
 const WK_I18N_RAW = {
   'Партнерська мережа (комʼюніті)':'Partner network (community)', 'Партнерська мережа':'Partner network',
+  'Партнерська мережа (outreach)':'Partner network (outreach)',
   'Партнерська мережа Solve':'Partner network Solve', 'Глобальний план':'Global plan',
   'LinkedIn Бориса':"LinkedIn (Boris)", 'LinkedIn Наталії':"LinkedIn (Natalia)",
   'Пости':'Posts', 'Нові підписники':'New followers', 'Охоплення':'Reach', 'Перегляди профілю':'Profile views',
@@ -1441,18 +1442,23 @@ function wkBuildSection(container, key, note, pinned, displayLabel){
    names. This maps each canonical stage to where it lives per channel, so the
    Зведена воронка block can show one row per contributing channel + a "Разом" total —
    still over the same 4-week window, still with the same Накопичувально column. */
+/* "Партнерська мережа (outreach Boris)", "(outreach Natalia)", "(outreach Oleksandr)" … are one
+   funnel source: every channel whose name is "Партнерська мережа (outreach …)" is summed into ONE
+   row "Partner network (outreach)" (a new outreach person added later is picked up automatically).
+   The plain old name "Партнерська мережа" is accepted too. */
+const WK_OUTREACH_RE = /^партнерська мережа(?: \(outreach[^)]*\))?$/;
 const PARTNER_FUNNEL_ORDER = ['Партнерів в мережі', 'Отримано лідів', 'Зустрічі проведено', 'Угоди'];
 const PARTNER_FUNNEL = {
   'Партнерів в мережі': [
     { channel:'Партнерська мережа (комʼюніті)', labels:['Партнерів в мережі'] },
-    { channel:'Партнерська мережа',              labels:['Партнерів в мережі'] },
+    { match:WK_OUTREACH_RE, label:'Partner network (outreach)', labels:['Партнерів в мережі'] },
   ],
   'Отримано лідів': [
     { channel:'Behance', labels:['Цільові'] },
     { channel:'Upwork',  labels:['Біди - відповіді', 'Інвайти отримано'] },
     { channel:'Fiverr',  labels:['Цільові'] },
     { channel:'Партнерська мережа (комʼюніті)', labels:['Отримано лідів'] },
-    { channel:'Партнерська мережа',              labels:['Отримано лідів'] },
+    { match:WK_OUTREACH_RE, label:'Partner network (outreach)', labels:['Отримано лідів'] },
     // Solve doesn't log a separate "leads received" row in the sheet — every meeting held
     // with a lead there IS the lead, so its "Ліди" fact reads from the same "Проведено
     // зустрічей з лідами" row as "Зустрічі проведено" below, instead of a nonexistent one.
@@ -1464,7 +1470,7 @@ const PARTNER_FUNNEL = {
     { channel:'Upwork',  labels:['Зустрічі проведено'] }, // Upwork has TWO rows with this exact label (bids flow + invites flow) — both get summed
     { channel:'Fiverr',  labels:['Дзвінки'] },
     { channel:'Партнерська мережа (комʼюніті)', labels:['Проведено зустрічей з лідами'] },
-    { channel:'Партнерська мережа',              labels:['Проведено зустрічей з лідами'] },
+    { match:WK_OUTREACH_RE, label:'Partner network (outreach)', labels:['Проведено зустрічей з лідами'] },
     { channel:'Партнерська мережа Solve',        labels:['Проведено зустрічей з лідами'] },
     { channel:'Партнерська мережа clients',      labels:['Проведено зустрічей з лідами'] },
   ],
@@ -1473,7 +1479,7 @@ const PARTNER_FUNNEL = {
     { channel:'Upwork',  labels:['Угоди'] },
     { channel:'Fiverr',  labels:['Угоди'] },
     { channel:'Партнерська мережа (комʼюніті)', labels:['Угоди'] },
-    { channel:'Партнерська мережа',              labels:['Угоди'] },
+    { match:WK_OUTREACH_RE, label:'Partner network (outreach)', labels:['Угоди'] },
     { channel:'Партнерська мережа Solve',        labels:['Угоди'] },
     { channel:'Партнерська мережа clients',      labels:['Угоди'] },
   ],
@@ -1554,6 +1560,14 @@ function wkIndexChannels(groups){
 /* Weekly {plan,fact} for one funnel contributor: a single channel, or (c.group) the sum of
    every channel in that sheet group. null if nothing in this run's data matches. */
 function wkContributorWeekly(channelsByName, c, weekCount){
+  if(c.match){ // every channel whose (normalised) name matches the pattern, summed
+    const names = Object.keys(channelsByName).filter(k=> c.match.test(wkNormLabel(k)));
+    const parts = names.map(n=> wkChannelWeekly(channelsByName, n, c.labels, weekCount)).filter(Boolean);
+    if(!parts.length) return null;
+    const out = [];
+    for(let i=0;i<weekCount;i++) out.push(wkSumWeek(parts.map(p=> p[i])));
+    return out;
+  }
   if(!c.group) return wkChannelWeekly(channelsByName, c.channel, c.labels, weekCount);
   const names = (channelsByName.byGroup || {})[wkNormLabel(c.group)] || [];
   const parts = names.map(n=> wkChannelWeekly(channelsByName, n, c.labels, weekCount)).filter(Boolean);
@@ -2202,10 +2216,11 @@ const UE_TO_WEEKLY = {};
   ['Upwork','Upwork'], ['SMM','SMM'], ['CSR','CSR'], ['Behance, Dribbble, Clutch','Behance'],
   ['Fiverr','Fiverr'], ['Website','Website'],
   ['Partner network (community)','Partner network (community)'],
-  ['Partner network','Partner network'],
+  ['Partner network','Partner network (outreach)'],
+  ['Partner network (outreach)','Partner network (outreach)'],
   ['Partner network (clients)','Partner network (clients)'],
 ].forEach(([a,b])=>{ UE_TO_WEEKLY[ueNorm(a)] = ueNorm(b); });
-const UE_PARTNER_CHANNELS = ['Partner network (community)','Partner network','Partner network (clients)'].map(ueNorm);
+const UE_PARTNER_CHANNELS = ['Partner network (community)','Partner network','Partner network (outreach)','Partner network (clients)'].map(ueNorm);
 
 function ueFmt(v, fmt){
   if(v==null || !isFinite(v)) return '—';
