@@ -2254,12 +2254,15 @@ function ueFmt(v, fmt){
   if(fmt==='x') return String(Math.round(v*100)/100) + '×';
   return String(Math.round(v));
 }
+/* The finance sheet's "Partner network" row is the outreach channel (weekly report: three outreach
+   channels consolidated) — shown under that name everywhere on this tab. */
+function ueDisplayName(n){ return ueNorm(n)==='partner network' ? 'Partner network (outreach)' : n; }
 function ueNormalize(raw){
   const out = {};
   UE_BLOCK_KEYS.forEach(k=>{
     const b = raw && raw.blocks && raw.blocks[k];
     out[k] = ((b && b.rows) || []).map(r=>({
-      label: String(r.name==null?'':r.name).replace(/\s+/g,' ').trim(),
+      label: ueDisplayName(String(r.name==null?'':r.name).replace(/\s+/g,' ').trim()),
       isTotal: !!r.isTotal || /^total$/i.test(String(r.name==null?'':r.name).trim()),
       values: Array.from({length:12}, (_,i)=>{ const v = (r.values||[])[i]; return (typeof v==='number' && isFinite(v)) ? v : null; }),
     }));
