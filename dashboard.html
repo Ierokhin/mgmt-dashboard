@@ -1689,11 +1689,12 @@ function renderWeekly(data){
    ══════════════════════════════════════════════════════
    Rebuilt (Sept 2026) on the SAME weekly report as "4 Weeks", reusing the exact same
    PARTNER_FUNNEL contributor mapping above — just aggregated into calendar months over
-   the whole period to date instead of a rolling 4-week window. A week is NEVER split:
-   the report only has weekly totals (no daily data) and the metrics are indivisible
-   events (a call, a deal, a lead), so a week straddling two months (e.g. 28.09–04.10)
-   goes ENTIRELY, plan and fact together, to the month it ENDS in (October there). Same
-   "week belongs to the month it ends in" rule mnLastCompletedMonthIdx already uses. */
+   the whole period to date instead of a rolling 4-week window.
+   Month assignment (Oct 2026 rule): only WORKING days (Mon–Fri, no public holidays) count. A week
+   that straddles two months is split by its number of working days in each month — e.g. 28.09–04.10
+   = 3 working days in Sep, 2 in Oct. The PLAN is split in those proportions; indivisible FACT
+   (whole leads / calls / deals / new partners) goes ENTIRELY to the month holding MORE of the week's
+   working days (never a tie: 5 days split 4:1 or 3:2). Totals over the year are preserved. */
 const MN_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function mnMonthKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
 function mnParseWeekRange(label){
@@ -1705,12 +1706,20 @@ function mnParseWeekRange(label){
     end:   new Date(yy(m[6]), parseInt(m[5],10)-1, parseInt(m[4],10)),
   };
 }
-/* Always the full 12 months of the current year (not just the months completed weeks
-   happen to fall into) — months a week never touches simply get 0 later on, via
-   mnProrateToMonths' zero-initialized buckets, instead of being left out of the table.
-   perWeekSplit still only walks COMPLETED weeks [0..lastIdx] — same "to date" boundary
-   the 4-week window uses — and maps each such week to exactly ONE month (the one its
-   end date falls in) as {monthKey: 1}, so nothing is ever divided between months. */
+/* Working days (Mon–Fri) of a week range, counted per calendar month → {monthKey: days}. */
+function mnWorkdaysByMonth(range){
+  const out = {};
+  const d = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate());
+  const end = new Date(range.end.getFullYear(), range.end.getMonth(), range.end.getDate());
+  while(d <= end){
+    const wd = d.getDay();
+    if(wd>=1 && wd<=5){ const k = mnMonthKey(d.getFullYear(), d.getMonth()); out[k] = (out[k]||0) + 1; }
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+/* Always the full 12 months of the current year (months no week touches simply stay 0).
+   perWeekSplit only walks COMPLETED weeks [0..lastIdx] and maps each to {monthKey: workingDays}. */
 function mnBuildMonthSplits(weekLabels, lastIdx){
   const months = [];
   for(let mo=0; mo<12; mo++){
@@ -1719,32 +1728,37 @@ function mnBuildMonthSplits(weekLabels, lastIdx){
   const perWeekSplit = [];
   for(let i=0;i<weekLabels.length;i++){
     const range = i<=lastIdx ? mnParseWeekRange(weekLabels[i]) : null;
-    const split = {};
+    let split = {};
     if(range){
-      // Whole week -> the month it ends in (never split across months).
-      split[mnMonthKey(range.end.getFullYear(), range.end.getMonth())] = 1;
+      split = mnWorkdaysByMonth(range);
+      // degenerate range with no working day at all → fall back to the month it ends in
+      if(!Object.keys(split).length) split[mnMonthKey(range.end.getFullYear(), range.end.getMonth())] = 1;
     }
     perWeekSplit.push(split);
   }
   return { months, perWeekSplit };
 }
-/* Aggregates one channel-metric's full (unwindowed) weekly {plan,fact}[] array into a
-   monthly array aligned to `months`. perWeekSplit now maps every week to a single month
-   (fraction 1), so this is a plain sum of whole weeks — the proportional-split code path
-   is kept only because it degenerates to that. A month no week ever touches stays at 0/0 —
-   shown as "0" rather than "—", so the table always has all 12 months filled in. */
+/* Aggregates one channel-metric's full (unwindowed) weekly {plan,fact}[] array into a monthly
+   array aligned to `months`: plan is split by working days; a whole-number fact (indivisible
+   events) goes entirely to the month with more working days that week; a fractional fact is
+   split by working days like the plan. A month no week touches stays 0/0. */
 function mnProrateToMonths(weekly, perWeekSplit, months){
   const byKey = {}; months.forEach(mo=> byKey[mo.key] = { plan:0, fact:0 });
   weekly.forEach((w,i)=>{
     const split = perWeekSplit[i] || {};
-    const totalDays = Object.values(split).reduce((a,b)=>a+b,0);
+    const keys = Object.keys(split);
+    const totalDays = keys.reduce((a,k)=>a+split[k],0);
     if(!totalDays) return;
-    Object.keys(split).forEach(key=>{
+    const major = keys.reduce((best,k)=> split[k]>split[best] ? k : best, keys[0]);
+    keys.forEach(key=>{
       const frac = split[key]/totalDays;
       const bucket = byKey[key];
       if(!bucket) return;
       if(w.plan!=null) bucket.plan += w.plan*frac;
-      if(w.fact!=null) bucket.fact += w.fact*frac;
+      if(w.fact!=null){
+        if(Number.isInteger(w.fact)){ if(key===major) bucket.fact += w.fact; }
+        else bucket.fact += w.fact*frac;
+      }
     });
   });
   return months.map(mo=> byKey[mo.key]);
@@ -1984,16 +1998,24 @@ function mnTrendPillHtml(prevFact, curFact){
   else if(txt==='0%') txt = '→ 0%';
   return `<span class="badge ${d.cls}">${txt}</span>`;
 }
-/* The last calendar month that's fully over, derived from the data's own timeline (the
-   last COMPLETED week's end date) rather than the browser's wall-clock date — so it stays
-   correct even against demo/offline fallback data whose "today" isn't real. E.g. if the
-   last completed week ends 13 Sep, August (index 7) is the last fully-completed month;
-   September itself is still in progress and would understate against a full month's plan. */
+/* The last month that is fully over, derived from the data's own timeline (the last COMPLETED
+   week's end date) rather than the browser's clock: a month is complete once the last completed
+   week ends on/after the month's last WORKING day (all its working days are in completed weeks).
+   E.g. last completed week ends 04.10 → September (last working day Wed 30.09) is complete;
+   October is still in progress. */
 function mnLastCompletedMonthIdx(allWeekLabels, lastIdx){
   if(lastIdx<0) return -1;
   const range = mnParseWeekRange(allWeekLabels[lastIdx]);
   if(!range) return -1;
-  return range.end.getMonth()-1;
+  const E = range.end;
+  if(E.getFullYear() > CURRENT_YEAR) return 11;
+  if(E.getFullYear() < CURRENT_YEAR) return -1;
+  for(let m=11; m>=0; m--){
+    const d = new Date(CURRENT_YEAR, m+1, 0); // last calendar day of month m
+    while(d.getDay()===0 || d.getDay()===6) d.setDate(d.getDate()-1);
+    if(d <= E) return m;
+  }
+  return -1;
 }
 /* One funnel/partner step: icon, label, hero fact, MoM trend pill + "vs <previous month>",
    "fact / plan target" and a plan-progress bar with its %. */
@@ -2196,7 +2218,7 @@ function mnRenderConsolidated(data, legacyUpwork){
     container.appendChild(row);
   })();
 
-  const note = `monthly (a week counts fully toward the month it ends in) · year to date`;
+  const note = `monthly (working days; a week on a month boundary is split by working days) · year to date`;
   const mkGrid = (key, sectionNote) => wkBuildSection(container, key, sectionNote);
   // Every card below shares the same reporting boundary — thread it through here once
   // instead of repeating it on each call (see mnBuildCard's draw() for what it's for).
@@ -2309,7 +2331,7 @@ function ueMarginRows(blocks){
   return rows;
 }
 /* Monthly leads / new partners per weekly-report row label, from the same month aggregation the
-   Strategic tab uses (a week counts fully toward the month it ends in). */
+   Strategic tab uses (working days Mon–Fri; boundary weeks split by working days, whole units to the month with more of them). */
 function ueWeeklyFacts(weekly){
   if(!weekly || !weekly.groups) return null;
   const allWeekLabels = weekly.weekLabels || [];
