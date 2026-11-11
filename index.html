@@ -193,38 +193,62 @@
     .kpi-bar { height: 3px; background: rgba(0,0,0,0.05); overflow: hidden; border-radius: 99px; }
     .kpi-bar-fill { height: 100%; background: var(--accent); transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 99px; }
 
-    /* ===== KPI CARD · split column (last month | YTD) ===== */
-    .kpi-card.split { display: flex; gap: 16px; padding: 20px 22px 18px; }
-    .kpi-split-left { flex: 1.3; min-width: 0; display: flex; flex-direction: column; }
-    .kpi-split-rule { width: 1px; background: var(--card-border); flex-shrink: 0; }
-    .kpi-split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-    .kpi-icon-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    /* ===== KPI CARD · split column (last month | YTD) =====
+       One grid for the whole card, so both columns share the same rows:
+       eyebrow, number, plan line, meter, gap pill. Rows line up across the
+       left and right sides and across neighbouring cards. */
+    .kpi-card.split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) 1px minmax(0, 1fr);
+      grid-template-rows: auto auto auto auto auto auto;
+      column-gap: 18px;
+      padding: 20px 22px 20px;
+    }
+    .kpi-head {
+      grid-column: 1 / -1; grid-row: 1;
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+      margin-bottom: 16px;
+    }
+    .kpi-head .kpi-label {
+      margin: 0; letter-spacing: 0.12em; font-weight: 600; color: var(--text-dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .kpi-icon {
       width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
       background: color-mix(in srgb, var(--accent) 14%, white);
       color: var(--accent); font-size: 10px; font-weight: 800;
       display: grid; place-items: center;
     }
-    .kpi-split .kpi-label { margin-bottom: 0; }
-    .kpi-value-sm {
-      font-size: 28px; font-weight: 700; color: var(--text);
-      letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px;
-      font-variant-numeric: tabular-nums;
-    }
+    .kpi-split-rule { grid-column: 2; grid-row: 2 / 7; background: var(--card-border); }
+    .kpi-card.split .c1 { grid-column: 1; min-width: 0; }
+    .kpi-card.split .c3 { grid-column: 3; min-width: 0; }
+    .kpi-card.split .r2 { grid-row: 2; }
+    .kpi-card.split .r3 { grid-row: 3; align-self: end; }
+    .kpi-card.split .r4 { grid-row: 4; }
+    .kpi-card.split .r5 { grid-row: 5; align-self: center; }
+    .kpi-card.split .r6 { grid-row: 6; justify-self: start; align-self: start; }
     .kpi-eyebrow {
       font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-faint);
-      text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; margin-bottom: 8px;
     }
-    .kpi-ytd-num { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
-    .kpi-ytd-num .faint { font-size: 11px; color: var(--text-faint); font-weight: 500; }
-    .kpi-ytd-target { font-size: 10.5px; color: var(--text-faint); margin: 2px 0 7px; font-variant-numeric: tabular-nums; }
+    .kpi-value-sm {
+      font-size: 30px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.02em; line-height: 1; white-space: nowrap;
+    }
+    .kpi-ytd-num {
+      font-size: 18px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.01em; line-height: 1; white-space: nowrap; padding-bottom: 2px;
+    }
+    .kpi-plan-line {
+      font-size: 11px; line-height: 1.35; color: var(--text-faint); margin: 8px 0 8px;
+      font-variant-numeric: tabular-nums;
+    }
     .kpi-meter { height: 5px; background: var(--card-border-light); border-radius: 99px; overflow: hidden; }
+    .kpi-meter.blank { background: transparent; }
     .kpi-meter-fill { height: 100%; border-radius: 99px; background: var(--text-faint); transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
     .kpi-meter-fill.pos { background: var(--c-pos); }
     .kpi-meter-fill.neg { background: var(--c-neg); }
-    .kpi-delta.sm { font-size: 10px; padding: 3px 8px; display: inline-block; white-space: nowrap; }
-    .kpi-split .kpi-label { letter-spacing: 0.12em; line-height: 1.35; }
-    @media (max-width: 1100px) { .kpi-card.split { flex-direction: column; } .kpi-split-rule { width: auto; height: 1px; } }
+    .kpi-delta.sm { font-size: 10px; padding: 3px 8px; display: inline-block; white-space: nowrap; margin-top: 10px; }
 
     /* ===== CHARTS ===== */
     .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -1031,52 +1055,47 @@
     // Split-column KPI card: last completed month is the headline (left),
     // YTD cumulative position is secondary (right). Both sides show the same
     // structure: actual, the plan it is measured against, % of plan, and the gap.
-    // Deviation from plan as a percentage of the plan's size. Against a plan of
-    // zero there is no percentage, so the caller falls back to the amount.
-    const fmtPctOfPlan = (delta, plan) => {
-      const p = delta / Math.abs(plan) * 100;
-      const v = Math.abs(p) >= 10 ? Math.round(p).toString() : p.toFixed(1);
-      return (p >= 0 ? '+' : '−') + v.replace('-', '') + '%';
-    };
-
-    function planBlock(fact, plan, fmt, deltaFmt, isCost, numClass, pctPill = false) {
+    // One side of a split KPI card (last month or YTD): four cells on the
+    // card's shared grid rows 3-6 — number, plan line, meter, gap pill.
+    // showPct: "% of plan" only for amounts, never for a margin (a percent of a
+    // percent reads as nonsense), and only when both plan and actual are
+    // positive — against a planned loss or an actual loss it means nothing.
+    function planBlock(col, fact, plan, fmt, deltaFmt, isCost, numClass, showPct) {
       const delta = (fact || 0) - (plan || 0);
       const flat = delta === 0;
       const good = isCost ? delta <= 0 : delta >= 0;
       const cls = flat ? 'neutral' : (good ? 'pos' : 'neg');
-      const gap = (pctPill && plan) ? fmtPctOfPlan(delta, plan) : deltaFmt(delta);
-      const pill = flat ? '● On plan' : `${good ? '▲' : '▼'} ${gap} vs plan`;
-      // "% of plan" only reads correctly against a positive plan; against a
-      // planned loss (negative plan) show the plan amount without a percentage.
-      if ((plan || 0) > 0) {
-        const pct = Math.min(Math.max((fact / plan) * 100, 0), 130);
-        return `
-            <div class="${numClass}">${fmt(fact)}</div>
-            <div class="kpi-ytd-target">${Math.round(pct)}% of ${fmt(plan)} plan</div>
-            <div class="kpi-meter"><div class="kpi-meter-fill ${flat ? 'pos' : cls}" style="width:${Math.min(pct, 100)}%"></div></div>
-            <span class="kpi-delta sm ${cls}" style="margin-top:7px; align-self:flex-start">${pill}</span>`;
+      // The plan line above already names the plan, so the pill carries only the gap.
+      const pill = flat ? '● On plan' : `${good ? '▲' : '▼'} ${deltaFmt(delta)}`;
+
+      let planLine = `vs ${fmt(plan)} plan`;
+      let meter = `<div class="kpi-meter blank"></div>`;
+      if (showPct && plan > 0 && fact >= 0) {
+        const pct = fact / plan * 100;
+        // Floor below 100 so a miss never rounds up to a clean "100%".
+        const pctText = pct > 999 ? '999%+' : (pct < 100 ? Math.floor(pct) : Math.round(pct)) + '%';
+        planLine = `${pctText} of ${fmt(plan)} plan`;
+        meter = `<div class="kpi-meter"><div class="kpi-meter-fill ${flat ? 'pos' : cls}" style="width:${Math.min(pct, 100)}%"></div></div>`;
       }
       return `
-            <div class="${numClass}">${fmt(fact)}</div>
-            <div class="kpi-ytd-target">vs ${fmt(plan)} plan</div>
-            <span class="kpi-delta sm ${cls}" style="align-self:flex-start">${pill}</span>`;
+            <div class="${col} r3 ${numClass}">${fmt(fact)}</div>
+            <div class="${col} r4 kpi-plan-line">${planLine}</div>
+            <div class="${col} r5">${meter}</div>
+            <span class="${col} r6 kpi-delta sm ${cls}">${pill}</span>`;
     }
 
-    function kpiCardSplit(label, icon, monthLabel, lastFact, lastPlan, ytdFact, ytdPlan, fmt, deltaFmt, isCost, accentColor, monthPct = true) {
+    function kpiCardSplit(label, icon, monthLabel, lastFact, lastPlan, ytdFact, ytdPlan, fmt, deltaFmt, isCost, accentColor, showPct = true) {
       return `
         <div class="kpi-card split" style="--accent: ${accentColor}">
-          <div class="kpi-split-left">
-            <div class="kpi-icon-row">
-              <span class="kpi-icon">${icon}</span>
-              <span class="kpi-label">${label} · ${monthLabel}</span>
-            </div>
-            ${planBlock(lastFact, lastPlan, fmt, deltaFmt, isCost, 'kpi-value-sm', monthPct)}
+          <div class="kpi-head">
+            <span class="kpi-icon">${icon}</span>
+            <span class="kpi-label">${label}</span>
           </div>
+          <div class="c1 r2 kpi-eyebrow">${monthLabel} · last month</div>
           <div class="kpi-split-rule"></div>
-          <div class="kpi-split-right">
-            <div class="kpi-eyebrow">YTD</div>
-            ${planBlock(ytdFact, ytdPlan, fmt, deltaFmt, isCost, 'kpi-ytd-num')}
-          </div>
+          <div class="c3 r2 kpi-eyebrow">Year to date</div>
+          ${planBlock('c1', lastFact, lastPlan, fmt, deltaFmt, isCost, 'kpi-value-sm', showPct)}
+          ${planBlock('c3', ytdFact, ytdPlan, fmt, deltaFmt, isCost, 'kpi-ytd-num', showPct)}
         </div>`;
     }
 
