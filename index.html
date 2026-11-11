@@ -195,7 +195,7 @@
 
     /* ===== KPI CARD · split column (last month | YTD) ===== */
     .kpi-card.split { display: flex; gap: 16px; padding: 20px 22px 18px; }
-    .kpi-split-left { flex: 1.3; min-width: 0; }
+    .kpi-split-left { flex: 1.3; min-width: 0; display: flex; flex-direction: column; }
     .kpi-split-rule { width: 1px; background: var(--card-border); flex-shrink: 0; }
     .kpi-split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
     .kpi-icon-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -208,7 +208,7 @@
     .kpi-split .kpi-label { margin-bottom: 0; }
     .kpi-value-sm {
       font-size: 28px; font-weight: 700; color: var(--text);
-      letter-spacing: -0.02em; line-height: 1; margin-bottom: 10px;
+      letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px;
       font-variant-numeric: tabular-nums;
     }
     .kpi-eyebrow {
@@ -711,7 +711,7 @@
         <div class="section-label">Key metrics · ${lastMonth} 2026 (last month) · ${scenario.label}</div>
         <div class="kpi-grid">
           ${kpiCardSplit('EBITDA', '€', lastMonth, lm(s.ebitdaFact), lm(s.ebitdaPlan), ytd.ebitdaFact, ytd.ebitdaPlan, fmtEur, fmtEurDelta, false, 'var(--c-ebitda)')}
-          ${kpiCardSplit('EBITDA Margin', '%', lastMonth, lastMarginFact, lastMarginPlan, marginFact, marginPlan, fmtPct, fmtPctDelta, false, 'var(--c-margin)')}
+          ${kpiCardSplit('EBITDA Margin', '%', lastMonth, lastMarginFact, lastMarginPlan, marginFact, marginPlan, fmtPct, fmtPctDelta, false, 'var(--c-margin)', false)}
           ${kpiCardSplit('Gross Profit', 'GP', lastMonth, lm(s.grossProfitFact), lm(s.grossProfitPlan), ytd.grossProfitFact, ytd.grossProfitPlan, fmtEur, fmtEurDelta, false, 'var(--c-gp)')}
           ${kpiCardSplit('Sales', '#', lastMonth, lm(s.salesFact), lm(s.salesPlan), ytd.salesFact, ytd.salesPlan, fmtInt, fmtIntDelta, false, 'var(--c-sales)')}
         </div>
@@ -1029,35 +1029,40 @@
     //  Shared helpers
     // ============================================================
     // Split-column KPI card: last completed month is the headline (left),
-    // YTD cumulative position — ahead or behind plan — is secondary (right).
-    function kpiCardSplit(label, icon, monthLabel, lastFact, lastPlan, ytdFact, ytdPlan, fmt, deltaFmt, isCost, accentColor) {
-      const lastDelta = (lastFact || 0) - (lastPlan || 0);
-      const lastFlat = lastDelta === 0;
-      const lastPos = isCost ? lastDelta <= 0 : lastDelta >= 0;
-      const lastCls = lastFlat ? 'neutral' : (lastPos ? 'pos' : 'neg');
-      const lastText = lastFlat ? '● On plan' : `${lastPos ? '▲' : '▼'} ${deltaFmt(lastDelta)} vs plan`;
+    // YTD cumulative position is secondary (right). Both sides show the same
+    // structure: actual, the plan it is measured against, % of plan, and the gap.
+    // Deviation from plan as a percentage of the plan's size. Against a plan of
+    // zero there is no percentage, so the caller falls back to the amount.
+    const fmtPctOfPlan = (delta, plan) => {
+      const p = delta / Math.abs(plan) * 100;
+      const v = Math.abs(p) >= 10 ? Math.round(p).toString() : p.toFixed(1);
+      return (p >= 0 ? '+' : '−') + v.replace('-', '') + '%';
+    };
 
-      const ytdDelta = (ytdFact || 0) - (ytdPlan || 0);
-      const ytdFlat = ytdDelta === 0;
-      const ytdPos = isCost ? ytdDelta <= 0 : ytdDelta >= 0;
-      const ytdCls = ytdFlat ? 'neutral' : (ytdPos ? 'pos' : 'neg');
-      const ytdText = ytdFlat ? '● On plan' : `${ytdPos ? '▲' : '▼'} ${deltaFmt(ytdDelta)}`;
-
-      let ytdRight;
-      if ((ytdPlan || 0) > 0) {
-        const pct = Math.min(Math.max((ytdFact / ytdPlan) * 100, 0), 130);
-        ytdRight = `
-            <div class="kpi-ytd-num">${fmt(ytdFact)}</div>
-            <div class="kpi-ytd-target">${Math.round(pct)}% of ${fmt(ytdPlan)} plan</div>
-            <div class="kpi-meter"><div class="kpi-meter-fill ${ytdFlat ? '' : (ytdPos ? 'pos' : 'neg')}" style="width:${Math.min(pct, 100)}%"></div></div>
-            <span class="kpi-delta sm ${ytdCls}" style="margin-top:6px; align-self:flex-start">${ytdText}</span>`;
-      } else {
-        ytdRight = `
-            <div class="kpi-ytd-num">${fmt(ytdFact)}</div>
-            <div class="kpi-ytd-target">vs ${fmt(ytdPlan)} plan</div>
-            <span class="kpi-delta sm ${ytdCls}" style="align-self:flex-start">${ytdText}</span>`;
+    function planBlock(fact, plan, fmt, deltaFmt, isCost, numClass, pctPill = false) {
+      const delta = (fact || 0) - (plan || 0);
+      const flat = delta === 0;
+      const good = isCost ? delta <= 0 : delta >= 0;
+      const cls = flat ? 'neutral' : (good ? 'pos' : 'neg');
+      const gap = (pctPill && plan) ? fmtPctOfPlan(delta, plan) : deltaFmt(delta);
+      const pill = flat ? '● On plan' : `${good ? '▲' : '▼'} ${gap} vs plan`;
+      // "% of plan" only reads correctly against a positive plan; against a
+      // planned loss (negative plan) show the plan amount without a percentage.
+      if ((plan || 0) > 0) {
+        const pct = Math.min(Math.max((fact / plan) * 100, 0), 130);
+        return `
+            <div class="${numClass}">${fmt(fact)}</div>
+            <div class="kpi-ytd-target">${Math.round(pct)}% of ${fmt(plan)} plan</div>
+            <div class="kpi-meter"><div class="kpi-meter-fill ${flat ? 'pos' : cls}" style="width:${Math.min(pct, 100)}%"></div></div>
+            <span class="kpi-delta sm ${cls}" style="margin-top:7px; align-self:flex-start">${pill}</span>`;
       }
+      return `
+            <div class="${numClass}">${fmt(fact)}</div>
+            <div class="kpi-ytd-target">vs ${fmt(plan)} plan</div>
+            <span class="kpi-delta sm ${cls}" style="align-self:flex-start">${pill}</span>`;
+    }
 
+    function kpiCardSplit(label, icon, monthLabel, lastFact, lastPlan, ytdFact, ytdPlan, fmt, deltaFmt, isCost, accentColor, monthPct = true) {
       return `
         <div class="kpi-card split" style="--accent: ${accentColor}">
           <div class="kpi-split-left">
@@ -1065,13 +1070,12 @@
               <span class="kpi-icon">${icon}</span>
               <span class="kpi-label">${label} · ${monthLabel}</span>
             </div>
-            <div class="kpi-value-sm">${fmt(lastFact)}</div>
-            <span class="kpi-delta sm ${lastCls}">${lastText}</span>
+            ${planBlock(lastFact, lastPlan, fmt, deltaFmt, isCost, 'kpi-value-sm', monthPct)}
           </div>
           <div class="kpi-split-rule"></div>
           <div class="kpi-split-right">
             <div class="kpi-eyebrow">YTD</div>
-            ${ytdRight}
+            ${planBlock(ytdFact, ytdPlan, fmt, deltaFmt, isCost, 'kpi-ytd-num')}
           </div>
         </div>`;
     }
